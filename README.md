@@ -1,4 +1,27 @@
-# Xerath Support Assistant · Companion V0.7 — HUD chỉ số trên game
+# Xerath Support Assistant · Companion V0.8 — HUD thông báo và cập nhật khoảng 1 giây
+
+**Mới trên màn hình game:** HUD không chỉ hiện các chỉ số cá nhân mà còn tự hiện lời nhắc đã chọn và cảnh báo khi máu/năng lượng của **chính bạn** vừa xuống dưới ngưỡng, hoặc vàng hiện có vừa đạt ngưỡng tham khảo. HUD tự ẩn thông báo sau 5–7 giây, chống lặp khi chỉ số vẫn thấp. Không cần chuyển tab để xem các thông báo. Vẫn có thể dùng HUD chữ mà **không có FPT.AI API key**.
+
+**Tần suất:** tự đọc chỉ số cá nhân theo chu kỳ khoảng **1 giây/lần** thay cho 5 giây; lời nhắc trên HUD được kiểm tra cùng chu kỳ. API qua HTTPS loopback có thể trả lời chậm hơn 1 giây; cập nhật không được bảo đảm liên tục từng khung hình. Sự kiện hạ gục đã được Riot công bố được đọc riêng khoảng 2 giây/lần (nếu đã bật); không làm chậm quá trình lấy chỉ số cá nhân.
+
+**Thông tin trận:** Có thể bật thông báo về **điểm hạ gục vừa xảy ra** từ endpoint công khai `/liveclientdata/eventdata`. Đây là sự kiện đã hoàn tất, **KHÔNG** có bằng chứng giao tranh đang diễn ra, không cung cấp vị trí Top/Mid/Bot và **KHÔNG** theo dõi vị trí hoặc đường di chuyển rừng địch. Trong giao diện Chỉ số trực tiếp, bỏ chọn tùy chọn thông báo hạ gục nếu không cần. Không tự đánh dấu vị trí rừng ngoài tầm nhìn, không tự suy luận vị trí theo thời gian thực, không can thiệp Vanguard.
+
+**Cách cập nhật trên Windows:** Đóng trợ lý cũ; tại thư mục repo, chạy:
+
+```powershell
+git pull origin main
+.\RUN_WINDOWS.cmd
+```
+
+Trong game dùng **Cửa sổ (Windowed)** hoặc **Không viền (Borderless)**. Từ Companion nhấn **Bật HUD và thông báo trên game**; các mục nhắc tích chọn ở Companion được hiển thị bằng chữ trên HUD theo lịch khi HUD đang bật, không cần nhấn riêng nút Bắt đầu nhắc. Chỉ số cá nhân và thông báo hạ gục đã hoàn tất đến từ API cục bộ, không phải nhận diện hình ảnh. Muốn thay góc/tắt HUD hoặc tắt thông báo hạ gục, vào **Chỉ số trực tiếp & tổng hợp · tùy chỉnh HUD**. Bật bộ hẹn giờ ở Companion riêng chỉ khi muốn sử dụng chức năng nhắc ngoài HUD/giọng FPT.AI; không cần API key FPT.AI để dùng HUD. Để tránh lời nhắc trùng, có thể không chạy cả hai bộ hẹn giờ cùng lúc.
+
+**Hạn chế của phiên bản:** chưa có tự nhận diện giao tranh Top/Mid, hay theo dõi rừng tự động. Live Client Data API không cung cấp vị trí rừng hoặc tín hiệu vị trí giao tranh trong dữ liệu sự kiện đã công bố; không tự đặt nhãn “có giao tranh” khi chỉ có thông báo hạ gục. Những chức năng này cần nguồn quan sát hợp lệ, kiểm thử độ chính xác và xác nhận phạm vi cho phép trước khi sử dụng trong trận. Công cụ không tự ra quyết định đẩy lính, đi gank hay ngắm Q/W/E/R.
+
+Mã nguồn mới: `src/XerathAssistant.Core/PersonalStatAlerts.cs`, `src/XerathAssistant.Core/PublicKillEventTracker.cs`, `src/XerathAssistant.Desktop/SelfStatsWindow.xaml.cs`, `src/XerathAssistant.Desktop/SelfStatsHudWindow.xaml.cs` và `.xaml`. Bộ kiểm thử core đã được bổ sung; **chưa xác nhận bản mới biên dịch/chạy thành công trên máy Windows của bạn**.
+
+---
+
+## V0.7 — HUD chỉ số trên game
 
 **Không cần Alt + Tab để xem chỉ số:** Phiên bản này bổ sung nút **Bật HUD chỉ số trên game** trong giao diện Companion. Sau khi vào trận, bật nút một lần rồi quay lại Liên Minh ở chế độ **Không viền (Borderless)**. HUD nhỏ sẽ hiển thị ở góc trên phải: máu, năng lượng, cấp độ, sức mạnh phép thuật, vàng hiện có và đồng hồ trận. Các chỉ số được cập nhật 5 giây/lần qua Riot Live Client Data API cục bộ của **chính người chơi**; không đọc thế lính, vị trí đối thủ hoặc thông tin ẩn. Không cần API key FPT.AI để sử dụng HUD.
 
