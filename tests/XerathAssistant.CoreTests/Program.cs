@@ -152,4 +152,53 @@ personalSession.Add(own with { GameTimeSeconds = 1 });
 Verify(personalSession.Samples == 1 && personalSession.LowResourceObservedSeconds == 0,
        "new match resets previous in-memory summary");
 
+
+var statAlerts = new PersonalStatAlerts(30, 25, 2500);
+Verify(statAlerts.Observe(own).Count == 0,
+       "own-stat alerts do not replay historical thresholds on first observation");
+var alertsOnCrossing = statAlerts.Observe(own with {
+    GameTimeSeconds = 561, Health = 300, Resource = 110, Gold = 2550
+});
+Verify(alertsOnCrossing.Count == 3 && alertsOnCrossing.Any(a => a.Contains("Máu")) &&
+       alertsOnCrossing.Any(a => a.Contains("Năng lượng")) &&
+       alertsOnCrossing.Any(a => a.Contains("Vàng")),
+       "own health mana and gold crossings produce factual warnings");
+Verify(statAlerts.Observe(own with {
+    GameTimeSeconds = 562, Health = 290, Resource = 90, Gold = 2600
+}).Count == 0, "no alert spam while own stats remain below or above thresholds");
+Verify(statAlerts.Observe(own with {
+    GameTimeSeconds = 563, Health = 1200, Resource = 400, Gold = 2100
+}).Count == 0, "recovery re-arms stat thresholds");
+Verify(statAlerts.Observe(own with {
+    GameTimeSeconds = 564, Health = 290, Resource = 100, Gold = 2600
+}).Count == 3, "stat alerts can fire again after recovery and re-crossing");
+Verify(statAlerts.Observe(own with {
+    GameTimeSeconds = 1, Health = 290, Resource = 100, Gold = 2600
+}).Count == 0, "new game restarts self-stat alert tracking without old alerts");
+
+var killTracker = new PublicKillEventTracker();
+const string openingEvents = """
+{"Events":[{"EventID":0,"EventName":"GameStart","EventTime":0}]}
+""";
+const string oneKillEvents = """
+{"Events":[{"EventID":0,"EventName":"GameStart","EventTime":0},{"EventID":1,"EventName":"ChampionKill","EventTime":13}]}
+""";
+Verify(killTracker.Observe(openingEvents, 12) is null,
+       "initial event snapshot never replays historical announcements");
+var killNotice = killTracker.Observe(oneKillEvents, 14);
+Verify(killNotice is not null && killNotice.Contains("hạ gục") &&
+       !killNotice.Contains("Mid") && !killNotice.Contains("Top") &&
+       !killNotice.Contains("giao tranh"),
+       "completed champion kill notice never invents fight or lane location");
+Verify(killTracker.Observe(oneKillEvents, 15) is null,
+       "same Riot event is never announced twice");
+const string twoKillEvents = """
+{"Events":[{"EventID":0,"EventName":"GameStart","EventTime":0},{"EventID":1,"EventName":"ChampionKill","EventTime":13},{"EventID":2,"EventName":"ChampionKill","EventTime":16},{"EventID":3,"EventName":"ChampionKill","EventTime":17}]}
+""";
+Verify(killTracker.Observe(twoKillEvents, 18) is string twoKills &&
+       twoKills.Contains("2 điểm hạ gục"),
+       "group freshly completed kill events without calling them a live teamfight");
+Verify(killTracker.Observe(openingEvents, 0) is null,
+       "new match game clock resets event stream without replaying old kills");
+
 Console.WriteLine($"ALL {count} CORE TESTS PASSED");
