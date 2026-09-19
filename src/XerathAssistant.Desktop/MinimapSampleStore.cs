@@ -13,12 +13,14 @@ public sealed class MinimapSampleStore
         "XerathSupportAssistant", "minimap-labeled-samples-v1.8");
     public string Folder => _root;
 
-    public (string filename, int count) SaveSelected(byte[] jpeg, string label)
+    public (string filename, int count) SaveSelected(byte[] jpeg, string label, string evidenceKind)
     {
         if (jpeg.Length is < 24 or > 2 * 1024 * 1024 ||
             jpeg[0] != 0xff || jpeg[1] != 0xd8 ||
             jpeg[^2] != 0xff || jpeg[^1] != 0xd9)
             throw new InvalidDataException("Ảnh JPEG đã chọn không hợp lệ hoặc vượt 2 MB.");
+        if (evidenceKind is not ("visible-observation" or "hypothesis" or "uncertain"))
+            throw new ArgumentException("Phân loại ghi chú không hợp lệ.");
         label = label.Trim();
         if (label.Length is < 3 or > 300)
             throw new ArgumentException("Hãy ghi nhãn mô tả ảnh từ 3 đến 300 ký tự.");
@@ -40,6 +42,7 @@ public sealed class MinimapSampleStore
             schemaVersion = 1,
             capturedFrom = "visible-practice-minimap",
             userLabel = label,
+            evidenceKind,
             verification = "manual-note-not-verified-object-detection-ground-truth",
             capturedTimeUtc = DateTimeOffset.UtcNow,
             imageIsApproximateBottomRightCrop = true,
