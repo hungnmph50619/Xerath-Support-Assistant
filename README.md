@@ -1,4 +1,14 @@
-# Xerath Support Assistant · V1.3 — Giai đoạn đầu của AI quan sát minimap
+# Xerath Support Assistant · V1.4 — Thử giọng nói về Rừng/Mid trên ảnh xem lại
+
+**Đã triển khai bản thử nghiệm đọc tiếng Việt cho hai vai trò Rừng địch và Mid đối phương, dựa trên vị trí BẠN đánh dấu trên ảnh đã lưu. Đây là chức năng XEM LẠI/LUYỆN TẬP, không phải AI biết vị trí địch trong trận đang diễn ra.** Cầu nối AI cá nhân V2.2.6 và HUD chỉ số/cảnh báo máu hoạt động như trước; không có lời đọc vị trí đối phương tự động trên HUD.
+
+**Thử chức năng:** cập nhật mã `git pull origin main`, chạy `.\\RUN_WINDOWS.cmd`. Trong Companion V1.4, bấm **Xem lại vị trí Rừng / Mid · nghe tiếng Việt**. Chọn **Mở ảnh trận đã lưu** (có thể chọn JPG được thu bởi công cụ V1.3); nhập thời điểm ảnh, bấm đúng biểu tượng tướng nhìn thấy trong ảnh để đặt dấu, chọn **Rừng địch** hoặc **Mid đối phương** cùng khu vực **Đường trên/giữa/dưới, sông, rừng**, sau đó bấm **Đọc vị trí đã đánh dấu trong ảnh**. Ứng dụng sẽ phát câu như “Trong ảnh đã lưu, bạn đánh dấu rừng địch ở đường giữa.” bằng giọng tiếng Việt miễn phí nếu tạo được âm thanh. Khi thử lần đầu, cần Internet để tạo câu qua dịch vụ miễn phí hoặc cài eSpeak NG để tạo giọng tiếng Việt ngoại tuyến; sau đó đọc từ tệp lưu trên máy. Nút **Dừng giọng xem lại** ngắt phát. Nếu vị trí chưa rõ, chọn **Không xác định**: ứng dụng sẽ không đưa ra câu đoán.
+
+**Độ tin cậy:** vai trò, vị trí và thời điểm là **nhãn thủ công do người dùng chọn**, không phải kết quả AI nhận diện. Chọn sai vai trò/đường sẽ dẫn tới phát câu sai tương ứng; chức năng không tự xác minh ảnh. Bản này không chụp màn hình ngầm, không định vị tướng khuất tầm nhìn, không phát cảnh báo rừng đang gank, không tự đọc vị trí khi bạn đang chơi. Muốn xây dựng phiên bản tự nhận diện cần ảnh minimap thực tế đã gán nhãn chính xác và kiểm thử độ trễ, tỷ lệ nhận diện sai, đồng thời rà soát chính sách dành cho ứng dụng trong trận của Riot. Không nên bật tính năng thông báo vị trí đối thủ trong trận khi chưa chứng minh được cả độ chính xác và phạm vi sử dụng được phép.
+
+---
+
+## V1.3 — Thu thập ảnh minimap để luyện tập
 
 **Đã thêm công cụ thu thập ảnh minimap để luyện tập AI; CHƯA có AI tự nhận diện rừng địch hoặc giao tranh.** Bản này tạo dữ liệu đầu vào thực tế phục vụ gán nhãn và kiểm thử một mô hình thị giác về sau, không giả định một thuật toán dò màu là trí tuệ nhân tạo hoặc một tướng vắng mặt là đang đi gank.
 
