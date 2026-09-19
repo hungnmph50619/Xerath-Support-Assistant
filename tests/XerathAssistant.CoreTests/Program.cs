@@ -78,4 +78,51 @@ var invalidPositionRejected = false;
 try { review.Mark(1.1, 0.5, TimeSpan.Zero); }
 catch (ArgumentOutOfRangeException) { invalidPositionRejected = true; }
 Verify(invalidPositionRejected, "reject off-image coordinates");
+
+var unknownScenario = new WaveFightScenario(
+    WaveLocation.Unknown, WaveDirection.Unknown, AdcPlan.Unknown,
+    Condition.Unknown, Condition.Unknown, VisionState.Unknown,
+    JungleState.Unknown, AllyState.Unknown, NumbersState.Unknown,
+    EnemyEngageState.Unknown, MinionState.Unknown, ObjectiveState.Unknown);
+var unknownAdvice = WaveFightAdvisor.Evaluate(unknownScenario);
+Verify(unknownAdvice.Wave.State == AdviceState.InsufficientInformation &&
+       unknownAdvice.Position.State == AdviceState.InsufficientInformation &&
+       unknownAdvice.Fight.State == AdviceState.InsufficientInformation,
+       "offline advisor refuses decisions with missing observations");
+Verify(unknownAdvice.Fight.Missing.Contains("Thông tin rừng địch"),
+       "unknown jungle position explicitly requires more information");
+
+var scenario = new WaveFightScenario(
+    WaveLocation.EnemyHalf, WaveDirection.TowardEnemy, AdcPlan.CrashThenRecall,
+    Condition.Healthy, Condition.Healthy, VisionState.Controlled,
+    JungleState.RecentlySeenTop, AllyState.Together, NumbersState.Advantage,
+    EnemyEngageState.RecentlyUsed, MinionState.Even, ObjectiveState.NotSoon);
+var conditional = WaveFightAdvisor.Evaluate(scenario);
+Verify(conditional.Wave.State == AdviceState.ConditionalOpportunity &&
+       conditional.Fight.State == AdviceState.ConditionalOpportunity,
+       "favorable manually entered scenario yields conditional options, not guarantees");
+Verify(conditional.Position.State == AdviceState.Evaluate &&
+       conditional.Position.Explanation.Contains("độ mới"),
+       "enemy-half position still warns about stale jungler location");
+Verify(WaveFightAdvisor.Evaluate(scenario with { AdcPlan = AdcPlan.Hold }).Wave.State ==
+       AdviceState.Caution, "ADC hold intention prevents fast-push suggestion");
+Verify(WaveFightAdvisor.Evaluate(scenario with {
+    WaveLocation = WaveLocation.AllyHalf, WaveDirection = WaveDirection.TowardAlly
+}).Wave.State == AdviceState.Caution,
+       "wave pushing toward allied tower gets wave preservation guidance");
+Verify(WaveFightAdvisor.Evaluate(scenario with { Vision = VisionState.Dark }).Fight.State ==
+       AdviceState.Caution, "dark river vision blocks aggressive fight guidance");
+Verify(WaveFightAdvisor.Evaluate(scenario with { EnemyJungle = JungleState.NoRecentSighting }).Position.State ==
+       AdviceState.Caution, "old or unavailable jungle information cannot imply safety");
+Verify(WaveFightAdvisor.Evaluate(scenario with { NearbyNumbers = NumbersState.Unknown }).Fight.State ==
+       AdviceState.InsufficientInformation, "unknown player count blocks fight evaluation");
+Verify(WaveFightAdvisor.Evaluate(scenario with { MinionPressure = MinionState.EnemyLarge }).Fight.State ==
+       AdviceState.Caution, "large enemy wave is a fight risk");
+Verify(WaveFightAdvisor.Evaluate(scenario with { Objective = ObjectiveState.Soon }).Wave.State ==
+       AdviceState.Caution, "upcoming objective blocks automatic push-and-recall suggestion");
+Verify(WaveFightAdvisor.Evaluate(scenario with { Objective = ObjectiveState.Unknown }).Wave.State ==
+       AdviceState.InsufficientInformation, "missing objective timing blocks recall evaluation");
+Verify(WaveFightAdvisor.Evaluate(scenario with { Health = Condition.Low }).Fight.State ==
+       AdviceState.Caution, "low health blocks favorable fight judgment");
+
 Console.WriteLine($"ALL {count} CORE TESTS PASSED");
