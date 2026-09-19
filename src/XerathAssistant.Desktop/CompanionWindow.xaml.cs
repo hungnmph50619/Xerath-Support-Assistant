@@ -25,8 +25,7 @@ public partial class CompanionWindow : Window
     private bool _started;
     private bool _paused;
     private bool _isMatchRunning;
-    private bool _playing;
-    private bool _closed;
+        private bool _closed;
 
     public CompanionWindow()
     {
@@ -244,9 +243,8 @@ public partial class CompanionWindow : Window
 
     private void PlayNext()
     {
-        if (_audioQueue.Count == 0) { _playing = false; return; }
-        _playing = true;
-        _player.Open(new Uri(_audioQueue.Dequeue(), UriKind.Absolute));
+        if (_audioQueue.Count == 0) return;
+        _player.Open(new Uri(Path.GetFullPath(_audioQueue.Dequeue())));
         _player.Volume = 0.7;
         _player.Play();
     }
@@ -255,7 +253,6 @@ public partial class CompanionWindow : Window
     {
         _player.Stop();
         _player.Close();
-        _playing = false;
         PlayNext();
     }
 
