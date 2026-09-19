@@ -68,14 +68,17 @@ public sealed class OwnDangerEpisodeTracker
                 current.HealthPercent);
             LowestObservedEpisodeHealthPercent = Math.Min(
                 LowestObservedEpisodeHealthPercent, current.HealthPercent);
-            if (loss > 0.1) _lastDamageTime = current.GameTimeSeconds;
-            GreatestEpisodeHealthLossPercent = Math.Max(
-                GreatestEpisodeHealthLossPercent,
-                100d * Math.Max(0, _episodeStartHealth - current.Health) / _episodeMaxHealth);
-            // Eight seconds without a fresh observed loss ends a recorded episode.
-            // Stable low HP is NOT proof that the player is now safe.
+            // A new hit after a quiet gap belongs to a new episode.
+            // Otherwise a single hit at t+30 would keep a t=0 episode open.
             if (current.GameTimeSeconds - _lastDamageTime >= 8)
                 CloseEpisode();
+            else if (loss > 0.1)
+                _lastDamageTime = current.GameTimeSeconds;
+            if (_active)
+                GreatestEpisodeHealthLossPercent = Math.Max(
+                GreatestEpisodeHealthLossPercent,
+                100d * Math.Max(0, _episodeStartHealth - current.Health) / _episodeMaxHealth);
+
         }
 
         if (candidate is null || candidate.GameTimeSeconds != current.GameTimeSeconds ||
