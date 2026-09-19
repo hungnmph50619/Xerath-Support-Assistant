@@ -67,7 +67,7 @@
           <Border Grid.Row="1" Background="#090F17" CornerRadius="7" BorderBrush="#34516A"
                   BorderThickness="1" MinHeight="250">
             <Grid>
-              <TextBlock Text="Chưa có ảnh. Nhấn “Xem trước”, chuyển về game 2–3 giây rồi quay lại."
+              <TextBlock Name="PreviewEmptyText" Text="Chưa có ảnh. Nhấn “Xem trước”, chuyển về game 2–3 giây rồi quay lại."
                          HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"
                          MaxWidth="285" Foreground="#849FB9" FontSize="13"/>
               <Image Name="SamplePreview" Width="420" Height="420" MaxWidth="420"
@@ -89,14 +89,16 @@
           <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="12" MaxWidth="660">
               <TextBlock Text="Căn vùng minimap một lần" FontSize="19" FontWeight="Bold"/>
+              <TextBlock Text="Nhanh nhất: bấm Khung gợi ý → Xem trước → Lưu khung."
+                         Foreground="#8FE1C3" FontWeight="SemiBold" Margin="0,5,0,0"/>
               <TextBlock Text="Bấm xem trước → chuyển về game 2–3 giây → quay lại nhìn ảnh BÊN TRÁI. Nếu còn lệch, chỉnh 4 thanh bên dưới rồi xem lại."
                          Foreground="#B5C9DD" FontSize="13" Margin="0,6,0,13"/>
               <Button Click="PresetCropClick" HorizontalAlignment="Left"
                       Content="Thử khung gợi ý cho minimap góc phải"
                       Background="#294763"/>
-              <TextBlock Text="Điều chỉnh nếu ảnh còn thiếu mép hoặc lẫn quá nhiều địa hình:"
-                         Foreground="#D8E6F5" Margin="0,8,0,5" FontSize="13"/>
-              <Grid Margin="0,0,0,10">
+              <Expander Header="Ảnh bị lệch? Mở 4 thanh chỉnh tay" Margin="0,8,0,10"
+                        Foreground="#E8F0F9" IsExpanded="False">
+                <Grid Margin="0,10,0,6">
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="*"/>
                   <ColumnDefinition Width="14"/>
@@ -122,7 +124,8 @@
                           Minimum="8" Maximum="50" Value="30" TickFrequency="1"
                           IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft" Margin="0,4,0,6"/>
                 </StackPanel>
-              </Grid>
+                </Grid>
+              </Expander>
               <Button Name="PreviewCropButton" Click="PreviewCropClick"
                       Content="1. Xem trước ảnh (không gửi AI)" Background="#315F84"/>
               <Button Name="SaveCropButton" Click="SaveCropClick" IsEnabled="False"
