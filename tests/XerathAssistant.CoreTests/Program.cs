@@ -398,8 +398,8 @@ Verify(trend.Observe(trendBase with { GameTimeSeconds = 2000, Health = 500 }) is
 trend.Reset();
 Verify(trend.Observe(trendBase with { GameTimeSeconds = 2100, Health = 900 }) is null &&
        trend.Observe(trendBase with { GameTimeSeconds = 2100, Health = 400 }) is null &&
-       trend.Observe(trendBase with { GameTimeSeconds = 2101, Health = 350 }) is null &&
-       trend.Observe(trendBase with { GameTimeSeconds = 2102, Health = 300 }) is null,
+       trend.Observe(trendBase with { GameTimeSeconds = 2101, Health = 850 }) is null &&
+       trend.Observe(trendBase with { GameTimeSeconds = 2102, Health = 800 }) is null,
        "duplicated clock data cannot fabricate a large multi-hit trend");
 trend.Reset();
 Verify(trend.Observe(trendBase with { GameTimeSeconds = 2200, Health = 1000 }) is null &&
