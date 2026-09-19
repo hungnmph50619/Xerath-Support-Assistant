@@ -6,7 +6,17 @@
 
 **Thư viện mẫu:** nhấn **Mở thư viện mẫu đã lưu** ngay trong Mắt nhìn AI để xem lại từng JPG, số điểm đã đánh dấu và ghi chú; bạn có thể sửa *ghi chú/loại bằng chứng* hoặc xóa từng ảnh + JSON sau khi xác nhận. Tọa độ và tên tướng đã gắn nhãn được giữ nguyên khi sửa ghi chú. Phần mềm từ chối lưu bản sao có **byte JPEG giống hệt** một ảnh đã lưu; hai ảnh nhìn gần giống nhưng có thể khác vị trí tướng sẽ **không bị tự xóa**. Giới hạn tổng thư viện vẫn là 250 ảnh / 200 MB và xóa toàn bộ vẫn yêu cầu xác nhận.
 
-**Còn thiếu:** V1.8 hiện **chưa có chế độ lưu chuỗi ảnh ngắn để xem lại nhiều khung liên tiếp**, chưa đánh dấu khung chữ nhật quanh icon, chưa có trang tự chấm độ chính xác nhận diện trên bộ kiểm thử, chưa có mô hình tự nhận diện tướng hoặc vị trí Rừng/Mid. Cần kiểm tra việc nhấp lên ảnh và thao tác thư viện trên máy Windows thực tế; CI xác nhận biên dịch và kiểm thử tự động hiện có, không chứng minh độ đúng của nhãn thủ công hoặc khả năng nhận diện biểu tượng.
+**Còn thiếu:** V1.8 chưa tự đánh dấu khung chữ nhật quanh icon, chưa có mô hình tự nhận diện tướng, chưa tự chấm độ chính xác nhận diện (Gemini hiện trả văn bản phân tích tự do, chưa có các dự đoán biểu tượng được chuẩn hóa để so sánh với điểm nhãn). Cần kiểm tra việc nhấp lên ảnh, lưu/xem chuỗi và thao tác thư viện trên Windows thực tế; CI chỉ xác nhận biên dịch và các kiểm thử tự động hiện có, không chứng minh độ đúng của nhãn thủ công hoặc khả năng nhận diện biểu tượng.
+
+---
+
+## Bổ sung V1.8 — Chuỗi ảnh trong RAM và chuẩn bị tập kiểm thử
+
+**Đã có nút Thu chuỗi 5 ảnh, không gửi AI:** bạn chủ động bấm nút, xác nhận, chuyển về cửa sổ trận luyện tập/xem lại. Ứng dụng lấy tối đa 5 khung minimap theo vùng cắt đã xác nhận, cách nhau khoảng 2 giây, chỉ trong RAM (tối đa 5 × 2 MB JPEG). Sau khi thu xong, bạn chọn từng khung trong ô danh sách, xem ảnh, đánh dấu biểu tượng và **chỉ lưu từng ảnh bạn chủ động chọn**. Các ảnh không chọn sẽ được xóa khỏi vùng đệm khi đóng cửa sổ hoặc bấm **Xóa chuỗi trong RAM**. Nếu game không ở cửa sổ được chọn, phần mềm chờ; sau 2 phút dừng thu. Nếu thay đổi độ phân giải, dừng thu và yêu cầu căn chỉnh lại. Nút **Bắt đầu phân tích qua Gemini** bị chặn khi còn chuỗi RAM; cần xóa chuỗi trước khi bật gửi ảnh qua đám mây. Chuỗi ảnh cho biết **những lần xuất hiện thực sự quan sát được**, không chứng minh đối thủ đang ẩn trong bụi hay chuẩn bị gank.
+
+**Metadata chuỗi:** nếu bạn lưu một ảnh trong chuỗi, JSON ghi nhóm chuỗi, thứ tự khung và thời điểm lấy ảnh. Các ảnh đã lưu được phân nhóm `train` (tập phục vụ điều chỉnh) hoặc `test` (tập giữ riêng) theo khóa nhóm ổn định; các khung liền nhau thuộc **cùng nhóm** để không bị dùng đồng thời làm dữ liệu điều chỉnh và dữ liệu kiểm thử. Thư viện hiện số ảnh thuộc mỗi nhóm, nhưng **chưa đo độ chính xác** vì chưa có mô hình nhận diện xuất ra tên tướng/tọa độ một cách có cấu trúc, và nhãn thủ công vẫn cần được kiểm tra. Tỷ lệ phân nhóm xấp xỉ 80/20, không bảo đảm chính xác với bộ ảnh nhỏ; mẫu tạo bởi bản V1.8 cũ không có nhãn phân nhóm được hiển thị là `unassigned`.
+
+**Lưu ý:** chế độ chuỗi trong RAM **không gửi Gemini**. Ngược lại, chế độ **Bắt đầu phân tích** có gửi ảnh tới Gemini theo xác nhận và giới hạn của phiên, như trước. Không nhầm hai chế độ hoặc hiểu việc lưu ảnh cục bộ có thể rút lại một ảnh đã gửi cho dịch vụ bên ngoài.
 
 ---
 
