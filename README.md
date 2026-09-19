@@ -1,4 +1,27 @@
-# Xerath Support Assistant · Companion V0.9.1 — Sửa lỗi giọng nói tiếng Việt miễn phí
+# Xerath Support Assistant · Companion V1.0 — HUD ưu tiên tình huống thực tế
+
+**V1.0 — phần đã triển khai:** đọc chỉ số *chính bạn* từ API trận cục bộ khoảng 1 giây/lần và tự nhận ra khi máu vừa giảm ít nhất 22% tối đa trong 2,5 giây (ít nhất 100 HP). Khi có thay đổi được xác nhận, HUD thông báo ngắn bằng tiếng Việt ngay trên màn hình game, có chống lặp khoảng 8 giây. Cảnh báo máu xuống dưới 30%, năng lượng dưới 25%, vàng đạt 2.500 vẫn hoạt động như trước. Số liệu API có thể trả về trễ hoặc gián đoạn; đây là quan sát hai mẫu gần nhau, **không phải thuật toán phát hiện tướng địch đang ở đâu, cũng không phải nhận diện giao tranh**.
+
+**Lời nhắc đúng tình huống trước:** lời nhắc *theo giờ* trên HUD mặc định **tắt**, chỉ hiện các thông báo theo chỉ số hoặc sự kiện trận thực. Trong cửa sổ **Chỉ số trực tiếp & tổng hợp**, bạn có thể tích **Hiện thêm lời nhắc theo thời gian trên HUD** nếu vẫn muốn nhắc nhìn minimap/mắt theo chu kỳ. Lời nhắc bằng giọng nói trong mục 3 của Companion vẫn là bộ hẹn giờ riêng; nếu nhấn **Bắt đầu nhắc**, tiếng sẽ phát theo lịch như cũ, không tự biến thành giọng đọc cảnh báo theo tình huống. Có thể tắt lựa chọn **Cảnh báo khi máu của bạn giảm nhanh** nếu không muốn nhận thông báo này.
+
+**Sự kiện hạ gục:** HUD vẫn có thể hiển thị điểm hạ gục *vừa xảy ra* từ `/liveclientdata/eventdata` (nếu bật), không suy ra Mid/Top/Bot đang giao tranh chỉ từ kill feed. Đừng hiểu thông báo nhanh về mất máu là bằng chứng rừng địch đã xuất hiện.
+
+**Vẫn chưa có:** hệ thống AI quan sát từng khung hình và nhận diện **vị trí rừng địch**, xác định **vị trí giao tranh từ minimap**, hoặc tự chọn **đường di chuyển và kỹ năng Q/W/E/R**. Muốn hiện những thông tin đó một cách đáng tin cậy cần (1) nguồn ảnh game phù hợp, (2) tập dữ liệu gán nhãn champion/minimap theo độ phân giải và chế độ giao diện, (3) mô hình nhận diện được kiểm chứng cả tỉ lệ báo sai và độ trễ, (4) rà soát quy định ứng dụng trong trận của Riot. Hiện tại không có model CV đã huấn luyện trong repo, nên **không thể nói chức năng AI theo dõi rừng/giao tranh đã hoàn thành**. Đây là phiên bản cải thiện khả năng phát hiện **tình huống thực từ dữ liệu cá nhân** trên HUD; không quảng cáo suy đoán thành quan sát.
+
+**Cập nhật trên Windows:** đóng ứng dụng đang chạy, mở PowerShell trong thư mục dự án rồi chạy:
+
+```powershell
+git pull origin main
+.\RUN_WINDOWS.cmd
+```
+
+Chờ tiêu đề **Companion V1.0**, nhấn **Bật HUD theo tình huống trong game** rồi quay lại game ở chế độ **Cửa sổ** hoặc **Không viền**. HUD có thể hiện cảnh báo sát thương theo sự kiện mà không yêu cầu API key FPT.AI và không cần cài giọng nói. Để nghe nhắc theo giờ, thực hiện riêng phần **2. Giọng nói tiếng Việt** và **3. Bắt đầu nhắc**.
+
+**Kiểm thử tự động:** workflow `.github/workflows/windows-build.yml` build WPF trên Windows và chạy các phép thử core. Bộ thử được bổ sung cho mất máu đột ngột, tránh báo liên tục, kết thúc trận và mở trận mới. Chưa thử điều kiện trận thật và chưa kiểm chứng nhận diện hình ảnh. Để xem quá trình build, mở trang Actions trong repo; nếu chạy `git pull` báo không thấy thay đổi, kiểm tra xem cửa sổ đang chạy đã đóng trước khi mở lại.
+
+---
+
+## V0.9.1 — Sửa lỗi giọng nói tiếng Việt miễn phí
 
 **Vấn đề đã sửa:** V0.9 dựa vào dịch vụ giọng Hoài My qua Edge TTS, nhưng trên máy người dùng dịch vụ không trả về âm thanh. V0.9.1 **không còn dùng thư viện Edge TTS đó**. Khi nhấn **Tạo giọng tiếng Việt miễn phí**, ứng dụng thử tạo MP3 tiếng Việt từ dịch vụ Google Translate TTS không cần API key; nếu không truy cập được, tự động chuyển sang **eSpeak NG đã cài trên máy** để tạo WAV tiếng Việt hoàn toàn offline. Giọng eSpeak NG nghe máy móc hơn giọng trực tuyến nhưng không phụ thuộc dịch vụ chuyển văn bản thành giọng nói khi đã cài đặt. Mỗi câu được lưu vào `%LOCALAPPDATA%\XerathSupportAssistant\voice\free-vietnamese-v2` để lần chơi sau không cần tạo lại.
 
