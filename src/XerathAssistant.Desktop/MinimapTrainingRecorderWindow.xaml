@@ -80,7 +80,7 @@
                   BorderBrush="#34516A" BorderThickness="1" MinHeight="250">
             <Grid>
               <TextBlock Name="PreviewEmptyText"
-                         Text="Chưa có ảnh. Bấm Xem trước, chuyển về game 2–3 giây, rồi quay lại."
+                         Text="Chưa có ảnh. Bấm Tự tìm minimap, chuyển về trận rồi quay lại kiểm tra."
                          HorizontalAlignment="Center" VerticalAlignment="Center"
                          TextAlignment="Center" MaxWidth="290" Foreground="#AFC3DA"/>
               <Image Name="SamplePreview" Stretch="Uniform" HorizontalAlignment="Stretch"
@@ -100,10 +100,10 @@
         <TabItem Header="Thu ảnh">
           <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="12" MaxWidth="650">
-              <TextBlock Text="1 · Kiểm tra minimap" FontSize="17" FontWeight="Bold"
+              <TextBlock Text="1 · Tự tìm minimap" FontSize="17" FontWeight="Bold"
                          Margin="0,0,0,5"/>
               <TextBlock Foreground="#CADDED" FontSize="12" Margin="0,0,0,10"
-                         Text="Bấm Tự tìm minimap → chuyển về game 2–3 giây → quay lại kiểm tra ảnh bên trái. Phần mềm tìm khung cục bộ trong RAM, không gửi Gemini. Chỉ xác nhận khi khung chứa đúng toàn bộ minimap."/>
+                         Text="Bấm Tự tìm minimap → chuyển về trận → kiểm tra ảnh bên trái. Nếu khung đúng, bấm Dùng khung này. Chỉ mở Chỉnh tay khi ảnh bị lệch. Việc tìm khung chạy cục bộ, không gửi Gemini."/>
               <WrapPanel>
                 <Button Name="AutoDetectButton" Click="AutoDetectMinimapClick"
                         Content="Tự tìm minimap" Background="#315F84"/>
@@ -113,14 +113,12 @@
                         Content="Dùng khung này" Background="#23705B"/>
               </WrapPanel>
               <TextBlock Name="CropStatusText" Foreground="#8FE1C3" FontSize="12"
-                         Text="Chưa tìm khung. Nhấn Tự tìm minimap trước." Margin="0,1,0,8"/>
-              <Expander Header="Tự tìm chưa đúng? Chỉnh vùng cắt thủ công" IsExpanded="False"
+                         Text="Chưa có ảnh minimap. Bấm Tự tìm minimap để bắt đầu." Margin="0,1,0,8"/>
+              <Expander Name="ManualCropExpander" Header="Ảnh bị lệch? Chỉnh tay nếu cần" IsExpanded="False"
                         Foreground="#E8F0F9" Margin="0,0,0,10">
                 <StackPanel Margin="8,8,0,4">
-                  <Button Click="PresetCropClick" Content="Thử khung gợi ý ở góc phải"
-                          HorizontalAlignment="Left"/>
                   <TextBlock Foreground="#B9CCDF" FontSize="12" Margin="0,0,0,7"
-                             Text="Khi tự dò chưa đúng, bạn có thể chọn khung gợi ý hoặc kéo thanh rồi bấm Xem trước lại."/>
+                             Text="Chỉ chỉnh các mép khi ảnh bên trái bị thiếu hoặc thừa vùng ngoài minimap. Sau đó bấm Xem trước lại và kiểm tra ảnh trước khi xác nhận."/>
                   <UniformGrid Columns="2">
                     <StackPanel Margin="0,0,14,6">
                       <TextBlock Text="Mép trái (%)"/>

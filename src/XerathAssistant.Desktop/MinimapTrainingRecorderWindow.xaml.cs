@@ -440,20 +440,6 @@ public partial class MinimapTrainingRecorderWindow : Window
             "Bạn cần tự xác minh tên tướng và các điểm đã nhìn thấy.";
     }
 
-    private void PresetCropClick(object sender, RoutedEventArgs e)
-    {
-        if (_running || _previewTimer.IsEnabled || _sequenceTimer.IsEnabled ||
-            _sequenceFrames.Count > 0) return;
-        // A starting point derived from the user's 1898x952 minimap preview, NOT
-        // proof that this rectangle fits another HUD size or minimap placement.
-        CropLeftSlider.Value = 87;
-        CropTopSlider.Value = 75;
-        CropWidthSlider.Value = 13;
-        CropHeightSlider.Value = 24;
-        CropStatusText.Text = "Đã điền khung GỢI Ý (87%, 75%, 13%, 24%). " +
-            "Hãy bấm Xem trước và nhìn ảnh bên trái; KHÔNG lưu nếu minimap bị cắt mép.";
-    }
-
     private MinimapCropProfile CurrentCropDraft() => new(
         Math.Round(CropLeftSlider.Value / 100d, 3),
         Math.Round(CropTopSlider.Value / 100d, 3),
@@ -556,6 +542,8 @@ public partial class MinimapTrainingRecorderWindow : Window
             return;
         }
         if (!TryGetForegroundGameClient(out var client)) return;
+
+        Bitmap? capturedClient = null;
         try
         {
             var finding = "";
@@ -565,52 +553,76 @@ public partial class MinimapTrainingRecorderWindow : Window
                     (long)client.Width * client.Height > 12_000_000)
                     throw new InvalidOperationException("Cửa sổ game quá lớn để tự tìm khung.");
 
-                // One local frame in RAM; it is never sent to Gemini or written to disk.
-                using var fullFrame = new Bitmap(client.Width, client.Height,
+                // Keep the detected frame in RAM until the preview is built.
+                // A second screen capture may show a different moment of gameplay.
+                capturedClient = new Bitmap(client.Width, client.Height,
                     PixelFormat.Format24bppRgb);
-                using (var graphics = Graphics.FromImage(fullFrame))
+                using (var graphics = Graphics.FromImage(capturedClient))
                     graphics.CopyFromScreen(client.Location, System.Drawing.Point.Empty,
                         client.Size, CopyPixelOperation.SourceCopy);
 
-                var detected = MinimapAutoCropDetector.Detect(fullFrame);
-                var selected = detected is { Confident: true } 
+                var detected = MinimapAutoCropDetector.Detect(capturedClient);
+                var suggested = detected is { Confident: true }
                     ? detected.Crop
                     : MinimapAutoCropDetector.CornerSuggestion(client.Width, client.Height);
-                ApplyCropToSliders(selected);
+                ApplyCropToSliders(suggested);
                 _previewProfile = CurrentCropDraft();
+                // Reveal the manual fallback only when the detector cannot identify a reliable candidate.
+                ManualCropExpander.IsExpanded = detected is not { Confident: true };
+                if (!_previewProfile.IsValid)
+                    throw new InvalidOperationException(
+                        "Khung gợi ý vượt mép game. Hãy mở Chỉnh tay nếu lệch.");
                 finding = detected is { Confident: true }
-                    ? "Đã dò được khung có dấu hiệu là minimap. "
-                    : "Chưa đủ chắc chắn: đây là khung gợi ý ở góc phải. ";
+                    ? "Đã tìm thấy khung có dấu hiệu là minimap (chưa được xác nhận). "
+                    : "Bộ dò chưa xác định được minimap; ảnh bên trái CHỈ là khung gợi ý. " +
+                      "Nếu bị lệch, mở Chỉnh tay nếu lệch rồi bấm Xem trước lại. ";
             }
+
             var region = _previewProfile.Crop(client);
             region.Intersect(client);
             region.Intersect(System.Windows.Forms.SystemInformation.VirtualScreen);
             if (region.Width < 90 || region.Height < 90)
                 throw new InvalidOperationException("Vùng cắt nhỏ hoặc nằm ngoài màn hình.");
-            using var bitmap = new Bitmap(region.Width, region.Height, PixelFormat.Format24bppRgb);
-            using (var graphics = Graphics.FromImage(bitmap))
+
+            // Auto-detect: preview the EXACT captured frame used for detection.
+            // Manual preview: capture only the selected rectangle to save memory.
+            using var bitmap = capturedClient is null
+                ? new Bitmap(region.Width, region.Height, PixelFormat.Format24bppRgb)
+                : capturedClient.Clone(new Rectangle(
+                    region.Left - client.Left, region.Top - client.Top,
+                    region.Width, region.Height), PixelFormat.Format24bppRgb);
+            if (capturedClient is null)
+            {
+                using var graphics = Graphics.FromImage(bitmap);
                 graphics.CopyFromScreen(region.Location, System.Drawing.Point.Empty,
                     region.Size, CopyPixelOperation.SourceCopy);
+            }
+
             using var buffer = new MemoryStream();
             bitmap.Save(buffer, ImageFormat.Jpeg);
             if (buffer.Length is < 24 or > MaximumImageBytes)
                 throw new InvalidDataException("Ảnh xem trước vượt giới hạn 2 MB.");
+
             _previewClient = client;
             SetPendingFrame(buffer.ToArray());
-            SaveCropButton.IsEnabled = true;
+            SaveCropButton.IsEnabled = _selectedFrame is not null;
             AnalysisText.Text = "Ảnh xem trước chỉ tồn tại trong RAM; chưa gửi AI để phân tích.";
             CropStatusText.Text = finding + $"Ảnh xem trước của cửa sổ {client.Width}×{client.Height} đã sẵn sàng. " +
-                "Quay lại đây, xem ảnh và CHỈ xác nhận nếu khung đúng minimap. " +
-                "Nếu còn lệch, chỉnh thanh trượt và xem trước lần nữa.";
+                "Chỉ bấm Dùng khung này khi ảnh chứa ĐÚNG toàn bộ minimap; " +
+                "nếu còn lệch, mở Chỉnh tay nếu lệch và xem trước lại.";
         }
         catch (Exception ex) when (ex is IOException or ExternalException or
                                    ArgumentException or InvalidOperationException)
         {
             _previewProfile = null;
+            _previewClient = Rectangle.Empty;
+            SaveCropButton.IsEnabled = false;
+            ClearPendingFrame();
             CropStatusText.Text = "Chưa xem được vùng minimap: " + ex.Message;
         }
         finally
         {
+            capturedClient?.Dispose();
             _autoDetectPreview = false;
             _previewTimer.Stop();
         }
