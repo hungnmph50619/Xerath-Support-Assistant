@@ -490,12 +490,33 @@ public partial class MinimapTrainingRecorderWindow : Window
     private void CropSliderChanged(object sender,
         System.Windows.RoutedPropertyChangedEventArgs<double> e)
     {
+        if (_suppressCropSliderChanged) return;
         // Any adjustment invalidates the old preview; it is never proof that the
         // NEW bounds actually show a minimap at the current game resolution.
         _previewProfile = null;
         if (SaveCropButton is not null) SaveCropButton.IsEnabled = false;
         if (CropStatusText is not null && _cropProfile.ConfirmedClientWidth > 0)
             CropStatusText.Text = "Khung vừa được chỉnh sửa: cần xem trước và xác nhận lại trước khi phân tích.";
+    }
+
+    private void AutoDetectMinimapClick(object sender, RoutedEventArgs e)
+    {
+        if (_running || _busy || _previewTimer.IsEnabled ||
+            _sequenceTimer.IsEnabled || _sequenceFrames.Count > 0) return;
+        if (!IsGameRunning())
+        {
+            CropStatusText.Text = "Chưa vào trận Liên Minh. Hãy vào Phòng Tập hoặc xem lại trước.";
+            return;
+        }
+        ClearPendingFrame();
+        _autoDetectPreview = true;
+        _previewProfile = CurrentCropDraft();
+        _previewClient = Rectangle.Empty;
+        SaveCropButton.IsEnabled = false;
+        _previewUntilUtc = DateTime.UtcNow.AddMinutes(2);
+        _previewTimer.Start();
+        CropStatusText.Text = "Chuyển về cửa sổ trận Liên Minh. Phần mềm sẽ thử tìm " +
+            "minimap từ một ảnh cục bộ trong RAM; không gửi Gemini hoặc lưu ảnh.";
     }
 
     private void PreviewCropClick(object sender, RoutedEventArgs e)
@@ -515,6 +536,7 @@ public partial class MinimapTrainingRecorderWindow : Window
             return;
         }
         ClearPendingFrame();
+        _autoDetectPreview = false;
         _previewProfile = draft;
         _previewClient = Rectangle.Empty;
         SaveCropButton.IsEnabled = false;
