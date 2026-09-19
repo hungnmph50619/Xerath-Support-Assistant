@@ -1,13 +1,13 @@
 <Window x:Class="XerathAssistant.Desktop.LastSeenReviewWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Enemy Jungle Last Seen · Xem lại ảnh trận" Width="1020" Height="800"
+        Title="Xem lại rừng và Mid · Đánh dấu &amp; nghe tiếng Việt từ ảnh đã lưu" Width="1020" Height="800"
         MinWidth="770" MinHeight="640" Background="#0B1521" FontFamily="Segoe UI">
   <ScrollViewer VerticalScrollBarVisibility="Auto">
     <StackPanel Margin="20">
       <TextBlock FontWeight="Bold" FontSize="23" Text="ENEMY JUNGLE · LAST SEEN REVIEW"/>
       <TextBlock Margin="0,6,0,12" Foreground="{StaticResource MutedBrush}"
-                 Text="Đánh dấu THỦ CÔNG vị trí rừng địch đã nhìn thấy trên minimap của ảnh trận lưu sẵn. Chỉ dùng để xem lại ảnh, không phải cảnh báo vị trí hiện tại trong game."/>
+                 Text="Đánh dấu THỦ CÔNG rừng địch hoặc Mid trên ảnh trận đã lưu và nghe đọc bằng tiếng Việt để kiểm thử dữ liệu. Không tự nhận diện hoặc cảnh báo vị trí trong trận."/>
       <Border Background="#122339" CornerRadius="9" Padding="12" Margin="0,0,0,10">
         <StackPanel>
           <WrapPanel>
@@ -29,6 +29,31 @@
             <TextBox Name="NoteBox" Width="330" Padding="5,3" Text="Rừng địch được nhìn thấy lần cuối"/>
             <Button Click="UpdateTimeClick" Content="Cập nhật thời điểm / ghi chú"/>
           </WrapPanel>
+          <WrapPanel Margin="0,10,0,0">
+            <TextBlock Text="Tướng trong ảnh:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <ComboBox Name="ChampionRoleBox" Width="155" SelectedIndex="0" Margin="0,0,12,0">
+              <ComboBoxItem Content="Rừng địch"/>
+              <ComboBoxItem Content="Mid đối phương"/>
+            </ComboBox>
+            <TextBlock Text="Vị trí đã nhìn thấy:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <ComboBox Name="LastSeenAreaBox" Width="155" SelectedIndex="0" Margin="0,0,12,0">
+              <ComboBoxItem Content="Đường trên"/>
+              <ComboBoxItem Content="Đường giữa"/>
+              <ComboBoxItem Content="Đường dưới"/>
+              <ComboBoxItem Content="Khu vực sông"/>
+              <ComboBoxItem Content="Rừng"/>
+              <ComboBoxItem Content="Không xác định"/>
+            </ComboBox>
+          </WrapPanel>
+          <WrapPanel Margin="0,9,0,0">
+            <Button Name="ReplayVoiceButton" Click="ReplayVoiceClick"
+                    Content="Đọc vị trí đã đánh dấu trong ảnh" />
+            <Button Name="StopReplayVoiceButton" Click="StopReplayVoiceClick"
+                    Content="Dừng giọng xem lại" />
+          </WrapPanel>
+          <TextBlock Name="ReplayVoiceStatus" Margin="0,7,0,0" TextWrapping="Wrap"
+                     Foreground="#F9CF90"
+                     Text="Chỉ phát lời đọc vị trí BẠN đánh dấu trong ẢNH ĐÃ LƯU. Không đoán rừng địch đang ở đâu và không phát cảnh báo trong game."/>
           <TextBlock Name="ReviewStatus" Margin="0,11,0,0" Foreground="#8FE1C3"
                      Text="Chưa có ảnh. Hãy mở ảnh trận đã lưu và chọn vị trí trên minimap của ảnh."/>
         </StackPanel>
