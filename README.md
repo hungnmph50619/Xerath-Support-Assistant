@@ -1,4 +1,18 @@
-# Xerath Support Assistant · V1.5 — Phân tích ảnh minimap trong RAM, không lưu ảnh mới
+# Xerath Support Assistant · V1.6 — Phân tích nguy hiểm theo diễn biến trận
+
+**Đã bổ sung bộ phân tích tình huống nguy hiểm dựa trên hai mẫu chỉ số máu liên tiếp của chính bạn (khoảng 1 giây/lần).** Thay vì chỉ nhắc nhìn minimap hay lặp câu "máu thấp", V1.6 kết hợp **lượng máu vừa mất, thời gian giữa hai lần đọc và lượng máu còn lại**, chọn một trong ba mức ưu tiên `chú ý / cảnh báo / nguy hiểm cao` và đọc **một câu tiếng Việt ngắn tương ứng** ngay khi HUD đang hiển thị trên game. Chữ HUD ghi kèm tỷ lệ máu đã mất, tỷ lệ còn lại và khoảng thời gian quan sát thực tế. Mức cảnh báo là quy tắc dựa trên chỉ số, **không phải AI dự đoán sắp chết hay biết nguyên nhân sát thương, người đi Rừng/Mid hoặc vị trí đối thủ**.
+
+Để tránh nhiễu, mặc định **tắt nhắc theo giờ, thông báo hạ gục công khai và cảnh báo cơ bản về mana/vàng/máu**. Bạn có thể bật lại từng mục trong Companion / **Chỉ số trực tiếp & tổng hợp**. Cảnh báo từ bộ phân tích nguy hiểm mặc định bật, giữ thứ tự ưu tiên cao hơn các thông báo thường và kết quả cầu nối AI cá nhân đến chậm. Khi chính bạn bị hạ gục, thông báo trạng thái chết tiếp tục là ưu tiên cao nhất. Nếu không có mẫu mới hoặc thiếu kết nối Riot thì bộ phân tích không đưa ra phỏng đoán.
+
+**Thống kê phiên:** bảng **Tổng hợp tự động** ghi số đợt giảm máu gây cảnh báo, số lần chạm mức nguy hiểm cao và tỷ lệ máu mất nhiều nhất trong một khoảng đọc hợp lệ. Những con số này chỉ dựa trên các mẫu đã nhận khi chương trình mở, không đại diện cho toàn bộ trận. Không lưu video hoặc ảnh mới bởi bộ phân tích nguy hiểm; công cụ minimap trong RAM của V1.5 vẫn tách riêng và **không được dùng làm lời cảnh báo vị trí rừng/mid trong trận**.
+
+**Cách thử trên Windows:** đóng phiên Xerath Support Assistant cũ. Trong PowerShell chuyển đến thư mục clone Xerath, chạy `git pull origin main` rồi `.\\RUN_WINDOWS.cmd`. Trong Companion, nhấn **Tạo giọng tiếng Việt miễn phí** *trước khi vào trận* để lưu thêm ba câu nguy hiểm, rồi **Nghe thử**. Bấm **Chỉ số trực tiếp & tổng hợp**, tích **Phân tích mức nguy hiểm**, bật **Đọc tiếng Việt khi HUD có cảnh báo**, nhấn **Nghe thử cảnh báo HUD** rồi **Bật HUD trên game**. Nếu chưa tạo được tệp âm thanh (dịch vụ tạo giọng mạng không chính thức có thể lỗi), HUD vẫn hiển thị chữ nhưng không có giọng cho mức chưa chuẩn bị; có thể cài eSpeak NG để tạo âm thanh offline. Không cần bật bộ nhắc theo giờ.
+
+**Kiểm thử:** Windows CI build dự án và chạy kiểm thử các trường hợp lượng máu thay đổi, thông báo trùng, mẫu trễ, hạ gục và hồi sinh. Chưa xác nhận tốc độ giọng nói hay độ đúng cảnh báo trong trận thực trên máy người dùng. Chưa có nhận diện tình huống giao tranh, khả năng gank hoặc hiểm nguy do đối thủ khuất tầm nhìn. Đây là bước **phân tích chỉ số của chính bạn**, không phải bộ chiến thuật AI hoàn chỉnh.
+
+---
+
+## V1.5 — Phân tích minimap trong RAM (bản trước)
 
 **Đã thay công cụ "Thu ảnh minimap" bằng chế độ phân tích theo phiên chỉ dùng bộ nhớ tạm.** Không còn tạo thư mục ảnh/tệp JPG mới trong phiên: mỗi lần chỉ cắt vùng minimap của cửa sổ game đang được chọn → giữ ảnh JPEG trong RAM → gửi đến API AI Cá Nhân tại `127.0.0.1:5188` → AI Cá Nhân chuyển đến **Google Gemini** để nhận xét hình ảnh → giải phóng ảnh trong RAM. Không lưu video, không ghi ảnh ra ổ đĩa và không tự đưa kết quả lên HUD hoặc đọc vị trí địch thành lời trong trận. Để chạy chế độ này bạn vẫn cần AI Cá Nhân ở nhánh `feature/v2.3.0-minimap-vision-lab`, máy chủ trên cổng 5188 và Gemini đã cấu hình, hỗ trợ nhận ảnh.
 
