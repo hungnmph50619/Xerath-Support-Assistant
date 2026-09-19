@@ -84,6 +84,25 @@
       </Border>
       <Border Background="#122339" CornerRadius="8" Padding="12" Margin="0,12,0,0">
         <StackPanel>
+          <TextBlock Text="CHUỖI QUAN SÁT NGẮN · CHỈ TRONG RAM" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,6"/>
+          <TextBlock TextWrapping="Wrap" Foreground="#F9CF90" FontSize="12" Margin="0,0,0,8"
+                     Text="Thao tác riêng khi KHÔNG chạy phiên gửi Gemini. Bấm Thu chuỗi, chuyển về cửa sổ trận luyện tập/xem lại: phần mềm chụp tối đa 5 ảnh minimap, mỗi ảnh cách nhau khoảng 2 giây, chỉ giữ trong RAM. Sau đó chọn từng khung để xem và chỉ lưu ảnh bạn muốn gắn nhãn; không tự gửi ảnh lên Gemini hay tự lưu hàng loạt ảnh. Vị trí biến mất không chứng minh đối thủ nấp bụi hoặc sắp gank."/>
+          <WrapPanel>
+            <Button Name="SequenceStartButton" Click="StartSequenceClick"
+                    Content="Thu chuỗi 5 ảnh, không gửi AI" Background="#345F83" Foreground="White"
+                    Padding="12,8" Margin="0,0,8,8"/>
+            <Button Name="SequenceClearButton" Click="ClearSequenceClick"
+                    Content="Xóa chuỗi trong RAM" Background="#564236" Foreground="White"
+                    Padding="12,8" Margin="0,0,8,8"/>
+          </WrapPanel>
+          <ComboBox Name="SequenceFrameBox" SelectionChanged="SequenceFrameChanged"
+                    MinWidth="270" HorizontalAlignment="Left" Margin="0,0,0,6"/>
+          <TextBlock Name="SequenceStatus" Foreground="#8FE1C3" TextWrapping="Wrap"
+                     Text="Chưa giữ chuỗi ảnh nào. Chế độ mặc định: không lưu."/>
+        </StackPanel>
+      </Border>
+      <Border Background="#122339" CornerRadius="8" Padding="12" Margin="0,12,0,0">
+        <StackPanel>
           <TextBlock Text="BỘ MẪU V1.8 · CHỈ LƯU KHI BẠN XÁC NHẬN" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,7"/>
           <TextBlock TextWrapping="Wrap" Foreground="#F9CF90" FontSize="12" Margin="0,0,0,8"
                      Text="Ảnh bên dưới chỉ giữ trong RAM đến lần phân tích kế tiếp hoặc khi bấm Dừng. Kiểm tra vùng cắt có đúng minimap không; ảnh có thể chứa chi tiết bên cạnh. Không mặc định lưu. Bạn có thể nhấp lên biểu tượng để gắn nhãn tọa độ x/y, tên tướng, đội và vai trò. Mọi nhãn đều do bạn tự nhập, CHƯA được AI xác minh. Không ghi tọa độ cho tướng khuất tầm nhìn."/>
