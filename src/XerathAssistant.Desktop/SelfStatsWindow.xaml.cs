@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Threading;
 using XerathAssistant.Core;
@@ -9,16 +10,30 @@ public partial class SelfStatsWindow : Window
 {
     private readonly RiotLocalSelfStatsClient _local = new();
     private readonly SelfStatsSession _session = new();
-    private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(5) };
+    private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(1) };
     private readonly CancellationTokenSource _cancel = new();
     private SelfStatsHudWindow? _hud;
+    private readonly PersonalStatAlerts _personalAlerts = new();
+    private readonly PublicKillEventTracker _publicEvents = new();
+    private readonly ReminderEngine _hudReminders = new(TimeSpan.FromSeconds(15));
+    private readonly Stopwatch _hudElapsed = new();
+    private ReminderItem[] _hudReminderItems =
+    {
+        new("minimap", "Kiểm tra minimap.", TimeSpan.FromSeconds(45)),
+        new("vision", "Kiểm tra tầm nhìn khu vực sông.", TimeSpan.FromMinutes(3))
+    };
+    private int _eventPollCount;
     private bool _fetching;
     private bool _closed;
 
     public SelfStatsWindow()
     {
         InitializeComponent();
-        _timer.Tick += async (_, _) => await ReadNowAsync();
+        _timer.Tick += async (_, _) =>
+        {
+            ShowDueHudReminder();
+            await ReadNowAsync();
+        };
     }
 
     private async void WindowLoaded(object sender, RoutedEventArgs e)
@@ -40,6 +55,26 @@ public partial class SelfStatsWindow : Window
         else _timer.Stop();
     }
 
+    public void ConfigureHudReminders(IEnumerable<ReminderItem> reminders)
+    {
+        _hudReminderItems = reminders.ToArray();
+        if (_hud is not null) StartHudReminders();
+    }
+
+    private void StartHudReminders()
+    {
+        _hudReminders.Start(_hudReminderItems);
+        _hudElapsed.Restart();
+    }
+
+    private void ShowDueHudReminder()
+    {
+        if (_hud is null || !_hudElapsed.IsRunning) return;
+        var message = _hudReminders.Tick(_hudElapsed.Elapsed);
+        if (!string.IsNullOrWhiteSpace(message))
+            _hud.ShowNotice(message.Replace(" | ", " · "));
+    }
+
     public void EnableHud(bool hidePanel = false)
     {
         if (_closed) return;
@@ -47,6 +82,7 @@ public partial class SelfStatsWindow : Window
         {
             _hud = new SelfStatsHudWindow();
             SetHudCorner();
+            StartHudReminders();
         }
         RefreshCheck.IsChecked = true;
         _timer.Start();
@@ -58,6 +94,7 @@ public partial class SelfStatsWindow : Window
 
     private void DisableHud()
     {
+        _hudElapsed.Reset();
         _hud?.Close();
         _hud = null;
         ToggleHudButton.Content = "Bật HUD trên game";
@@ -97,6 +134,23 @@ public partial class SelfStatsWindow : Window
             if (_closed) return;
             _session.Add(snapshot);
             _hud?.SetSnapshot(snapshot);
+            var personalWarnings = _personalAlerts.Observe(snapshot);
+            if (_hud is not null && personalWarnings.Count > 0)
+                _hud.ShowNotice(string.Join(" ", personalWarnings), priority: true);
+
+            if (EventsCheck.IsChecked == true && ++_eventPollCount % 2 == 0)
+            {
+                try
+                {
+                    var eventsJson = await _local.ReadEventsJsonAsync(_cancel.Token);
+                    if (_closed) return;
+                    var eventMessage = _publicEvents.Observe(eventsJson, snapshot.GameTimeSeconds);
+                    if (_hud is not null && eventMessage is not null)
+                        _hud.ShowNotice(eventMessage);
+                }
+                catch (OperationCanceledException) when (_closed || _cancel.IsCancellationRequested) { }
+                catch (Exception) { /* This optional feed must never break personal stats. */ }
+            }
 
             GameClock.Text = SelfStatsSnapshot.Clock(snapshot.GameTimeSeconds);
             LevelValue.Text = snapshot.Level.ToString();
@@ -138,6 +192,7 @@ public partial class SelfStatsWindow : Window
     private void WindowClosed(object sender, EventArgs e)
     {
         _closed = true;
+        _hudElapsed.Stop();
         _hud?.Close();
         _hud = null;
         _timer.Stop();
