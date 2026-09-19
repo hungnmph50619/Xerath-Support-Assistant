@@ -417,6 +417,16 @@ public partial class MinimapTrainingRecorderWindow : Window
             : "Chưa lấy được ảnh nào. Kiểm tra cửa sổ trận rồi thử lại.");
     }
 
+    private void GoToLabelClick(object sender, RoutedEventArgs e)
+    {
+        if (_selectedFrame is null)
+        {
+            SequenceStatus.Text = "Hãy xem trước minimap hoặc thu ảnh rồi chọn một khung trước khi gắn nhãn.";
+            return;
+        }
+        WorkflowTabs.SelectedIndex = 1;
+    }
+
     private void SequenceFrameChanged(object sender, SelectionChangedEventArgs e)
     {
         var index = SequenceFrameBox.SelectedIndex;
@@ -571,7 +581,7 @@ public partial class MinimapTrainingRecorderWindow : Window
             SaveCropButton.IsEnabled = false;
             CropStatusText.Text = $"Đã lưu khung minimap cho {confirmed.ConfirmedClientWidth}×" +
                 $"{confirmed.ConfirmedClientHeight}. Bây giờ có thể thu 5 ảnh KHÔNG gửi AI.";
-            WorkflowTabs.SelectedIndex = 1;
+            WorkflowTabs.SelectedIndex = 0; // Capture and calibration now share the same main tab.
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or
                                    ArgumentException)
