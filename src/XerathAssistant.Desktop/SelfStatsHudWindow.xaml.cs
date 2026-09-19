@@ -22,6 +22,7 @@ public partial class SelfStatsHudWindow : Window
     private HudCorner _corner = HudCorner.TopRight;
     private DateTime _noticeUntilUtc = DateTime.MinValue;
     private DateTime _lastNoticeUtc = DateTime.MinValue;
+    private int _currentNoticePriority;
     private bool _closed;
     private bool _isDead;
 
@@ -46,7 +47,10 @@ public partial class SelfStatsHudWindow : Window
         {
             RefreshVisibility();
             if (AlertBorder.Visibility == Visibility.Visible && DateTime.UtcNow >= _noticeUntilUtc)
+            {
                 AlertBorder.Visibility = Visibility.Collapsed;
+                _currentNoticePriority = 0;
+            }
         };
         _foregroundTimer.Start();
         Closed += (_, _) =>
@@ -110,27 +114,37 @@ public partial class SelfStatsHudWindow : Window
             AlertText.Text = InGameVoicePrompts.Died;
             AlertBorder.Visibility = Visibility.Visible;
             _noticeUntilUtc = DateTime.MaxValue;
+            _currentNoticePriority = int.MaxValue;
         }
         else
         {
             AlertBorder.Visibility = Visibility.Collapsed;
             _noticeUntilUtc = DateTime.MinValue;
             _lastNoticeUtc = DateTime.MinValue;
+            _currentNoticePriority = 0;
         }
         StatusText.Text = isDead ? "Bạn đã bị hạ gục · chờ hồi sinh"
                                  : "Chỉ số cá nhân · cập nhật mỗi 1 giây";
     }
 
     /// <returns>Whether the on-screen alert was actually displayed.</returns>
-    public bool ShowNotice(string message, bool priority = false)
+    public bool ShowNotice(string message, bool priority = false, int dangerPriority = 0)
     {
         if (_closed || _isDead || string.IsNullOrWhiteSpace(message)) return false;
         var now = DateTime.UtcNow;
-        if (!priority && now - _lastNoticeUtc < TimeSpan.FromSeconds(5)) return false;
+        // A warning based on fresh, confirmed own HP has priority over scheduled
+        // tips and the optional asynchronous AI bridge, even if both arrive later.
+        var rank = dangerPriority > 0 ? dangerPriority : priority ? 2 : 1;
+        if (AlertBorder.Visibility == Visibility.Visible && now < _noticeUntilUtc &&
+            rank < _currentNoticePriority) return false;
+        if (!priority && dangerPriority <= 0 &&
+            now - _lastNoticeUtc < TimeSpan.FromSeconds(5)) return false;
+
         AlertText.Text = message.Length > 150 ? message[..147] + "…" : message;
         AlertBorder.Visibility = Visibility.Visible;
         _lastNoticeUtc = now;
-        _noticeUntilUtc = now.AddSeconds(priority ? 7 : 5);
+        _noticeUntilUtc = now.AddSeconds(dangerPriority > 0 ? 7 : priority ? 7 : 5);
+        _currentNoticePriority = rank;
         return true;
     }
 
