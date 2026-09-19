@@ -1,4 +1,18 @@
-# Xerath Support Assistant · V1.4 — Thử giọng nói về Rừng/Mid trên ảnh xem lại
+# Xerath Support Assistant · V1.5 — Phân tích ảnh minimap trong RAM, không lưu ảnh mới
+
+**Đã thay công cụ "Thu ảnh minimap" bằng chế độ phân tích theo phiên chỉ dùng bộ nhớ tạm.** Không còn tạo thư mục ảnh/tệp JPG mới trong phiên: mỗi lần chỉ cắt vùng minimap của cửa sổ game đang được chọn → giữ ảnh JPEG trong RAM → gửi đến API AI Cá Nhân tại `127.0.0.1:5188` → AI Cá Nhân chuyển đến **Google Gemini** để nhận xét hình ảnh → giải phóng ảnh trong RAM. Không lưu video, không ghi ảnh ra ổ đĩa và không tự đưa kết quả lên HUD hoặc đọc vị trí địch thành lời trong trận. Để chạy chế độ này bạn vẫn cần AI Cá Nhân ở nhánh `feature/v2.3.0-minimap-vision-lab`, máy chủ trên cổng 5188 và Gemini đã cấu hình, hỗ trợ nhận ảnh.
+
+**Quyền riêng tư và chi phí:** bạn phải bấm **Bắt đầu phân tích** và xác nhận riêng **cho cả phiên** rằng tối đa 45 ảnh minimap sẽ được gửi qua AI Cá Nhân tới Gemini. Mặc định tối đa một ảnh mỗi 60 giây; có thể chọn 30 hoặc 120 giây trước khi bật. Chỉ duy trì một yêu cầu phân tích tại một thời điểm, không dồn hàng đợi. Gemini có thể áp dụng hạn mức, phí và chính sách lưu trữ riêng; dừng/xóa ảnh trên máy **không đồng nghĩa xóa ảnh đã gửi khỏi nhà cung cấp bên ngoài**. Nếu không muốn gửi ảnh tới Gemini, đừng bật chế độ này. Hiện chưa tích hợp mô hình thị giác chạy hoàn toàn trên máy.
+
+**Chỉ đọc khi có trận:** cần phát hiện tiến trình `League of Legends` trước khi bắt đầu; chỉ chụp nếu cửa sổ game được chọn và phần minimap nằm trong vùng hiển thị. Khi tắt game, công cụ tự dừng ở nhịp kiểm tra tiếp theo. Nếu chuyển sang cửa sổ khác, công cụ ngừng chụp và tự dừng nếu không quay lại game sau ba phút; cũng tự dừng khi đạt 45 ảnh/phiên hoặc khi bạn đóng cửa sổ/bấm **Dừng**. Kết quả văn bản phiên gần nhất cũng được xóa khỏi giao diện khi dừng. Cửa sổ chỉ dùng cho luyện tập hoặc xem lại: nhận xét từ Gemini chưa được xác minh và không phải công cụ tự theo dõi rừng/mid trong trận.
+
+**Xóa ảnh cũ:** ảnh được tạo bởi **V1.3/V1.4** vẫn còn trên ổ đĩa và sẽ không tự biến mất sau khi nâng cấp. Để xóa, mở công cụ mới và bấm **Xóa ảnh minimap ĐÃ LƯU từ các phiên cũ**, đọc xác nhận rồi đồng ý. Chương trình chỉ xóa các tệp `minimap_*.jpg` trong thư mục phiên trực tiếp dưới `%LOCALAPPDATA%\XerathSupportAssistant\minimap-training`, không xóa ảnh của bạn ở nơi khác hoặc tệp tên khác. Không thể khôi phục các tệp đó bằng nút này.
+
+**Cài đặt:** đóng Xerath Support Assistant đang chạy rồi trong PowerShell chuyển tới thư mục clone Xerath, chạy `git pull origin main` và `.\RUN_WINDOWS.cmd`. Trong Companion V1.5 bấm **Phân tích minimap trực tiếp trong RAM (cần đồng ý gửi Gemini)**, chọn chu kỳ, bắt đầu trận luyện tập, bấm **Bắt đầu phân tích**, đọc xác nhận và quay lại game ở chế độ cửa sổ/không viền. Nếu AI Cá Nhân chưa mở, trả lỗi, không nhận ảnh, hoặc mô hình/hạn mức Gemini không sẵn sàng thì công cụ dừng và báo lỗi; không ghi ảnh dự phòng. Cần thử thực tế trên máy người dùng để xác nhận vùng cắt và kết quả phân tích đúng độ phân giải. Quy trình CI chỉ kiểm chứng build và kiểm thử mã, không kiểm chứng được nhận diện đúng Rừng/Mid thực tế.
+
+---
+
+## V1.4 — Giọng xem lại ảnh cũ (tài liệu phiên bản trước)
 
 **Đã triển khai bản thử nghiệm đọc tiếng Việt cho hai vai trò Rừng địch và Mid đối phương, dựa trên vị trí BẠN đánh dấu trên ảnh đã lưu. Đây là chức năng XEM LẠI/LUYỆN TẬP, không phải AI biết vị trí địch trong trận đang diễn ra.** Cầu nối AI cá nhân V2.2.6 và HUD chỉ số/cảnh báo máu hoạt động như trước; không có lời đọc vị trí đối phương tự động trên HUD.
 
