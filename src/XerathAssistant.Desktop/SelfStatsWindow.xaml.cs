@@ -24,6 +24,7 @@ public partial class SelfStatsWindow : Window
     private SelfStatsHudWindow? _hud;
     private readonly PersonalStatAlerts _personalAlerts = new();
     private readonly OwnHealthChangeDetector _healthChangeDetector = new();
+    private readonly OwnDangerAnalyzer _dangerAnalyzer = new();
     private readonly PublicKillEventTracker _publicEvents = new();
     private readonly ReminderEngine _hudReminders = new(TimeSpan.FromSeconds(15));
     private readonly Stopwatch _hudElapsed = new();
@@ -242,6 +243,8 @@ public partial class SelfStatsWindow : Window
     private void ResetSessionClick(object sender, RoutedEventArgs e)
     {
         _session.Reset();
+        _dangerAnalyzer.Reset();
+        DangerAnalysisStatus.Text = "Đã xóa thống kê nguy hiểm của phiên. Chờ các mẫu mới.";
         SummaryValue.Text = "Đã xóa số liệu phiên. Chờ lần đọc tiếp theo.";
     }
 
@@ -261,6 +264,7 @@ public partial class SelfStatsWindow : Window
                 _latestLifeTransitionTime = snapshot.GameTimeSeconds;
                 _personalAlerts.Reset();
                 _healthChangeDetector.Reset();
+                _dangerAnalyzer.ResetBaseline();
             }
             // Death is the highest priority: pin its notice, suppress stale warnings,
             // then clear it on confirmed respawn.
@@ -275,10 +279,40 @@ public partial class SelfStatsWindow : Window
             {
                 var personalWarnings = _personalAlerts.Observe(snapshot);
                 var healthLoss = _healthChangeDetector.Observe(snapshot);
+                // Always maintain an accurate local baseline while alive, even if
+                // the user temporarily switches this optional HUD alert off.
+                var danger = _dangerAnalyzer.Observe(snapshot);
+                if (danger is not null && DangerAnalysisCheck.IsChecked == true)
+                    DangerAnalysisStatus.Text = danger.Message;
+                else if (lifeTransition == OwnLifeTransition.Respawned)
+                    DangerAnalysisStatus.Text = "Đã hồi sinh: đang xây dựng đường cơ sở máu mới.";
+                else if (danger is null && _dangerAnalyzer.ObservedDangerEpisodes == 0)
+                    DangerAnalysisStatus.Text = "Chưa ghi nhận đợt giảm máu đủ lớn trong các mẫu liên tiếp.";
+
                 if (_hud is not null && lifeTransition != OwnLifeTransition.Respawned)
                 {
-                    // One alert per observation: rapid damage precedes threshold reminders.
-                    if (healthLoss is not null && HealthChangeCheck.IsChecked == true)
+                    // One useful warning per observation. A danger observation is
+                    // always more urgent than generic damage, mana or gold notices.
+                    if (danger is not null && DangerAnalysisCheck.IsChecked == true)
+                    {
+                        var level = danger.Severity switch
+                        {
+                            OwnDangerSeverity.Critical => 5,
+                            OwnDangerSeverity.High => 4,
+                            _ => 3
+                        };
+                        if (_hud.ShowNotice(danger.Message, priority: true, dangerPriority: level))
+                        {
+                            var voice = danger.Severity switch
+                            {
+                                OwnDangerSeverity.Critical => InGameVoicePrompts.DangerCritical,
+                                OwnDangerSeverity.High => InGameVoicePrompts.DangerHigh,
+                                _ => InGameVoicePrompts.DangerElevated
+                            };
+                            PlayHudVoice(voice, urgent: true);
+                        }
+                    }
+                    else if (healthLoss is not null && HealthChangeCheck.IsChecked == true)
                         _ = ShowContextNoticeAsync("own-health-loss",
                             snapshot.GameTimeSeconds, snapshot.HealthPercent,
                             healthLoss, priority: true);
@@ -294,6 +328,8 @@ public partial class SelfStatsWindow : Window
                     }
                 }
             }
+            else
+                DangerAnalysisStatus.Text = "Bạn đã bị hạ gục; tạm dừng phân tích các đợt giảm máu.";
 
             GameClock.Text = SelfStatsSnapshot.Clock(snapshot.GameTimeSeconds);
             LevelValue.Text = snapshot.Level.ToString();
@@ -320,7 +356,11 @@ public partial class SelfStatsWindow : Window
                 (snapshot.ResourceType.Equals("MANA", StringComparison.OrdinalIgnoreCase)
                     ? $"{_session.LowestResourcePercent:0}%." : "không áp dụng.") + "\n" +
                 $"Thời gian quan sát có năng lượng dưới 25%: {_session.LowResourceObservedSeconds:0} giây (xấp xỉ).\n" +
-                $"Lượng vàng hiện có cao nhất ghi nhận: {_session.HighestObservedGold:0}.";
+                $"Lượng vàng hiện có cao nhất ghi nhận: {_session.HighestObservedGold:0}.\\n" +
+                $"Các đợt giảm máu gây cảnh báo đã quan sát: {_dangerAnalyzer.ObservedDangerEpisodes} " +
+                $"(nguy hiểm cao: {_dangerAnalyzer.ObservedCriticalEpisodes}).\\n" +
+                $"Mức máu mất lớn nhất trong một khoảng lấy mẫu liên tiếp có cảnh báo: " +
+                $"{_dangerAnalyzer.GreatestObservedLossPercent:0}% máu tối đa."
         }
         catch (OperationCanceledException) when (_closed || _cancel.IsCancellationRequested) { }
         catch (Exception)
