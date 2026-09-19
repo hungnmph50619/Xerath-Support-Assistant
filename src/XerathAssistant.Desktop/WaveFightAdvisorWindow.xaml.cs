@@ -1,3 +1,4 @@
+using Condition = XerathAssistant.Core.Condition;
 using System.Windows;
 using System.Windows.Controls;
 using XerathAssistant.Core;
