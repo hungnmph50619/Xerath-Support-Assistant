@@ -1,161 +1,241 @@
 <Window x:Class="XerathAssistant.Desktop.MinimapTrainingRecorderWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Mắt nhìn AI V1.8 · Phân tích và chọn lưu mẫu minimap"
-        Width="880" Height="760" MinWidth="650" MinHeight="530"
-        Background="#0B1521" FontFamily="Segoe UI">
-  <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <StackPanel Margin="22" MaxWidth="950">
-      <TextBlock Text="MẮT NHÌN AI V1.8 · CHỌN LƯU MẪU HUẤN LUYỆN" FontWeight="Bold" FontSize="21"
-                 Foreground="White" Margin="0,0,0,12"/>
-      <TextBlock TextWrapping="Wrap" Foreground="#D4E3F5" FontSize="14" Margin="0,0,0,10"
-                 Text="Khi bạn chủ động bật chế độ thử nghiệm, ứng dụng chụp duy nhất vùng minimap đang HIỂN THỊ của cửa sổ trận Liên Minh được chọn, đưa ảnh trực tiếp qua bộ nhớ tới AI cá nhân để phân tích rồi giải phóng ảnh. Mặc định không lưu tệp ảnh mới; chỉ ảnh bạn chủ động chọn mới được lưu để gắn nhãn. Chế độ tự dừng khi đóng game, hết giới hạn hoặc bạn bấm Dừng."/>
-      <TextBlock TextWrapping="Wrap" Foreground="#F9CF90" Margin="0,0,0,14"
-                 Text="MỖI ẢNH được gửi từ máy bạn qua AI cá nhân tới Google Gemini theo cấu hình hiện có; có thể phát sinh hạn mức hoặc chi phí. Không có mô hình AI chạy hoàn toàn offline ở chế độ này. Chỉ thử ở trận luyện tập/xem lại. Kết quả có thể sai và KHÔNG được gửi thành cảnh báo vị trí đối thủ trên HUD hoặc giọng nói trong trận."/>
-      <Border Background="#122339" CornerRadius="8" Padding="12" Margin="0,0,0,12">
-        <StackPanel>
-          <TextBlock Text="BƯỚC 1 · CĂN CHỈNH VÙNG CẮT (KHÔNG GỬI ẢNH)" FontWeight="SemiBold"
-                     FontSize="15" Margin="0,0,0,6"/>
-          <TextBlock TextWrapping="Wrap" Foreground="#F9CF90" FontSize="12" Margin="0,0,0,8"
-                     Text="Điều chỉnh 4 thanh trượt theo phần trăm vùng nội dung game. Bấm Xem trước rồi quay lại game: phần mềm chỉ lấy MỘT ảnh cục bộ, không gửi Gemini và không lưu JPG. Quay về đây để kiểm tra hình, sau đó xác nhận Lưu khung. Mỗi khi đổi độ phân giải, phải xem trước và xác nhận lại. Chỉ bấm Bắt đầu phân tích sau khi ảnh xem trước đúng minimap."/>
-          <UniformGrid Columns="2">
-            <StackPanel Margin="0,0,10,8">
-              <TextBlock Text="Từ mép trái (%)"/>
-              <Slider Name="CropLeftSlider" ValueChanged="CropSliderChanged" Minimum="0" Maximum="90" Value="78" TickFrequency="1"
-                      IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft"/>
-            </StackPanel>
-            <StackPanel Margin="0,0,10,8">
-              <TextBlock Text="Từ mép trên (%)"/>
-              <Slider Name="CropTopSlider" ValueChanged="CropSliderChanged" Minimum="0" Maximum="90" Value="70" TickFrequency="1"
-                      IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft"/>
-            </StackPanel>
-            <StackPanel Margin="0,0,10,8">
-              <TextBlock Text="Chiều rộng vùng cắt (%)"/>
-              <Slider Name="CropWidthSlider" ValueChanged="CropSliderChanged" Minimum="8" Maximum="50" Value="22" TickFrequency="1"
-                      IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft"/>
-            </StackPanel>
-            <StackPanel Margin="0,0,10,8">
-              <TextBlock Text="Chiều cao vùng cắt (%)"/>
-              <Slider Name="CropHeightSlider" ValueChanged="CropSliderChanged" Minimum="8" Maximum="50" Value="30" TickFrequency="1"
-                      IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft"/>
-            </StackPanel>
-          </UniformGrid>
-          <WrapPanel>
-            <Button Name="PreviewCropButton" Click="PreviewCropClick"
-                    Content="Xem trước 1 ảnh (hãy chuyển về game)" Padding="12,8" Margin="0,0,8,8"
-                    Background="#345F83" Foreground="White"/>
-            <Button Name="SaveCropButton" Click="SaveCropClick" IsEnabled="False"
-                    Content="Xác nhận ảnh đúng minimap &amp; lưu khung" Padding="12,8" Margin="0,0,8,8"
-                    Background="#23705B" Foreground="White"/>
-          </WrapPanel>
-          <TextBlock Name="CropStatusText" TextWrapping="Wrap" Foreground="#8FE1C3"
-                     Text="Chưa căn chỉnh hoặc chưa xác nhận vùng cắt minimap."/>
-        </StackPanel>
-      </Border>
-      <WrapPanel Margin="0,0,0,12">
-        <TextBlock VerticalAlignment="Center" Text="Chu kỳ gửi ảnh:" Margin="0,0,9,0"/>
-        <ComboBox Name="IntervalBox" Width="200" SelectedIndex="1" Margin="0,0,15,0">
-          <ComboBoxItem Content="30 giây / ảnh" Tag="30"/>
-          <ComboBoxItem Content="60 giây / ảnh (mặc định)" Tag="60"/>
-          <ComboBoxItem Content="120 giây / ảnh" Tag="120"/>
-        </ComboBox>
-        <TextBlock VerticalAlignment="Center" Text="Giới hạn: 45 ảnh/phiên; mỗi lần chỉ gửi 1 ảnh." Foreground="#AFC3D8"/>
-      </WrapPanel>
-      <WrapPanel Margin="0,0,0,8">
-        <Button Name="StartButton" Content="Bắt đầu phân tích (cần đồng ý gửi Gemini)" Click="StartClick"
-                Background="#23705B" Foreground="White" Padding="14,10" Margin="0,0,8,8"/>
-        <Button Name="StopButton" Content="Dừng ngay / xóa bộ nhớ phiên" Click="StopClick"
-                IsEnabled="False" Background="#344B65" Foreground="White" Padding="14,10" Margin="0,0,8,8"/>
-        <Button Content="Xóa ảnh minimap ĐÃ LƯU từ các phiên cũ" Click="DeleteOldImagesClick"
-                Background="#564236" Foreground="White" Padding="14,10" Margin="0,0,8,8"/>
-      </WrapPanel>
-      <TextBlock Name="StatusText" Text="Chưa bật. Không chụp hay gửi ảnh."
-                 TextWrapping="Wrap" Foreground="#8FE1C3" Margin="0,0,0,10"/>
-      <Border Background="#122339" CornerRadius="8" Padding="12">
-        <StackPanel>
-          <TextBlock Text="Kết quả ảnh gần nhất (chỉ trong RAM)" FontWeight="SemiBold" FontSize="16"
-                     Margin="0,0,0,6"/>
-          <TextBlock Name="AnalysisText" Text="Chưa có kết quả." TextWrapping="Wrap"
-                     Foreground="#D4E3F5" FontSize="13"/>
-          <TextBlock Name="AnalysisNote" Margin="0,8,0,0" TextWrapping="Wrap"
-                     Foreground="#F9CF90" FontSize="12"
-                     Text="Kết quả chưa được xác minh. Không kết luận ai đi Rừng/Mid chỉ từ vị trí trên một ảnh."/>
-        </StackPanel>
-      </Border>
-      <Border Background="#122339" CornerRadius="8" Padding="12" Margin="0,12,0,0">
-        <StackPanel>
-          <TextBlock Text="CHUỖI QUAN SÁT NGẮN · CHỈ TRONG RAM" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,6"/>
-          <TextBlock TextWrapping="Wrap" Foreground="#F9CF90" FontSize="12" Margin="0,0,0,8"
-                     Text="Thao tác riêng khi KHÔNG chạy phiên gửi Gemini. Bấm Thu chuỗi, chuyển về cửa sổ trận luyện tập/xem lại: phần mềm chụp tối đa 5 ảnh minimap, mỗi ảnh cách nhau khoảng 2 giây, chỉ giữ trong RAM. Sau đó chọn từng khung để xem và chỉ lưu ảnh bạn muốn gắn nhãn; không tự gửi ảnh lên Gemini hay tự lưu hàng loạt ảnh. Vị trí biến mất không chứng minh đối thủ nấp bụi hoặc sắp gank."/>
-          <WrapPanel>
-            <Button Name="SequenceStartButton" Click="StartSequenceClick"
-                    Content="Thu chuỗi 5 ảnh, không gửi AI" Background="#345F83" Foreground="White"
-                    Padding="12,8" Margin="0,0,8,8"/>
-            <Button Name="SequenceClearButton" Click="ClearSequenceClick"
-                    Content="Xóa chuỗi trong RAM" Background="#564236" Foreground="White"
-                    Padding="12,8" Margin="0,0,8,8"/>
-          </WrapPanel>
-          <ComboBox Name="SequenceFrameBox" SelectionChanged="SequenceFrameChanged"
-                    MinWidth="270" HorizontalAlignment="Left" Margin="0,0,0,6"/>
-          <TextBlock Name="SequenceStatus" Foreground="#8FE1C3" TextWrapping="Wrap"
-                     Text="Chưa giữ chuỗi ảnh nào. Chế độ mặc định: không lưu."/>
-        </StackPanel>
-      </Border>
-      <Border Background="#122339" CornerRadius="8" Padding="12" Margin="0,12,0,0">
-        <StackPanel>
-          <TextBlock Text="BỘ MẪU V1.8 · CHỈ LƯU KHI BẠN XÁC NHẬN" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,7"/>
-          <TextBlock TextWrapping="Wrap" Foreground="#F9CF90" FontSize="12" Margin="0,0,0,8"
-                     Text="Ảnh bên dưới chỉ giữ trong RAM đến lần phân tích kế tiếp hoặc khi bấm Dừng. Kiểm tra vùng cắt có đúng minimap không; ảnh có thể chứa chi tiết bên cạnh. Không mặc định lưu. Bạn có thể nhấp lên biểu tượng để gắn nhãn tọa độ x/y, tên tướng, đội và vai trò. Mọi nhãn đều do bạn tự nhập, CHƯA được AI xác minh. Không ghi tọa độ cho tướng khuất tầm nhìn."/>
-          <Image Name="SamplePreview" MaxWidth="300" MaxHeight="260" HorizontalAlignment="Left"
-                 Stretch="Uniform" Cursor="Cross" MouseLeftButtonDown="SamplePreviewClick"
-                 Margin="0,0,0,8"/>
-          <TextBlock Name="MarkCoordinateStatus" Text="Nhấp trực tiếp lên biểu tượng đang thấy rõ trong ảnh để chọn tọa độ."
-                     FontSize="12" Foreground="#8FE1C3" TextWrapping="Wrap" Margin="0,0,0,6"/>
-          <WrapPanel Margin="0,0,0,8">
-            <TextBox Name="ChampionNameBox" Width="130" MaxLength="50" Margin="0,0,8,6"
-                     ToolTip="Tên tướng; nhập không xác định nếu không chắc."/>
-            <ComboBox Name="ChampionTeamBox" Width="140" SelectedIndex="2" Margin="0,0,8,6">
-              <ComboBoxItem Content="Đồng minh" Tag="ally"/>
-              <ComboBoxItem Content="Đối thủ" Tag="enemy"/>
-              <ComboBoxItem Content="Chưa rõ đội" Tag="unknown"/>
-            </ComboBox>
-            <ComboBox Name="ChampionRoleBox" Width="140" SelectedIndex="5" Margin="0,0,8,6">
-              <ComboBoxItem Content="Top" Tag="top"/>
-              <ComboBoxItem Content="Rừng" Tag="jungle"/>
-              <ComboBoxItem Content="Mid" Tag="mid"/>
-              <ComboBoxItem Content="Bot/ADC" Tag="bottom"/>
-              <ComboBoxItem Content="Support" Tag="support"/>
-              <ComboBoxItem Content="Chưa rõ vai trò" Tag="unknown"/>
-            </ComboBox>
-            <Button Click="AddChampionMarkClick" Content="Thêm điểm" Padding="10,6" Margin="0,0,8,6"/>
-            <Button Click="ClearChampionMarksClick" Content="Xóa các điểm" Padding="10,6" Margin="0,0,8,6"/>
-          </WrapPanel>
-          <TextBlock Name="ChampionMarksStatus" Text="Chưa có điểm đánh dấu. Có thể lưu ảnh không có biểu tượng xác định."
-                     Foreground="#AFC3D8" TextWrapping="Wrap" FontSize="12" Margin="0,0,0,8"/>
-          <TextBlock Text="Minimap có thể gợi ý Mid rời đường hoặc Rừng tiến gần bot khi có biểu tượng hiển thị qua nhiều ảnh; đây chưa phải bằng chứng họ sẽ gank. Không gắn nhãn chắc chắn địch trong bụi nếu không thấy họ được lộ tầm nhìn." TextWrapping="Wrap" FontSize="12" Foreground="#AFC3D8"/>
-          <TextBlock Text="Phân loại thông tin: quan sát trực tiếp hay chỉ là suy luận?" Foreground="#D4E3F5" FontSize="12" Margin="0,6,0,4"/>
-          <ComboBox Name="EvidenceTypeBox" SelectedIndex="2" Margin="0,0,0,8" Width="440" HorizontalAlignment="Left">
-            <ComboBoxItem Tag="visible-observation" Content="Tôi nhìn thấy trực tiếp biểu tượng trên ảnh"/>
-            <ComboBoxItem Tag="hypothesis" Content="Giả thuyết (ví dụ: Rừng có thể gank, Mid có thể đảo đường)"/>
-            <ComboBoxItem Tag="uncertain" Content="Không xác định: ảnh mờ, khuất hoặc không đủ dữ liệu"/>
-          </ComboBox>
-          <TextBox Name="SampleLabelBox" MinHeight="50" MaxLength="300" TextWrapping="Wrap" AcceptsReturn="True"
-                   VerticalScrollBarVisibility="Auto" Margin="0,7,0,8"/>
-          <WrapPanel>
-            <Button Name="SaveSampleButton" IsEnabled="False" Click="SaveSampleClick"
-                    Content="Lưu duy nhất ảnh đang xem + nhãn đã ghi" Padding="12,8" Margin="0,0,8,8"
-                    Background="#23705B" Foreground="White"/>
-            <Button Click="OpenSampleLibraryClick" Content="Mở thư viện mẫu đã lưu"
-                    Padding="12,8" Margin="0,0,8,8" Background="#345F83" Foreground="White"/>
-            <Button Click="DeleteTrainingSamplesClick" Content="Xóa toàn bộ mẫu V1.8 (cần xác nhận)"
-                    Padding="12,8" Margin="0,0,8,8" Background="#564236" Foreground="White"/>
-          </WrapPanel>
-          <TextBlock Name="TrainingStatus" TextWrapping="Wrap" Foreground="#8FE1C3" FontSize="12"
-                     Text="Giới hạn dữ liệu lưu thủ công: tối đa 250 ảnh và 200 MB trên máy. Không tự xóa mẫu đã lưu."/>
-        </StackPanel>
-      </Border>
-      <TextBlock Name="FolderText" Margin="0,13,0,0" Foreground="#AFC3D8" TextWrapping="Wrap" FontSize="12"
-                 Text="Ảnh cũ từng tạo trước khi nâng cấp KHÔNG tự biến mất. Bấm nút xóa ảnh cũ để xác nhận dọn chúng."/>
+        Title="Mắt nhìn AI V1.8 · Xem minimap, thu mẫu và gắn nhãn"
+        Width="1200" Height="790" MinWidth="980" MinHeight="650"
+        WindowStartupLocation="CenterScreen" Background="#0D1724" FontFamily="Segoe UI"
+        Foreground="#ECF4FC">
+  <Window.Resources>
+    <Style TargetType="TextBlock">
+      <Setter Property="Foreground" Value="#ECF4FC"/>
+      <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <Style TargetType="Button">
+      <Setter Property="Padding" Value="12,7"/>
+      <Setter Property="MinHeight" Value="34"/>
+      <Setter Property="Margin" Value="0,0,8,8"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Background" Value="#294763"/>
+      <Setter Property="Foreground" Value="White"/>
+    </Style>
+    <Style TargetType="TextBox">
+      <Setter Property="Background" Value="White"/>
+      <Setter Property="Foreground" Value="#162335"/>
+      <Setter Property="Padding" Value="7,5"/>
+    </Style>
+    <Style TargetType="ComboBox">
+      <Setter Property="Background" Value="White"/>
+      <Setter Property="Foreground" Value="#162335"/>
+      <Setter Property="Padding" Value="6,4"/>
+      <Setter Property="MinHeight" Value="34"/>
+    </Style>
+    <Style TargetType="TabItem">
+      <Setter Property="Padding" Value="12,9"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+  </Window.Resources>
+  <Grid Margin="16">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    <StackPanel Grid.Row="0" Margin="0,0,0,14">
+      <TextBlock Text="MẮT NHÌN AI · MINIMAP" FontSize="22" FontWeight="Bold"/>
+      <TextBlock Text="Ảnh ở bên trái luôn hiển thị cạnh nút điều chỉnh. Làm theo thứ tự: 1. Kiểm tra minimap → 2. Thu ảnh → 3. Chọn ảnh cần lưu."
+                 Foreground="#AFC4DC" FontSize="13" Margin="0,4,0,0"/>
     </StackPanel>
-  </ScrollViewer>
+    <Grid Grid.Row="1">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="450"/>
+        <ColumnDefinition Width="14"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+      <Border Grid.Column="0" CornerRadius="10" Padding="12" Background="#15283B">
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+          </Grid.RowDefinitions>
+          <StackPanel Grid.Row="0" Margin="0,0,0,8">
+            <TextBlock Text="ẢNH MINIMAP ĐANG XEM" FontWeight="Bold" FontSize="15"/>
+            <TextBlock Text="Ảnh sẽ hiện ngay tại đây sau khi bạn quay lại từ game; không phải kéo xuống tìm ảnh."
+                       Foreground="#B5C9DD" FontSize="12" Margin="0,4,0,0"/>
+          </StackPanel>
+          <Border Grid.Row="1" Background="#090F17" CornerRadius="7" BorderBrush="#34516A"
+                  BorderThickness="1" MinHeight="250">
+            <Grid>
+              <TextBlock Text="Chưa có ảnh. Nhấn “Xem trước”, chuyển về game 2–3 giây rồi quay lại."
+                         HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"
+                         MaxWidth="285" Foreground="#849FB9" FontSize="13"/>
+              <Image Name="SamplePreview" Width="420" Height="420" MaxWidth="420"
+                     MaxHeight="420" Stretch="Uniform" HorizontalAlignment="Center"
+                     VerticalAlignment="Center" Cursor="Cross"
+                     MouseLeftButtonDown="SamplePreviewClick"/>
+            </Grid>
+          </Border>
+          <TextBlock Grid.Row="2" Name="MarkCoordinateStatus"
+                     Text="Khi gắn nhãn: nhấp trực tiếp vào biểu tượng nhìn rõ trong ảnh."
+                     Foreground="#8FE1C3" FontSize="12" Margin="0,9,0,5"/>
+          <TextBlock Grid.Row="3" Foreground="#F9CF90" FontSize="12"
+                     Text="Ảnh chỉ giữ trong RAM, trừ khi bạn tự bấm Lưu mẫu. Không đánh dấu vị trí tướng đang khuất tầm nhìn."/>
+        </Grid>
+      </Border>
+      <TabControl Grid.Column="2" Name="WorkflowTabs" SelectedIndex="0"
+                  Background="#15283B" BorderThickness="0">
+        <TabItem Header="1 · Căn khung">
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="12" MaxWidth="660">
+              <TextBlock Text="Căn vùng minimap một lần" FontSize="19" FontWeight="Bold"/>
+              <TextBlock Text="Bấm xem trước → chuyển về game 2–3 giây → quay lại nhìn ảnh BÊN TRÁI. Nếu còn lệch, chỉnh 4 thanh bên dưới rồi xem lại."
+                         Foreground="#B5C9DD" FontSize="13" Margin="0,6,0,13"/>
+              <Button Click="PresetCropClick" HorizontalAlignment="Left"
+                      Content="Thử khung gợi ý cho minimap góc phải"
+                      Background="#294763"/>
+              <TextBlock Text="Điều chỉnh nếu ảnh còn thiếu mép hoặc lẫn quá nhiều địa hình:"
+                         Foreground="#D8E6F5" Margin="0,8,0,5" FontSize="13"/>
+              <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*"/>
+                  <ColumnDefinition Width="14"/>
+                  <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                  <TextBlock Text="Mép trái (%)" FontWeight="SemiBold"/>
+                  <Slider Name="CropLeftSlider" ValueChanged="CropSliderChanged"
+                          Minimum="0" Maximum="90" Value="78" TickFrequency="1"
+                          IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft" Margin="0,4,0,13"/>
+                  <TextBlock Text="Chiều rộng (%)" FontWeight="SemiBold"/>
+                  <Slider Name="CropWidthSlider" ValueChanged="CropSliderChanged"
+                          Minimum="8" Maximum="50" Value="22" TickFrequency="1"
+                          IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft" Margin="0,4,0,6"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                  <TextBlock Text="Mép trên (%)" FontWeight="SemiBold"/>
+                  <Slider Name="CropTopSlider" ValueChanged="CropSliderChanged"
+                          Minimum="0" Maximum="90" Value="70" TickFrequency="1"
+                          IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft" Margin="0,4,0,13"/>
+                  <TextBlock Text="Chiều cao (%)" FontWeight="SemiBold"/>
+                  <Slider Name="CropHeightSlider" ValueChanged="CropSliderChanged"
+                          Minimum="8" Maximum="50" Value="30" TickFrequency="1"
+                          IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft" Margin="0,4,0,6"/>
+                </StackPanel>
+              </Grid>
+              <Button Name="PreviewCropButton" Click="PreviewCropClick"
+                      Content="1. Xem trước ảnh (không gửi AI)" Background="#315F84"/>
+              <Button Name="SaveCropButton" Click="SaveCropClick" IsEnabled="False"
+                      Content="2. Ảnh đúng minimap → Lưu khung" Background="#23705B"/>
+              <TextBlock Name="CropStatusText" Foreground="#8FE1C3" Margin="0,8,0,8"
+                         Text="Chưa có vùng minimap được kiểm tra."/>
+              <Border Background="#23364B" CornerRadius="7" Padding="11" Margin="0,5,0,0">
+                <StackPanel>
+                  <TextBlock Text="Sau khi lưu khung" FontWeight="SemiBold"/>
+                  <TextBlock Text="Chọn tab “2 · Thu &amp; lưu” để thu 5 ảnh trong RAM mà không cần Gemini. Không cần cài AI Cá Nhân cho bước đó."
+                             Foreground="#CADBED" Margin="0,5,0,0"/>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+        <TabItem Header="2 · Thu &amp; lưu">
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="12" MaxWidth="660">
+              <TextBlock Text="Thu ảnh không cần Gemini" FontSize="19" FontWeight="Bold"/>
+              <TextBlock Text="Bấm Thu 5 ảnh → chuyển về game khoảng 10–15 giây → quay lại chọn từng khung. Ảnh sẽ hiện ngay bên trái."
+                         Foreground="#B5C9DD" Margin="0,5,0,12"/>
+              <WrapPanel>
+                <Button Name="SequenceStartButton" Click="StartSequenceClick"
+                        Content="Thu 5 ảnh trong RAM" Background="#23705B"/>
+                <Button Name="SequenceClearButton" Click="ClearSequenceClick"
+                        Content="Xóa chuỗi RAM"/>
+              </WrapPanel>
+              <ComboBox Name="SequenceFrameBox" SelectionChanged="SequenceFrameChanged"
+                        Margin="0,2,0,7" MinWidth="260"/>
+              <TextBlock Name="SequenceStatus" Foreground="#8FE1C3" FontSize="12"
+                         Text="Chưa giữ chuỗi ảnh nào."/>
+              <Border Background="#293F55" CornerRadius="8" Padding="10" Margin="0,12,0,10">
+                <StackPanel>
+                  <TextBlock Text="Gắn nhãn cho ảnh đang xem (tùy chọn)" FontWeight="SemiBold"/>
+                  <TextBlock Text="Nhấp vào biểu tượng trong ảnh BÊN TRÁI, điền tên tướng và chọn đội/vai trò nếu bạn biết chắc."
+                             Foreground="#C8D7E6" FontSize="12" Margin="0,4,0,8"/>
+                  <TextBox Name="ChampionNameBox" MaxLength="50" Margin="0,0,0,6"
+                           ToolTip="Tên tướng nhìn thấy được; nếu không chắc, không đánh dấu."/>
+                  <WrapPanel>
+                    <ComboBox Name="ChampionTeamBox" SelectedIndex="2" Width="165" Margin="0,0,8,7">
+                      <ComboBoxItem Content="Đồng minh" Tag="ally"/>
+                      <ComboBoxItem Content="Đối thủ" Tag="enemy"/>
+                      <ComboBoxItem Content="Chưa rõ đội" Tag="unknown"/>
+                    </ComboBox>
+                    <ComboBox Name="ChampionRoleBox" SelectedIndex="5" Width="165" Margin="0,0,8,7">
+                      <ComboBoxItem Content="Top" Tag="top"/>
+                      <ComboBoxItem Content="Rừng" Tag="jungle"/>
+                      <ComboBoxItem Content="Mid" Tag="mid"/>
+                      <ComboBoxItem Content="Bot/ADC" Tag="bottom"/>
+                      <ComboBoxItem Content="Support" Tag="support"/>
+                      <ComboBoxItem Content="Chưa rõ vai trò" Tag="unknown"/>
+                    </ComboBox>
+                    <Button Click="AddChampionMarkClick" Content="Thêm điểm"/>
+                    <Button Click="ClearChampionMarksClick" Content="Xóa điểm"/>
+                  </WrapPanel>
+                  <TextBlock Name="ChampionMarksStatus"
+                             Text="Chưa có điểm đánh dấu." Foreground="#AFC3D8" FontSize="12"/>
+                </StackPanel>
+              </Border>
+              <TextBlock Text="Bạn quan sát được gì trong ảnh?" FontWeight="SemiBold" Margin="0,2,0,5"/>
+              <ComboBox Name="EvidenceTypeBox" SelectedIndex="2" Margin="0,0,0,7">
+                <ComboBoxItem Tag="visible-observation" Content="Quan sát trực tiếp (nhìn rõ biểu tượng)"/>
+                <ComboBoxItem Tag="hypothesis" Content="Giả thuyết, chưa xác minh"/>
+                <ComboBoxItem Tag="uncertain" Content="Không xác định / ảnh chưa rõ"/>
+              </ComboBox>
+              <TextBox Name="SampleLabelBox" MinHeight="56" MaxLength="300"
+                       TextWrapping="Wrap" AcceptsReturn="True" Margin="0,0,0,7"/>
+              <Button Name="SaveSampleButton" IsEnabled="False" Click="SaveSampleClick"
+                      Content="Lưu duy nhất ảnh đã chọn + ghi chú" Background="#23705B"/>
+              <TextBlock Name="TrainingStatus" Foreground="#8FE1C3" FontSize="12"
+                         Text="Chỉ lưu khi bạn bấm nút và xác nhận. Giới hạn: 250 ảnh / 200 MB."/>
+              <Button Click="OpenSampleLibraryClick" Content="Mở thư viện ảnh đã lưu" Margin="0,10,8,8"/>
+              <Expander Header="Quản lý và xóa dữ liệu" Foreground="#E8F0F9" Margin="0,6,0,0">
+                <StackPanel Margin="8">
+                  <Button Click="DeleteTrainingSamplesClick" Content="Xóa toàn bộ mẫu V1.8 (cần xác nhận)"/>
+                  <Button Click="DeleteOldImagesClick" Content="Xóa ảnh minimap đã lưu từ phiên bản cũ"/>
+                  <TextBlock Name="FolderText" Foreground="#B5C9DD" FontSize="12"
+                             Text="Ảnh V1.8 chỉ lưu khi bạn chọn."/>
+                </StackPanel>
+              </Expander>
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+        <TabItem Header="3 · AI (tùy chọn)">
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="12" MaxWidth="660">
+              <TextBlock Text="Thử phân tích với Gemini" FontSize="19" FontWeight="Bold"/>
+              <TextBlock Text="Bạn KHÔNG cần bật chế độ này để căn minimap, thu 5 ảnh hoặc lưu dữ liệu. Chỉ dùng trong trận luyện tập/xem lại khi bạn đồng ý gửi tối đa 45 ảnh qua AI Cá Nhân đến Gemini."
+                         Foreground="#F9CF90" Margin="0,7,0,15"/>
+              <TextBlock Text="Khoảng cách giữa các ảnh gửi" FontWeight="SemiBold"/>
+              <ComboBox Name="IntervalBox" SelectedIndex="1" Margin="0,5,0,12">
+                <ComboBoxItem Content="30 giây / ảnh" Tag="30"/>
+                <ComboBoxItem Content="60 giây / ảnh (mặc định)" Tag="60"/>
+                <ComboBoxItem Content="120 giây / ảnh" Tag="120"/>
+              </ComboBox>
+              <Button Name="StartButton" Click="StartClick" Background="#23705B"
+                      Content="Đồng ý và bắt đầu phân tích với Gemini"/>
+              <Button Name="StopButton" Click="StopClick" IsEnabled="False"
+                      Content="Dừng phân tích / giải phóng ảnh RAM"/>
+              <TextBlock Name="AnalysisText" Text="Chưa có kết quả." Margin="0,14,0,6"
+                         Foreground="#E4EDF7"/>
+              <TextBlock Name="AnalysisNote" Foreground="#F9CF90"
+                         Text="Kết quả AI chưa được xác minh; không dùng làm cảnh báo vị trí đối thủ trong trận."/>
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+      </TabControl>
+    </Grid>
+    <Border Grid.Row="2" Background="#1D3146" CornerRadius="7" Padding="11"
+            Margin="0,12,0,0">
+      <TextBlock Name="StatusText" Text="Chưa bật. Chưa chụp hay gửi ảnh."
+                 Foreground="#8FE1C3" FontSize="13"/>
+    </Border>
+  </Grid>
 </Window>
