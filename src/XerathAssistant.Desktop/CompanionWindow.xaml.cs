@@ -271,6 +271,9 @@ public partial class CompanionWindow : Window
     private void OpenWaveFightAdvisorClick(object sender, RoutedEventArgs e) =>
         new WaveFightAdvisorWindow { Owner = this }.Show();
 
+    private void OpenSelfStatsClick(object sender, RoutedEventArgs e) =>
+        new SelfStatsWindow { Owner = this }.Show();
+
     protected override void OnClosed(EventArgs e)
     {
         _closed = true;
