@@ -25,6 +25,7 @@ public partial class SelfStatsWindow : Window
     private readonly PersonalStatAlerts _personalAlerts = new();
     private readonly OwnHealthChangeDetector _healthChangeDetector = new();
     private readonly OwnDangerAnalyzer _dangerAnalyzer = new();
+    private double _dangerStatusUntilGameTime = double.NegativeInfinity;
     private readonly PublicKillEventTracker _publicEvents = new();
     private readonly ReminderEngine _hudReminders = new(TimeSpan.FromSeconds(15));
     private readonly Stopwatch _hudElapsed = new();
@@ -244,6 +245,7 @@ public partial class SelfStatsWindow : Window
     {
         _session.Reset();
         _dangerAnalyzer.Reset();
+        _dangerStatusUntilGameTime = double.NegativeInfinity;
         DangerAnalysisStatus.Text = "Đã xóa thống kê nguy hiểm của phiên. Chờ các mẫu mới.";
         SummaryValue.Text = "Đã xóa số liệu phiên. Chờ lần đọc tiếp theo.";
     }
@@ -282,12 +284,20 @@ public partial class SelfStatsWindow : Window
                 // Always maintain an accurate local baseline while alive, even if
                 // the user temporarily switches this optional HUD alert off.
                 var danger = _dangerAnalyzer.Observe(snapshot);
-                if (danger is not null && DangerAnalysisCheck.IsChecked == true)
-                    DangerAnalysisStatus.Text = danger.Message;
+                if (DangerAnalysisCheck.IsChecked != true)
+                    DangerAnalysisStatus.Text = "Đã tắt lời cảnh báo nguy hiểm; số liệu phiên vẫn được tổng hợp.";
+                else if (danger is not null)
+                {
+                    _dangerStatusUntilGameTime = snapshot.GameTimeSeconds + 7;
+                    DangerAnalysisStatus.Text = danger.Message + " (quan sát vừa xảy ra)";
+                }
                 else if (lifeTransition == OwnLifeTransition.Respawned)
+                {
+                    _dangerStatusUntilGameTime = double.NegativeInfinity;
                     DangerAnalysisStatus.Text = "Đã hồi sinh: đang xây dựng đường cơ sở máu mới.";
-                else if (danger is null && _dangerAnalyzer.ObservedDangerEpisodes == 0)
-                    DangerAnalysisStatus.Text = "Chưa ghi nhận đợt giảm máu đủ lớn trong các mẫu liên tiếp.";
+                }
+                else if (snapshot.GameTimeSeconds > _dangerStatusUntilGameTime)
+                    DangerAnalysisStatus.Text = "Không có cảnh báo nguy hiểm mới trong các mẫu vừa đọc; không suy ra an toàn.";
 
                 if (_hud is not null && lifeTransition != OwnLifeTransition.Respawned)
                 {
