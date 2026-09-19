@@ -387,16 +387,19 @@ public partial class SelfStatsWindow : Window
                     ? $"{_session.LowestResourcePercent:0}%." : "không áp dụng.") + "\n" +
                 $"Thời gian quan sát có năng lượng dưới 25%: {_session.LowResourceObservedSeconds:0} giây (xấp xỉ).\n" +
                 $"Lượng vàng hiện có cao nhất ghi nhận: {_session.HighestObservedGold:0}.\n" +
-                $"Các đợt giảm máu gây cảnh báo đã quan sát: {_dangerAnalyzer.ObservedDangerEpisodes} " +
-                $"(nguy hiểm cao: {_dangerAnalyzer.ObservedCriticalEpisodes}).\n" +
+                $"Lượt cảnh báo giảm máu từ mẫu đơn (V1.6): {_dangerAnalyzer.ObservedDangerEpisodes} " +
+                $"(lượt ở mức cao nhất: {_dangerAnalyzer.ObservedCriticalEpisodes}).\n" +
                 $"Mức máu mất lớn nhất trong một khoảng lấy mẫu liên tiếp có cảnh báo: " +
                 $"{_dangerAnalyzer.GreatestObservedLossPercent:0}% máu tối đa.\n" +
                 $"V1.7 · Các đợt nguy hiểm riêng biệt đã quan sát: {_dangerEpisodes.EpisodeCount} " +
                 $"(đợt từng đạt mức nguy hiểm cao: {_dangerEpisodes.CriticalEpisodeCount}, " +
-                $"đợt đã ngừng ghi nhận mất máu: {_dangerEpisodes.CompletedEpisodeCount}).\n" +
+                $"đợt đã kết thúc quan sát: {_dangerEpisodes.CompletedEpisodeCount}).\n" +
                 $"Tổng mức máu mất lớn nhất trong một đợt quan sát: " +
                 $"{_dangerEpisodes.GreatestEpisodeHealthLossPercent:0}% máu tối đa; " +
-                $"HP thấp nhất trong các đợt đó: {_dangerEpisodes.LowestObservedEpisodeHealthPercent:0}%.";
+                $"HP thấp nhất trong các đợt đó: " +
+                (_dangerEpisodes.EpisodeCount > 0
+                    ? $"{_dangerEpisodes.LowestObservedEpisodeHealthPercent:0}%."
+                    : "chưa có mẫu đủ điều kiện.");
         }
         catch (OperationCanceledException) when (_closed || _cancel.IsCancellationRequested) { }
         catch (Exception)
