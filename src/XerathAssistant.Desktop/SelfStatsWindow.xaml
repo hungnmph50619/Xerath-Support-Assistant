@@ -28,6 +28,14 @@
                     Content="Hiện thông báo hạ gục đã xảy ra (không xác định vị trí giao tranh)"/>
           <CheckBox Name="HealthChangeCheck" IsChecked="True" Margin="0,5,0,0"
                     Content="Cảnh báo khi máu của bạn giảm nhanh theo chỉ số trận thực (không đoán vị trí đối thủ)"/>
+          <CheckBox Name="HudVoiceCheck" IsChecked="True" Margin="0,8,0,0"
+                    Content="Đọc tiếng Việt khi HUD có cảnh báo theo tình huống (không cần Bắt đầu nhắc)"/>
+          <WrapPanel Margin="0,5,0,0">
+            <Button Name="TestHudVoiceButton" Content="Nghe thử cảnh báo HUD" Click="TestHudVoiceClick"/>
+            <TextBlock Name="HudVoiceStatus" VerticalAlignment="Center" Margin="8,0,0,0"
+                       Foreground="{StaticResource MutedBrush}"
+                       Text="Chưa kiểm tra âm thanh. Trong Companion hãy tạo giọng tiếng Việt miễn phí trước khi chơi."/>
+          </WrapPanel>
           <CheckBox Name="AiBridgeCheck" IsChecked="False" Margin="0,9,0,0"
                     Content="Thử cầu nối AI cá nhân trên máy (tùy chọn, chỉ truyền sự kiện đã xác nhận)"/>
           <WrapPanel Margin="0,5,0,0">
