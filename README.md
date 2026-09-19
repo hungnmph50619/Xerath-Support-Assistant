@@ -1,4 +1,25 @@
-# Xerath Support Assistant · Companion V1.1 — Cầu nối AI cá nhân trên HUD
+# Xerath Support Assistant · Companion V1.2 — HUD thông báo có giọng tiếng Việt
+
+**Đã triển khai:** HUD vẫn cập nhật chỉ số cá nhân khoảng mỗi giây và nay theo dõi trạng thái chính Xerath từ HP: khi HP về 0, xóa cảnh báo máu dưới 30% cũ, ghim dòng **“Bạn đã bị hạ gục.”** cho đến lúc HP hồi phục. Khi hồi sinh, xóa dòng hạ gục và hiện **“Xerath đã hồi sinh.”** một lần. Không suy ra kẻ hạ gục, vị trí địch hoặc thời điểm hồi sinh tương lai.
+
+**Giọng cảnh báo HUD:** âm thanh tiếng Việt *có thể bật/tắt độc lập* với bộ hẹn giờ. Có 7 câu cố định được tạo/lưu một lần trước khi chơi: hạ gục, hồi sinh, máu giảm nhanh, máu thấp, năng lượng thấp, mốc vàng và thông báo điểm hạ gục. Khi một cảnh báo tương ứng **thực sự được hiển thị trên HUD**, ứng dụng phát bản ghi đã lưu; không cần chuyển tab, không phải nhấn **Bắt đầu nhắc** và không gọi dịch vụ tạo giọng trong trận. Phần trăm máu, lượng vàng và mô tả trả về của AI cá nhân **vẫn được hiển thị đầy đủ bằng chữ**, nhưng câu đọc là **tóm tắt cố định theo loại sự kiện**, không đọc chính xác mọi con số động hoặc nguyên văn mọi câu trả về. Lời nhắc minimap theo giờ đang tắt mặc định trên HUD vẫn không được đọc bởi bộ đọc tình huống này.
+
+**Cách chuẩn bị giọng (miễn phí, không có API key):** đóng phiên Companion cũ, cập nhật bản mới và mở Companion. Trong mục **2 · Giọng nói tiếng Việt**, nhấn **Tạo giọng tiếng Việt miễn phí** để lưu 7 câu HUD trước các lời nhắc theo giờ đã chọn, sau đó **Nghe thử**. Việc tạo một lần cần Internet cho bộ giọng trực tuyến miễn phí; nếu dịch vụ không trả âm thanh, có thể cài [eSpeak NG Windows x64](https://github.com/espeak-ng/espeak-ng/releases) và nhấn tạo lại: eSpeak NG có giọng tiếng Việt ngoại tuyến (hơi máy móc). Ở mục **Chỉ số trực tiếp & tổng hợp · tùy chỉnh HUD**, tích **Đọc tiếng Việt khi HUD có cảnh báo theo tình huống** và nhấn **Nghe thử cảnh báo HUD**. Chỉ khi tệp âm thanh tương ứng đã tạo xong mới có tiếng; nếu không thì cảnh báo chữ vẫn hiển thị và ứng dụng báo thiếu tệp. Không khẳng định tự tạo giọng thành công trên máy nếu nút nghe thử chưa phát tiếng.
+
+**Không trùng bộ nhắc giờ:** nút **Bắt đầu nhắc** ở Companion chỉ dùng cho sáu loại lời nhắc *theo thời gian*, không cần bật để nghe các sự kiện của HUD. Nếu bạn không muốn hai luồng âm thanh phát đè lên nhau, đừng chạy bộ nhắc theo giờ khi đang dùng tiếng cảnh báo tình huống. Cảnh báo lời theo tình huống tôn trọng lựa chọn bật/tắt, tránh phát trùng trong khoảng thời gian ngắn; trạng thái hạ gục ưu tiên hơn thông báo cũ. Kết nối AI cá nhân là tùy chọn, chưa phải mô hình AI quan sát hình ảnh.
+
+**Cập nhật Windows:** trong PowerShell, tại thư mục dự án Xerath chạy:
+
+```powershell
+git pull origin main
+.\RUN_WINDOWS.cmd
+```
+
+Sau khi bạn nghe thử thành công, bật HUD và trở lại game ở chế độ Cửa sổ/Không viền. **Cần thử thực tế trên máy người dùng:** quy trình CI build WPF và chạy kiểm thử các thay đổi HP→0 và HP hồi phục, nhưng chưa kiểm chứng loa/phát giọng, tệp giọng trên máy và kết nối trong trận thực. Không bao gồm AI theo dõi rừng hoặc tự chỉ đường/ra lệnh dùng kỹ năng.
+
+---
+
+## V1.1 — Cầu nối AI cá nhân trên HUD
 
 **Tích hợp bước đầu:** HUD hiện có thể **tùy chọn** gửi hai loại sự kiện đã xác nhận sang ứng dụng AI-Ca-Nhan đang chạy trên **cùng máy**: máu của chính bạn vừa giảm nhanh và điểm hạ gục đã được công bố. AI Cá Nhân nhận dữ liệu dạng JSON qua API cục bộ và trả lại lời nhắc tiếng Việt dạng mẫu cố định để hiển thị trong HUD. Nếu API không phản hồi trong 750 ms hoặc không chạy, Xerath vẫn hiện lời nhắc cục bộ như trước. Không truyền ảnh màn hình, video, tệp cá nhân, API key hoặc vị trí đối thủ; không cần AI trả phí để thử kết nối.
 
