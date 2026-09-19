@@ -1,5 +1,13 @@
 # Xerath Support Assistant · V1.8 — Lưu có chọn lọc ảnh minimap để kiểm thử nhận diện
 
+## Giao diện V1.8 dễ dùng hơn — xem trước và chỉnh khung cạnh nhau
+
+Cửa sổ **Mắt nhìn AI V1.8** hiện chia thành hai phần cố định: **ảnh minimap lớn luôn hiển thị bên trái**, thao tác bên phải chia thành ba thẻ **1 · Căn khung**, **2 · Thu & lưu**, **3 · AI (tùy chọn)**. Không cần cuộn qua nhiều đoạn văn hoặc nút chỉ để tìm ảnh vừa chụp. Các thanh chỉnh tọa độ nâng cao được thu gọn; bấm **Thử khung gợi ý cho minimap góc phải** (ước lượng từ ảnh 1898×952), sau đó **Xem trước ảnh** (chuyển về game 2–3 giây rồi quay lại), nhìn ngay ảnh bên trái và chỉ bấm **Ảnh đúng minimap → Lưu khung** khi thấy đúng toàn bộ minimap. Khung gợi ý KHÔNG thay thế bước kiểm tra thủ công; nếu còn lệch hãy mở nhóm 4 thanh điều chỉnh và xem trước lại.
+
+Sau khi lưu khung, ứng dụng tự chuyển sang thẻ **2 · Thu & lưu**: có thể **Thu 5 ảnh trong RAM** rồi chọn từng khung để đánh dấu và lưu có chọn lọc, không cần AI Cá Nhân/Gemini. Thẻ thứ ba là tùy chọn gửi ảnh qua AI Cá Nhân/Gemini với sự đồng ý riêng và giới hạn 45 ảnh/phiên; mặc định không gửi. Các nút xóa dữ liệu đặt trong khu vực quản lý tách riêng khỏi luồng thu ảnh. Chỉ những ảnh người dùng xác nhận lưu mới ghi đĩa. Windows CI kiểm tra biên dịch và bộ thử hiện có; cần kiểm tra thực tế việc ảnh luôn hiển thị cạnh phần điều khiển trên máy Windows và độ phân giải của bạn.
+
+---
+
 ## Bổ sung V1.8 — Gắn tọa độ biểu tượng và thư viện mẫu cục bộ
 
 **Đã thêm đánh dấu điểm bằng chuột trên ảnh minimap đang xem.** Khi bạn chủ động chọn một ảnh trong RAM, hãy nhấp trực tiếp vào biểu tượng tướng nhìn thấy được; phần mềm tính tọa độ x/y chuẩn hóa trong vùng JPEG, hỗ trợ nhiều nhất 10 điểm/ảnh. Nhập tên tướng, đội, vai trò (nếu không chắc, chọn **Chưa rõ**), sau đó nhấn **Thêm điểm**. Bạn có thể xóa các điểm vừa chọn trước khi lưu. Những nhãn này là thông tin **do bạn tự xác nhận**, không phải kết quả AI đã nhận diện; tuyệt đối không đánh dấu vị trí đối thủ đang khuất tầm nhìn. Để lưu một ảnh có đánh dấu, hãy chọn loại bằng chứng **Quan sát trực tiếp**, nhập ghi chú và bấm lưu ảnh + nhãn thủ công. JSON của mỗi ảnh lưu các điểm và tọa độ tương ứng; ảnh không được tự gửi lên mạng khi bấm lưu.
