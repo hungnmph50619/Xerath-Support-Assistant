@@ -307,4 +307,62 @@ Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1400, Health = 700 }
 Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1402, Health = 170 }) is null,
        "critical risk warning is not repeated merely because health stays low");
 
+
+var episodes = new OwnDangerEpisodeTracker();
+var episodeAnalyzer = new OwnDangerAnalyzer();
+var episodeSample = own with { GameTimeSeconds = 1500, Health = 1000, MaxHealth = 1000 };
+OwnDangerNotice? FeedEpisode(SelfStatsSnapshot sample) =>
+    episodes.Observe(sample, episodeAnalyzer.Observe(sample));
+Verify(FeedEpisode(episodeSample) is null && episodes.EpisodeCount == 0,
+       "episode tracker cannot invent initial danger");
+Verify(FeedEpisode(episodeSample with { GameTimeSeconds = 1501, Health = 650 }) is
+       { Severity: OwnDangerSeverity.Elevated } &&
+       episodes.EpisodeCount == 1 && episodes.IsActive,
+       "first verified damage begins one episode");
+Verify(FeedEpisode(episodeSample with { GameTimeSeconds = 1502, Health = 580 }) is null &&
+       episodes.EpisodeCount == 1,
+       "follow-up HP damage during same episode does not repeat speech");
+Verify(FeedEpisode(episodeSample with { GameTimeSeconds = 1503, Health = 350 }) is
+       { Severity: OwnDangerSeverity.High } &&
+       episodes.EpisodeCount == 1 && episodes.CriticalEpisodeCount == 0,
+       "a single danger episode escalates without incrementing episode count");
+Verify(FeedEpisode(episodeSample with { GameTimeSeconds = 1504, Health = 140 }) is
+       { Severity: OwnDangerSeverity.Critical } &&
+       episodes.CriticalEpisodeCount == 1 && episodes.EpisodeCount == 1,
+       "critical escalation counted once inside the same episode");
+Verify(FeedEpisode(episodeSample with { GameTimeSeconds = 1505, Health = 130 }) is null &&
+       episodes.CriticalEpisodeCount == 1,
+       "remaining at critical HP does not repeat an unverified prediction");
+Verify(episodes.GreatestEpisodeHealthLossPercent >= 86 &&
+       episodes.LowestObservedEpisodeHealthPercent <= 13,
+       "episode summary reports aggregate observed loss and lowest observed HP");
+for (var steady = 1506; steady <= 1513; steady++)
+    FeedEpisode(episodeSample with { GameTimeSeconds = steady, Health = 130 });
+Verify(!episodes.IsActive && episodes.CompletedEpisodeCount == 1,
+       "eight seconds without observed damage closes an episode but does not announce safety");
+Verify(FeedEpisode(episodeSample with { GameTimeSeconds = 1514, Health = 80 }) is null &&
+       episodes.EpisodeCount == 1,
+       "small subsequent damage does not fabricate a new episode");
+Verify(FeedEpisode(episodeSample with { GameTimeSeconds = 1515, Health = 0 }) is null &&
+       !episodes.IsActive && episodes.CompletedEpisodeCount == 1,
+       "own death does not create a fabricated follow-on danger notice");
+episodes.ResetBaseline();
+episodeAnalyzer.ResetBaseline();
+Verify(episodes.EpisodeCount == 1 && episodes.CriticalEpisodeCount == 1,
+       "respawn reset retains per-match episode summary");
+Verify(FeedEpisode(episodeSample with { GameTimeSeconds = 1540, Health = 1000 }) is null &&
+       FeedEpisode(episodeSample with { GameTimeSeconds = 1541, Health = 100 }) is
+       { Severity: OwnDangerSeverity.Critical } &&
+       episodes.EpisodeCount == 2 && episodes.CriticalEpisodeCount == 2,
+       "new verified danger after respawn counts as a distinct episode");
+Verify(FeedEpisode(episodeSample with { GameTimeSeconds = 1, Health = 800 }) is null &&
+       episodes.EpisodeCount == 0 && episodes.CriticalEpisodeCount == 0,
+       "new match clock resets all danger episode statistics");
+episodes.Reset();
+episodeAnalyzer.Reset();
+Verify(FeedEpisode(episodeSample with { GameTimeSeconds = 1700, Health = 800 }) is null &&
+       FeedEpisode(episodeSample with { GameTimeSeconds = 1700, Health = 100 }) is null &&
+       episodes.EpisodeCount == 0,
+       "duplicate clock samples cannot introduce synthetic risk episodes");
+
 Console.WriteLine($"ALL {count} CORE TESTS PASSED");
