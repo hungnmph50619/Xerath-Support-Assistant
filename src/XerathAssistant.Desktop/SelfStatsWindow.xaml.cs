@@ -71,7 +71,7 @@ public partial class SelfStatsWindow : Window
 
     private void ShowDueHudReminder()
     {
-        if (_hud is null || !_hudElapsed.IsRunning) return;
+        if (_hud is null || !_hudElapsed.IsRunning || TimeRemindersCheck.IsChecked != true) return;
         var message = _hudReminders.Tick(_hudElapsed.Elapsed);
         if (!string.IsNullOrWhiteSpace(message))
             _hud.ShowNotice(message.Replace(" | ", " · "));
