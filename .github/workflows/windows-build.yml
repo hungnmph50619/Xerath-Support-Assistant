@@ -1,0 +1,18 @@
+name: Windows build and core checks
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+jobs:
+  build-and-check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Build WPF desktop
+        run: dotnet build src/XerathAssistant.Desktop/XerathAssistant.Desktop.csproj -c Release
+      - name: Run core checks
+        run: dotnet run --project tests/XerathAssistant.CoreTests/XerathAssistant.CoreTests.csproj -c Release
