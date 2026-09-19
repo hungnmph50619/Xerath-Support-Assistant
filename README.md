@@ -1,4 +1,25 @@
-# Xerath Support Assistant · Companion V0.5 — Wave & Fight Advisor
+# Xerath Support Assistant · Companion V0.6 — Live Self Stats
+
+**Mới:** nút **Chỉ số trực tiếp & tổng hợp** mở cửa sổ đọc tự động chỉ số của **chính bạn** đang chơi, mỗi 5 giây, bằng Riot Live Client Data API trên máy (`https://127.0.0.1:2999`). Không cần tự nhập hoặc xem lại video. Cửa sổ hiển thị đồng hồ trận, cấp độ, máu, năng lượng, vàng hiện có, sức mạnh phép thuật, và tổng hợp từ các lần đọc (máu/năng lượng thấp nhất đã thấy; ước lượng khoảng thời gian quan sát khi mana dưới 25%; lượng vàng hiện có cao nhất đã thấy). Không cần API key; không lưu số liệu lên máy chủ; dữ liệu lịch sử chỉ nằm trong bộ nhớ cho tới khi đóng cửa sổ.
+
+**Cài đặt/cập nhật Windows:** Đóng chương trình cũ, tại thư mục dự án chạy:
+
+```powershell
+git pull origin main
+.\RUN_WINDOWS.cmd
+```
+
+Vào **trận thực tế** với Xerath, mở Companion rồi nhấn **Chỉ số trực tiếp & tổng hợp**. Nếu trò chơi chưa khởi chạy trận, cửa sổ sẽ báo chưa đọc được. Nhấn **Cập nhật ngay** hoặc bật **Cập nhật chỉ số mỗi 5 giây**; khi kết thúc trận hãy xem phần **Tổng hợp tự động** trước khi đóng cửa sổ. Có thể nhấn **Xóa thống kê phiên** để bắt đầu thống kê mới. Khi mở trận mới, lịch sử trước đó tự reset nếu đồng hồ trận quay về 0; ứng dụng không ghi file thống kê.
+
+**Dữ liệu và giới hạn:** Chỉ gọi hai endpoint tài liệu hóa `/liveclientdata/activeplayer` và `/liveclientdata/gamestats` qua HTTPS loopback. Client Liên Minh sử dụng chứng chỉ tự ký nên ứng dụng chỉ chấp nhận ngoại lệ chứng chỉ cho địa chỉ `127.0.0.1:2999`; không tắt kiểm tra TLS cho các dịch vụ khác, không truy cập bộ nhớ game hay Vanguard. Nội dung chỉ hiển thị **thông tin cá nhân vốn đã nhìn thấy trong game**, không thu thập vị trí hay hồi chiêu đối phương, không thông báo tự động giao tranh Top/Mid, không phân tích thế lính và không hướng dẫn giao tranh theo thời gian thực. Đây **không phải** công cụ tự động cho lời khuyên chiến thuật. Việc sử dụng dịch vụ/trình bày thông tin cần tuân thủ chính sách hiện hành của Riot; hãy đăng ký sản phẩm trên Riot Developer Portal trước khi phát hành cho người chơi khác.
+
+Tài liệu endpoint chính thức: https://developer.riotgames.com/docs/lol#game-client-api và https://developer.riotgames.com/docs/lol#live-client-data-api
+
+**Kiểm tra:** `dotnet build src/XerathAssistant.Desktop/XerathAssistant.Desktop.csproj` và `dotnet run --project tests/XerathAssistant.CoreTests/XerathAssistant.CoreTests.csproj`. Các bài kiểm tra mới xác nhận đọc JSON có cấu trúc API, số phần trăm HP/mana và thống kê phiên. Chưa xác nhận build/chạy thành công trên máy Windows của bạn.
+
+---
+
+## V0.5 — Wave & Fight Advisor
 
 **Mới trong V0.5:** nút **Phân tích thế lính & giao tranh** trên cửa sổ Companion mở công cụ **Wave & Fight Advisor** để bạn tự nhập tình huống đã quan sát từ ảnh/video trận đấu. Công cụ trả về ba nhận định bằng tiếng Việt, mỗi nhận định có lời giải thích, dữ kiện làm căn cứ và danh sách thông tin còn thiếu: **có nên đẩy lính**, **có nên dâng cao**, **điều kiện giao tranh thuận lợi hoặc bất lợi**.
 
