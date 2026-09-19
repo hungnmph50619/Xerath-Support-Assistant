@@ -1,4 +1,14 @@
-# Xerath Support Assistant · V1.8 — Lưu có chọn lọc ảnh minimap để kiểm thử nhận diện
+# Xerath Support Assistant · V1.8 — Trợ lý trận đấu & thu mẫu minimap
+
+## V1.8 — Giao diện chính đơn giản theo tác vụ (đợt tinh gọn)
+
+**Companion chỉ còn hai tác vụ hiển thị nổi bật:** (1) **Bật HUD cảnh báo** dựa trên máu thực của chính bạn, kèm nút phụ **Xem chỉ số & cài đặt HUD**; (2) **Mở minimap · Xem trước & thu ảnh**, không cần Gemini. Phần tạo và nghe thử giọng tiếng Việt, sáu lịch nhắc theo giờ (mặc định tắt), cùng Aim Lab và các công cụ xem lại được chuyển vào nhóm mở rộng; không bị xóa hoặc tự bật. Nút **Bắt đầu nhắc theo giờ** chỉ dành cho lời nhắc định kỳ, **không** phải điều kiện để bật HUD theo tình huống.
+
+**Mắt nhìn AI:** ảnh xem trước luôn ở cạnh bên trái, thao tác ở bên phải chỉ gồm **Thu ảnh**, **Gắn nhãn & thư viện** và **Thử AI (tùy chọn)**. Trong cùng màn hình Thu ảnh, bạn xem trước → kiểm tra ảnh → xác nhận khung → thu 5 ảnh RAM → chọn khung để xem; không phải qua hai tab chỉ để căn khung và thu ảnh. Chỉ mở **Ảnh bị lệch? Chỉnh vùng cắt** nếu ảnh sai, còn biểu tượng tướng/tọa độ và thao tác xóa mẫu đã lưu nằm ở màn hình riêng. **Không gửi ảnh Gemini hoặc lưu JPG tự động**; thẻ Thử AI vẫn có xác nhận riêng trước khi bắt đầu gửi ảnh, tối đa 45 ảnh/phiên.
+
+**Kiểm thử:** chạy Windows CI để kiểm tra build và các bộ thử tự động hiện có. CI không chứng minh bố cục, focus, thao tác Alt+Tab, mức DPI và khả năng thấy rõ nút ở mọi máy thực tế. Sau khi cập nhật, cần kiểm tra trực tiếp giao diện trên máy người dùng và phản hồi bằng ảnh chụp cửa sổ chính + cửa sổ minimap.
+
+---
 
 ## Giao diện V1.8 dễ dùng hơn — xem trước và chỉnh khung cạnh nhau
 
