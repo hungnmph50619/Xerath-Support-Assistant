@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
@@ -17,10 +18,109 @@ public partial class LastSeenReviewWindow : Window
 {
     private readonly LastSeenReview _review = new();
     private bool _imageLoaded;
+    private readonly FreeVietnameseVoiceService _reviewVoice = new();
+    private readonly MediaPlayer _reviewPlayer = new() { Volume = 0.7 };
+    private CancellationTokenSource? _voicePreparation;
 
     public LastSeenReviewWindow()
     {
         InitializeComponent();
+        _reviewPlayer.MediaEnded += (_, _) => _reviewPlayer.Close();
+        _reviewPlayer.MediaFailed += (_, _) =>
+        {
+            ReplayVoiceStatus.Text = "Không phát được tệp tiếng Việt. Hãy kiểm tra âm lượng Windows.";
+            _reviewPlayer.Close();
+        };
+    }
+
+    /// <summary>
+    /// Narrate ONLY a manually annotated screenshot during replay. No live detection,
+    /// no automated opponent tracking and no narration of an unseen position.
+    /// </summary>
+    private async void ReplayVoiceClick(object sender, RoutedEventArgs e)
+    {
+        if (!_imageLoaded || _review.Current is null)
+        {
+            ReplayVoiceStatus.Text = "Hãy mở ảnh đã lưu rồi bấm đánh dấu đúng biểu tượng tướng trong ảnh trước khi nghe.";
+            return;
+        }
+
+        // Even a marked coordinate is not evidence of identity/role, so the user
+        // must manually select the role and the observed region.
+        var role = ChampionRoleBox.SelectedIndex switch
+        {
+            0 => "Rừng địch",
+            1 => "Mid đối phương",
+            _ => null
+        };
+        var area = LastSeenAreaBox.SelectedIndex switch
+        {
+            0 => "đường trên",
+            1 => "đường giữa",
+            2 => "đường dưới",
+            3 => "khu vực sông",
+            4 => "khu vực rừng",
+            _ => null
+        };
+        if (role is null || area is null)
+        {
+            ReplayVoiceStatus.Text = "Chưa xác định được vai trò hoặc vị trí trong ảnh. Không phát lời suy đoán.";
+            return;
+        }
+
+        var phrase = $"Trong ảnh đã lưu, bạn đánh dấu {role.ToLowerInvariant()} ở {area}.";
+        if (_voicePreparation is not null)
+        {
+            ReplayVoiceStatus.Text = "Đang chuẩn bị giọng cho ảnh trước, hãy đợi hoàn tất.";
+            return;
+        }
+
+        using var preparation = new CancellationTokenSource();
+        _voicePreparation = preparation;
+        ReplayVoiceButton.IsEnabled = false;
+        try
+        {
+            ReplayVoiceStatus.Text = "Đang tạo câu tiếng Việt miễn phí cho ảnh xem lại (chỉ tạo nếu chưa lưu).";
+            await _reviewVoice.PrepareAsync(phrase, preparation.Token);
+            if (preparation.IsCancellationRequested) return;
+            _reviewPlayer.Stop();
+            _reviewPlayer.Close();
+            _reviewPlayer.Open(new Uri(Path.GetFullPath(_reviewVoice.CachePath(phrase))));
+            _reviewPlayer.Volume = 0.7;
+            _reviewPlayer.Play();
+            ReplayVoiceStatus.Text = "Đang đọc vị trí bạn đánh dấu TRONG ẢNH ĐÃ LƯU; không phải vị trí hiện tại trong game.";
+        }
+        catch (OperationCanceledException)
+        {
+            ReplayVoiceStatus.Text = "Đã dừng chuẩn bị giọng cho ảnh.";
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or
+                                   ArgumentException or TimeoutException)
+        {
+            ReplayVoiceStatus.Text = "Chưa tạo/phát được tiếng Việt: " + ex.Message;
+        }
+        finally
+        {
+            _voicePreparation = null;
+            ReplayVoiceButton.IsEnabled = true;
+        }
+    }
+
+    private void StopReplayVoiceClick(object sender, RoutedEventArgs e)
+    {
+        _voicePreparation?.Cancel();
+        _reviewPlayer.Stop();
+        _reviewPlayer.Close();
+        ReplayVoiceStatus.Text = "Đã dừng phát giọng xem lại.";
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        _voicePreparation?.Cancel();
+        _reviewPlayer.Stop();
+        _reviewPlayer.Close();
+        _reviewVoice.Dispose();
+        base.OnClosed(e);
     }
 
     private void OpenImageClick(object sender, RoutedEventArgs e)
