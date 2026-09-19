@@ -228,4 +228,28 @@ Verify(healthDetector.Observe(healthBaseline with { GameTimeSeconds = 3, Health 
 Verify(healthDetector.Observe(healthBaseline with { GameTimeSeconds = 10, Health = 100 }) is null,
        "sampling gaps do not imply damage happened in the most recent two seconds");
 
+
+var life = new OwnLifeStateDetector();
+var lifeBase = own with { GameTimeSeconds = 900, Health = 1000, MaxHealth = 1200 };
+Verify(life.Observe(lifeBase) == OwnLifeTransition.None && !life.IsDead,
+       "initial alive state causes no fake respawn notice");
+Verify(life.Observe(lifeBase with { GameTimeSeconds = 901, Health = 0 })
+       == OwnLifeTransition.Died && life.IsDead,
+       "confirmed own HP zero triggers a single death transition");
+Verify(life.Observe(lifeBase with { GameTimeSeconds = 902, Health = 0 })
+       == OwnLifeTransition.None && life.IsDead,
+       "remaining dead never repeats a death announcement");
+Verify(life.Observe(lifeBase with { GameTimeSeconds = 912, Health = 1000 })
+       == OwnLifeTransition.Respawned && !life.IsDead,
+       "confirmed own HP recovery triggers one respawn announcement");
+Verify(life.Observe(lifeBase with { GameTimeSeconds = 913, Health = 1000 })
+       == OwnLifeTransition.None,
+       "continued living does not replay respawn");
+Verify(life.Observe(lifeBase with { GameTimeSeconds = 2, Health = 0 })
+       == OwnLifeTransition.Died && life.IsDead,
+       "game clock reset clears earlier life status before new match");
+Verify(life.Observe(lifeBase with { GameTimeSeconds = 3, Health = 1000 })
+       == OwnLifeTransition.Respawned && !life.IsDead,
+       "new match life-state stream can independently recover");
+
 Console.WriteLine($"ALL {count} CORE TESTS PASSED");
