@@ -1,0 +1,56 @@
+<Window x:Class="XerathAssistant.Desktop.LastSeenReviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Enemy Jungle Last Seen · Xem lại ảnh trận" Width="1020" Height="800"
+        MinWidth="770" MinHeight="640" Background="#0B1521" FontFamily="Segoe UI">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="20">
+      <TextBlock FontWeight="Bold" FontSize="23" Text="ENEMY JUNGLE · LAST SEEN REVIEW"/>
+      <TextBlock Margin="0,6,0,12" Foreground="{StaticResource MutedBrush}"
+                 Text="Đánh dấu THỦ CÔNG vị trí rừng địch đã nhìn thấy trên minimap của ảnh trận lưu sẵn. Chỉ dùng để xem lại ảnh, không phải cảnh báo vị trí hiện tại trong game."/>
+      <Border Background="#122339" CornerRadius="9" Padding="12" Margin="0,0,0,10">
+        <StackPanel>
+          <WrapPanel>
+            <Button Click="OpenImageClick" Content="Mở ảnh trận đã lưu"/>
+            <Button Click="ClearMarkClick" Content="Xóa dấu cuối cùng"/>
+            <TextBlock VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"
+                       Text="Không chụp game · Không tự đọc minimap · Không overlay"/>
+          </WrapPanel>
+          <WrapPanel Margin="0,12,0,4">
+            <TextBlock VerticalAlignment="Center" Text="Thời điểm trong ảnh (mm:ss): " Margin="0,0,6,0"/>
+            <TextBox Name="GameTimeBox" Text="09:20" Width="65" Padding="5,3"/>
+            <TextBlock VerticalAlignment="Center" Margin="16,0,6,0" Text="Thời điểm xem lại (tùy chọn): "/>
+            <TextBox Name="ReviewTimeBox" Width="65" Padding="5,3" TextChanged="ReviewTimeChanged"/>
+            <TextBlock VerticalAlignment="Center" Margin="14,0,0,0" Foreground="{StaticResource MutedBrush}"
+                       Text="Đánh dấu bằng cách bấm đúng biểu tượng trên minimap trong ảnh."/>
+          </WrapPanel>
+          <WrapPanel Margin="0,8,0,0">
+            <TextBlock VerticalAlignment="Center" Text="Ghi chú (tùy chọn): " Margin="0,0,7,0"/>
+            <TextBox Name="NoteBox" Width="330" Padding="5,3" Text="Rừng địch được nhìn thấy lần cuối"/>
+            <Button Click="UpdateTimeClick" Content="Cập nhật thời điểm / ghi chú"/>
+          </WrapPanel>
+          <TextBlock Name="ReviewStatus" Margin="0,11,0,0" Foreground="#8FE1C3"
+                     Text="Chưa có ảnh. Hãy mở ảnh trận đã lưu và chọn vị trí trên minimap của ảnh."/>
+        </StackPanel>
+      </Border>
+      <Border Background="#122339" CornerRadius="9" Padding="10">
+        <Grid HorizontalAlignment="Stretch">
+          <Viewbox Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Center"
+                   Width="900" Height="490">
+            <Canvas Name="ScreenshotCanvas" Width="900" Height="490"
+                    Background="#182638" MouseLeftButtonDown="ImageClick">
+              <Image Name="ScreenshotImage" Width="900" Height="490" Stretch="Fill"
+                     IsHitTestVisible="False"/>
+              <Ellipse Name="MarkHalo" Width="34" Height="34" Stroke="#FFB64A" StrokeThickness="3"
+                       Fill="#44FFA62B" Visibility="Collapsed" IsHitTestVisible="False"/>
+              <TextBlock Name="MarkTag" Foreground="#FFDA8A" FontSize="18" FontWeight="Bold"
+                         Background="#DD14202A" Visibility="Collapsed" IsHitTestVisible="False"/>
+            </Canvas>
+          </Viewbox>
+        </Grid>
+      </Border>
+      <TextBlock Margin="0,10,0,0" FontSize="12" Foreground="{StaticResource MutedBrush}"
+                 Text="Dấu cam = vị trí nhìn thấy TRONG ẢNH được chọn, không phải vị trí rừng địch lúc này. Khi có ảnh/thời điểm mới, chọn lại để thay thế thông tin cũ. Không suy đoán đường di chuyển trong vùng khuất tầm nhìn."/>
+    </StackPanel>
+  </ScrollViewer>
+</Window>
