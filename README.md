@@ -1,4 +1,18 @@
-# Xerath Support Assistant · Companion V1.2 — HUD thông báo có giọng tiếng Việt
+# Xerath Support Assistant · V1.3 — Giai đoạn đầu của AI quan sát minimap
+
+**Đã thêm công cụ thu thập ảnh minimap để luyện tập AI; CHƯA có AI tự nhận diện rừng địch hoặc giao tranh.** Bản này tạo dữ liệu đầu vào thực tế phục vụ gán nhãn và kiểm thử một mô hình thị giác về sau, không giả định một thuật toán dò màu là trí tuệ nhân tạo hoặc một tướng vắng mặt là đang đi gank.
+
+**Cách thử:** cập nhật nguồn trên máy Windows bằng `git pull origin main`, chạy `.\RUN_WINDOWS.cmd`. Trong cửa sổ Companion V1.3, chọn **Thu ảnh minimap để luyện tập AI (chỉ lưu trên máy)** → **Bắt đầu thu ảnh luyện tập** → xác nhận đồng ý → chuyển sang trận luyện tập hoặc video xem lại Liên Minh đang chạy ở chế độ Cửa sổ/Không viền. Chương trình chỉ lấy phần **góc dưới bên phải của vùng nội dung cửa sổ Liên Minh đang được chọn**; không quét hay ghi hình ứng dụng khác. Mỗi ba giây lưu một ảnh JPG tối đa 120 ảnh/phiên, tự dừng khi đủ; bạn có thể quay lại cửa sổ Recorder và nhấn **Dừng thu ảnh** bất cứ lúc nào. Nút **Mở thư mục ảnh đã lưu** mở thư mục phiên đó. Khi không có Liên Minh được chọn, chương trình chờ mà không thu ảnh.
+
+**Lưu ở đâu:** `%LOCALAPPDATA%\XerathSupportAssistant\minimap-training\<thư mục phiên>`. Không tự gửi ảnh tới API AI Cá Nhân, Gemini, ChatGPT, GitHub hoặc dịch vụ trực tuyến; không chụp toàn màn hình và không can thiệp tiến trình, bộ nhớ hay thao tác game. Ảnh được lưu theo phiên vào ổ đĩa của bạn và **không tự xóa**: chỉ sử dụng ở buổi luyện tập hoặc xem lại khi bạn đồng ý lưu hình ảnh đó. Vùng cắt đang dùng tỷ lệ tương đối của cửa sổ, chưa được căn chỉnh theo mọi kiểu HUD, DPI, độ phân giải hay minimap ở góc khác. Trước khi chia sẻ ảnh cần xem lại nội dung và quyền riêng tư của người chơi khác.
+
+**Còn thiếu để thành AI quan sát thực tế:** ảnh đã được gán nhãn vị trí/tên tướng thấy trên minimap và trạng thái tầm nhìn, bộ mô hình thị giác thực sự (ví dụ mô hình chạy trên máy dùng ONNX), đo độ chính xác trên ảnh thực tế và đo báo sai theo chuỗi ảnh. Khi mô hình chưa nhận ra icon rừng địch với bằng chứng rõ ràng, app sẽ **không nói rằng đã theo dõi rừng địch**, không suy ra vị trí trong sương mù chiến tranh và không phát cảnh báo tác chiến trong trận. Cầu nối hiện tại AI-Ca-Nhan chỉ tiếp nhận hai sự kiện đã xác nhận và không nhận ảnh. Việc chụp ảnh game không tự chứng minh tính phù hợp với mọi quy định ứng dụng của Riot; cần xem xét từng loại kết quả và hình thức sử dụng trước khi bật trong trận.
+
+**Kiểm tra kỹ thuật:** Windows CI build WPF và chạy các kiểm thử core. Sau khi cập nhật mã, cần kiểm tra thủ công rằng ảnh JPG lưu đúng minimap trên độ phân giải và cách đặt minimap của máy bạn; nếu vùng ảnh trống/lệch hãy gửi một ảnh JPG mẫu đã kiểm tra không chứa nội dung riêng tư (không gửi thông tin tài khoản). Không nên coi việc build thành công là nhận diện hình ảnh thành công.
+
+---
+
+## V1.2 — HUD thông báo có giọng tiếng Việt
 
 **Đã triển khai:** HUD vẫn cập nhật chỉ số cá nhân khoảng mỗi giây và nay theo dõi trạng thái chính Xerath từ HP: khi HP về 0, xóa cảnh báo máu dưới 30% cũ, ghim dòng **“Bạn đã bị hạ gục.”** cho đến lúc HP hồi phục. Khi hồi sinh, xóa dòng hạ gục và hiện **“Xerath đã hồi sinh.”** một lần. Không suy ra kẻ hạ gục, vị trí địch hoặc thời điểm hồi sinh tương lai.
 
