@@ -35,4 +35,22 @@ Verify(!AimEngine.IsHit(Spell.E, origin, new Vector2(300, 0), new Vector2(300, 0
 Verify(!AimEngine.Predict(new AimRequest(origin,
        new TargetObservation(new Vector2(900, 0), Vector2.Zero), Spell.W)).InRange,
        "out-of-range rejection");
+
+var reminder = new ReminderEngine(TimeSpan.FromSeconds(30));
+reminder.Start(new[]
+{
+    new ReminderItem("map", "Nhìn minimap.", TimeSpan.FromSeconds(45)),
+    new ReminderItem("jungle", "Kiểm tra rừng đồng minh.", TimeSpan.FromSeconds(90))
+});
+Verify(reminder.Tick(TimeSpan.FromSeconds(44)) is null, "no reminder before due");
+Verify(reminder.Tick(TimeSpan.FromSeconds(45)) == "Nhìn minimap.", "first reminder on time");
+Verify(reminder.Tick(TimeSpan.FromSeconds(60)) is null, "suppress alerts inside 30-second gap");
+Verify(reminder.Tick(TimeSpan.FromSeconds(90)) is string at90 &&
+       at90.Contains("minimap") && at90.Contains("rừng"),
+       "combine reminders due at same time");
+Verify(reminder.Tick(TimeSpan.FromSeconds(91)) is null, "no duplicate after combined alert");
+reminder.Start(new[] { new ReminderItem("vision", "Kiểm tra mắt.", TimeSpan.FromSeconds(5)) });
+Verify(reminder.Tick(TimeSpan.FromSeconds(5)) == "Kiểm tra mắt.", "restart resets previous session");
+Verify(reminder.Tick(TimeSpan.FromSeconds(10)) is null, "global suppression applies to rapid reminder");
+Verify(reminder.Tick(TimeSpan.FromSeconds(35)) == "Kiểm tra mắt.", "deferred reminder fires after gap");
 Console.WriteLine($"ALL {count} CORE TESTS PASSED");
