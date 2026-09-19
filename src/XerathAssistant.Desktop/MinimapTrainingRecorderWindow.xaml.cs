@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using MessageBox = System.Windows.MessageBox;
 
@@ -32,6 +33,8 @@ public partial class MinimapTrainingRecorderWindow : Window
     private readonly string _legacyRoot = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "XerathSupportAssistant", "minimap-training");
+    private readonly MinimapSampleStore _sampleStore = new();
+    private byte[]? _selectedFrame;
     private CancellationTokenSource? _sessionCancellation;
     private DateTime _lastGameFocusedUtc;
     private int _sent;
@@ -43,8 +46,8 @@ public partial class MinimapTrainingRecorderWindow : Window
     {
         InitializeComponent();
         _timer.Tick += CaptureTick;
-        FolderText.Text = "Ảnh mới chỉ nằm trong bộ nhớ trong lúc xử lý, KHÔNG ghi ra ổ đĩa. " +
-            "Thư mục ảnh của phiên bản cũ: " + _legacyRoot;
+        FolderText.Text = "Ảnh phân tích mặc định không lưu. Chỉ mẫu bạn chọn mới ghi vào: " +
+            _sampleStore.Folder + ". Ảnh từ phiên bản cũ: " + _legacyRoot;
     }
 
     private static bool IsGameRunning()
@@ -85,6 +88,7 @@ public partial class MinimapTrainingRecorderWindow : Window
         _sessionCancellation?.Dispose();
         _sessionCancellation = new CancellationTokenSource();
         _sent = 0;
+        ClearPendingFrame();
         _running = true;
         _lastGameFocusedUtc = DateTime.UtcNow;
         _timer.Interval = TimeSpan.FromSeconds(seconds);
@@ -104,6 +108,7 @@ public partial class MinimapTrainingRecorderWindow : Window
     {
         _timer.Stop();
         _running = false;
+        ClearPendingFrame();
         _sessionCancellation?.Cancel();
         StartButton.IsEnabled = true;
         StopButton.IsEnabled = false;
@@ -211,7 +216,10 @@ public partial class MinimapTrainingRecorderWindow : Window
             }
 
             _sent++;
-            // Discard the previous text; keep no screenshot, replay log or video.
+            // Exactly one preview JPEG may remain in RAM for explicit manual selection.
+            // No frame is ever saved automatically by the timer or by Gemini.
+            SetPendingFrame(jpeg.ToArray());
+            // Discard the previous analysis text; retain no replay log or video.
             AnalysisText.Text = analysis.GetString() ?? "Không có kết quả.";
             AnalysisNote.Text = "Kết quả từ một ảnh minimap vừa lấy, chưa được kiểm chứng " +
                 $"(mốc máy: {DateTime.Now:HH:mm:ss}). Không phải thông tin vị trí hiện tại đáng tin cậy.";
@@ -234,6 +242,100 @@ public partial class MinimapTrainingRecorderWindow : Window
         finally
         {
             _busy = false;
+        }
+    }
+
+    private void ClearPendingFrame()
+    {
+        if (_selectedFrame is not null) Array.Clear(_selectedFrame, 0, _selectedFrame.Length);
+        _selectedFrame = null;
+        if (SamplePreview is not null) SamplePreview.Source = null;
+        if (SaveSampleButton is not null) SaveSampleButton.IsEnabled = false;
+    }
+
+    private void SetPendingFrame(byte[] jpeg)
+    {
+        ClearPendingFrame();
+        try
+        {
+            using var stream = new MemoryStream(jpeg, writable: false);
+            var preview = new BitmapImage();
+            preview.BeginInit();
+            preview.CacheOption = BitmapCacheOption.OnLoad;
+            preview.StreamSource = stream;
+            preview.EndInit();
+            preview.Freeze();
+            _selectedFrame = jpeg;
+            SamplePreview.Source = preview;
+            SaveSampleButton.IsEnabled = true;
+            SampleLabelBox.Clear(); // User must confirm EACH frame; never carry forward an old label.
+            TrainingStatus.Text = "Ảnh vừa phân tích đang nằm trong RAM. Kiểm tra đúng minimap, " +
+                "ghi nhãn của chính bạn rồi nhấn Lưu. Không tự tạo tập huấn luyện.";
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or
+                                   NotSupportedException or ArgumentException)
+        {
+            Array.Clear(jpeg, 0, jpeg.Length);
+            ClearPendingFrame();
+            TrainingStatus.Text = "Không xem được ảnh để xác nhận: " + ex.Message;
+        }
+    }
+
+    private void SaveSampleClick(object sender, RoutedEventArgs e)
+    {
+        if (_selectedFrame is null)
+        {
+            TrainingStatus.Text = "Chưa có ảnh minimap để chọn; ảnh cũ đã bị giải phóng.";
+            return;
+        }
+        var label = SampleLabelBox.Text.Trim();
+        if (label.Length is < 3 or > 300)
+        {
+            TrainingStatus.Text = "Hãy mô tả bằng 3–300 ký tự điều thật sự nhìn thấy; " +
+                "ghi riêng mọi suy luận. Không xác định thì ghi 'không xác định'.";
+            return;
+        }
+        if (MessageBox.Show(this,
+            "Bạn đã xem ảnh và xác nhận CHỈ LƯU MỘT ảnh hiện tại cùng ghi chú thủ công? " +
+            "Ảnh sẽ lưu tại ổ đĩa cục bộ trong thư mục mẫu V1.8, KHÔNG tự xóa cuối trận. " +
+            "Nhãn bạn ghi chưa phải sự thật được mô hình xác minh. Không gửi ảnh tới bên thứ ba khi lưu.",
+            "Xác nhận lưu mẫu V1.8", MessageBoxButton.YesNo,
+            MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        try
+        {
+            var (name, count) = _sampleStore.SaveSelected(_selectedFrame, label);
+            TrainingStatus.Text = $"Đã lưu mẫu {name} ({count}/250) cùng nhãn thủ công tại: " +
+                                  _sampleStore.Folder;
+            ClearPendingFrame(); // A given preview must not be saved repeatedly by accident.
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or
+                                   ArgumentException or InvalidDataException)
+        {
+            TrainingStatus.Text = "Chưa lưu mẫu: " + ex.Message;
+        }
+    }
+
+    private void DeleteTrainingSamplesClick(object sender, RoutedEventArgs e)
+    {
+        if (_running)
+        {
+            TrainingStatus.Text = "Hãy dừng phiên và giải phóng ảnh RAM trước khi xóa mẫu.";
+            return;
+        }
+        if (MessageBox.Show(this, "XÓA VĨNH VIỄN tất cả mẫu JPG và nhãn JSON do V1.8 " +
+            "lưu trong thư mục riêng? Việc này không xóa ảnh của phiên bản cũ hoặc tệp ở nơi khác.",
+            "Xác nhận xóa toàn bộ dữ liệu mẫu V1.8",
+            MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        try
+        {
+            ClearPendingFrame();
+            var count = _sampleStore.DeleteAllSelected();
+            TrainingStatus.Text = $"Đã xóa {count} tệp JPG/JSON của bộ mẫu V1.8. " +
+                "Thư mục khác và dữ liệu đã gửi Gemini không bị ảnh hưởng.";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            TrainingStatus.Text = "Không thể xóa hết bộ mẫu: " + ex.Message;
         }
     }
 
@@ -309,6 +411,7 @@ public partial class MinimapTrainingRecorderWindow : Window
     {
         _closed = true;
         StopRecording("Cửa sổ đã đóng.");
+        ClearPendingFrame();
         _sessionCancellation?.Dispose();
         _visionClient.Dispose();
         base.OnClosed(e);
