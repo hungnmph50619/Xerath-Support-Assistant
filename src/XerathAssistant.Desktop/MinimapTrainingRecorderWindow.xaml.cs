@@ -269,6 +269,7 @@ public partial class MinimapTrainingRecorderWindow : Window
             SamplePreview.Source = preview;
             SaveSampleButton.IsEnabled = true;
             SampleLabelBox.Clear(); // User must confirm EACH frame; never carry forward an old label.
+            EvidenceTypeBox.SelectedIndex = 2; // Never carry over a confirmed-looking tag.
             TrainingStatus.Text = "Ảnh vừa phân tích đang nằm trong RAM. Kiểm tra đúng minimap, " +
                 "ghi nhãn của chính bạn rồi nhấn Lưu. Không tự tạo tập huấn luyện.";
         }
@@ -303,7 +304,9 @@ public partial class MinimapTrainingRecorderWindow : Window
             MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         try
         {
-            var (name, count) = _sampleStore.SaveSelected(_selectedFrame, label);
+            var evidenceKind = (EvidenceTypeBox.SelectedItem as ComboBoxItem)?.Tag?.ToString()
+                ?? "uncertain";
+            var (name, count) = _sampleStore.SaveSelected(_selectedFrame, label, evidenceKind);
             TrainingStatus.Text = $"Đã lưu mẫu {name} ({count}/250) cùng nhãn thủ công tại: " +
                                   _sampleStore.Folder;
             ClearPendingFrame(); // A given preview must not be saved repeatedly by accident.
