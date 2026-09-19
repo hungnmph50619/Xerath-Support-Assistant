@@ -9,6 +9,7 @@ namespace XerathAssistant.Desktop;
 public partial class SelfStatsWindow : Window
 {
     private readonly RiotLocalSelfStatsClient _local = new();
+    private readonly PersonalAiBridgeClient _bridge = new();
     private readonly SelfStatsSession _session = new();
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(1) };
     private readonly CancellationTokenSource _cancel = new();
@@ -118,6 +119,47 @@ public partial class SelfStatsWindow : Window
             _hud.SetCorner(corner);
     }
 
+    private async void CheckAiBridgeClick(object sender, RoutedEventArgs e)
+    {
+        AiBridgeStatus.Text = "Đang kiểm tra kết nối AI cá nhân trên máy...";
+        try
+        {
+            var connected = await _bridge.CheckAsync(_cancel.Token);
+            if (!_closed)
+                AiBridgeStatus.Text = connected
+                    ? "Đã kết nối API nội bộ · hiện chưa chạy mô hình AI."
+                    : "Chưa kết nối: mở AI cá nhân ở http://127.0.0.1:5188 rồi thử lại.";
+        }
+        catch (OperationCanceledException) when (_closed || _cancel.IsCancellationRequested) { }
+    }
+
+    private async Task ShowContextNoticeAsync(string kind, double gameTime,
+        double? healthPercent, string localMessage, bool priority = false)
+    {
+        var hud = _hud;
+        if (hud is null || _closed) return;
+
+        if (AiBridgeCheck.IsChecked != true)
+        {
+            hud.ShowNotice(localMessage, priority);
+            return;
+        }
+
+        string? bridgeMessage = null;
+        try
+        {
+            bridgeMessage = await _bridge.GetNoticeAsync(kind, gameTime,
+                healthPercent, _cancel.Token);
+        }
+        catch (OperationCanceledException) when (_closed || _cancel.IsCancellationRequested)
+        {
+            return;
+        }
+
+        if (_closed || !ReferenceEquals(_hud, hud)) return;
+        hud.ShowNotice(bridgeMessage ?? localMessage, priority);
+    }
+
     private async void FetchNowClick(object sender, RoutedEventArgs e) => await ReadNowAsync();
 
     private void ResetSessionClick(object sender, RoutedEventArgs e)
@@ -142,7 +184,9 @@ public partial class SelfStatsWindow : Window
             {
                 // One concise message per sample, ordered by urgency.
                 if (healthLoss is not null && HealthChangeCheck.IsChecked == true)
-                    _hud.ShowNotice(healthLoss, priority: true);
+                    _ = ShowContextNoticeAsync("own-health-loss",
+                        snapshot.GameTimeSeconds, snapshot.HealthPercent,
+                        healthLoss, priority: true);
                 else if (personalWarnings.Count > 0)
                     _hud.ShowNotice(string.Join(" ", personalWarnings), priority: true);
             }
@@ -196,7 +240,9 @@ public partial class SelfStatsWindow : Window
             var json = await _local.ReadEventsJsonAsync(_cancel.Token);
             if (_closed) return;
             var message = _publicEvents.Observe(json, gameTime);
-            if (message is not null) _hud?.ShowNotice(message);
+            if (message is not null)
+                await ShowContextNoticeAsync("completed-kill", gameTime,
+                    null, message);
         }
         catch (OperationCanceledException) when (_closed || _cancel.IsCancellationRequested) { }
         catch (Exception) { /* Optional feed cannot interrupt stats or reminders. */ }
@@ -212,6 +258,7 @@ public partial class SelfStatsWindow : Window
         _timer.Stop();
         _cancel.Cancel();
         _local.Dispose();
+        _bridge.Dispose();
         _cancel.Dispose();
     }
 }
