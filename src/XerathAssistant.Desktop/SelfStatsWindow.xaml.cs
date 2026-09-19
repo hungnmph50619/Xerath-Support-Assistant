@@ -11,6 +11,7 @@ public partial class SelfStatsWindow : Window
     private readonly SelfStatsSession _session = new();
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(5) };
     private readonly CancellationTokenSource _cancel = new();
+    private SelfStatsHudWindow? _hud;
     private bool _fetching;
     private bool _closed;
 
@@ -29,8 +30,53 @@ public partial class SelfStatsWindow : Window
     private void RefreshChanged(object sender, RoutedEventArgs e)
     {
         if (_timer is null) return;
+        // HUD never displays stale values silently because polling was turned off.
+        if (_hud is not null && RefreshCheck?.IsChecked != true)
+        {
+            if (RefreshCheck is not null) RefreshCheck.IsChecked = true;
+            return;
+        }
         if (RefreshCheck?.IsChecked == true && !_closed) _timer.Start();
         else _timer.Stop();
+    }
+
+    public void EnableHud(bool hidePanel = false)
+    {
+        if (_closed) return;
+        if (_hud is null)
+        {
+            _hud = new SelfStatsHudWindow();
+            SetHudCorner();
+        }
+        RefreshCheck.IsChecked = true;
+        _timer.Start();
+        ToggleHudButton.Content = "Tắt HUD";
+        HudHint.Text = "HUD đang bật: chỉ hiện khi Liên Minh là cửa sổ được chọn. Mở lại Chỉ số trực tiếp & tổng hợp để tắt hoặc đổi góc.";
+        _hud.RefreshVisibility();
+        if (hidePanel) Hide();
+    }
+
+    private void DisableHud()
+    {
+        _hud?.Close();
+        _hud = null;
+        ToggleHudButton.Content = "Bật HUD trên game";
+        HudHint.Text = "HUD đã tắt. Bật lại trước khi quay lại game; dùng chế độ cửa sổ Không viền (Borderless).";
+    }
+
+    private void ToggleHudClick(object sender, RoutedEventArgs e)
+    {
+        if (_hud is not null) DisableHud();
+        else EnableHud(hidePanel: true);
+    }
+
+    private void HudCornerChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e) => SetHudCorner();
+
+    private void SetHudCorner()
+    {
+        if (_hud is null || HudCornerBox?.SelectedItem is not System.Windows.Controls.ComboBoxItem item) return;
+        if (Enum.TryParse<HudCorner>(item.Tag?.ToString(), out var corner))
+            _hud.SetCorner(corner);
     }
 
     private async void FetchNowClick(object sender, RoutedEventArgs e) => await ReadNowAsync();
@@ -50,6 +96,7 @@ public partial class SelfStatsWindow : Window
             var snapshot = await _local.ReadAsync(_cancel.Token);
             if (_closed) return;
             _session.Add(snapshot);
+            _hud?.SetSnapshot(snapshot);
 
             GameClock.Text = SelfStatsSnapshot.Clock(snapshot.GameTimeSeconds);
             LevelValue.Text = snapshot.Level.ToString();
@@ -79,8 +126,11 @@ public partial class SelfStatsWindow : Window
         catch (Exception)
         {
             if (!_closed)
+            {
+                _hud?.MarkUnavailable();
                 ConnectionStatus.Text = "Chưa đọc được thông tin trong trận từ API Riot. " +
                     "Hãy vào trận rồi nhấn Cập nhật ngay. Chỉ số bên dưới (nếu có) là dữ liệu lần đọc trước.";
+            }
         }
         finally { _fetching = false; }
     }
@@ -88,6 +138,8 @@ public partial class SelfStatsWindow : Window
     private void WindowClosed(object sender, EventArgs e)
     {
         _closed = true;
+        _hud?.Close();
+        _hud = null;
         _timer.Stop();
         _cancel.Cancel();
         _local.Dispose();
