@@ -1,7 +1,7 @@
 <Window x:Class="XerathAssistant.Desktop.CompanionWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Xerath Support Assistant · Companion V1.2 · Giọng cảnh báo HUD" Width="980" Height="760"
+        Title="Xerath Support Assistant · Companion V1.3 · Thu ảnh minimap luyện tập" Width="980" Height="760"
         MinWidth="720" MinHeight="600" Background="#0B1521" FontFamily="Segoe UI">
   <Window.Resources>
     <Style x:Key="CompanionSectionTitle" TargetType="TextBlock">
@@ -106,13 +106,15 @@
               <Button Style="{StaticResource CompanionButton}" Click="OpenSelfStatsClick"
                       Content="Chỉ số trực tiếp &amp; tổng hợp · tùy chỉnh HUD"/>
               <Button Style="{StaticResource CompanionButton}" Click="OpenLabClick" Content="Mở Aim Lab V0.1"/>
+              <Button Style="{StaticResource CompanionButton}" Click="OpenMinimapTrainingClick"
+                      Content="Thu ảnh minimap để luyện tập AI (chỉ lưu trên máy)"/>
               <Button Style="{StaticResource CompanionButton}" Click="OpenLastSeenReviewClick"
                       Content="Xem lại vị trí rừng địch"/>
               <Button Style="{StaticResource CompanionButton}" Click="OpenWaveFightAdvisorClick"
                       Content="Phân tích thế lính &amp; giao tranh"/>
             </WrapPanel>
             <TextBlock FontSize="12" Foreground="{StaticResource MutedBrush}"
-                       Text="HUD ưu tiên trạng thái bị hạ gục, hồi sinh và biến động máu thực; có thể phát tiếng Việt đã tạo sẵn và hiện chữ ngay trong game. Chọn bật giọng, nghe thử hoặc thử kết nối AI cá nhân trong Chỉ số trực tiếp. Chưa có AI đọc màn hình hay theo dõi rừng địch."/>
+                       Text="HUD phát cảnh báo sự kiện đã xác nhận. Công cụ Thu ảnh minimap tạo dữ liệu hình ảnh cục bộ cho AI học và kiểm thử trong trận luyện tập; chưa nhận diện rừng địch, giao tranh hay đưa lệnh chiến thuật trên HUD."/>
           </StackPanel>
         </Border>
       </StackPanel>
