@@ -19,7 +19,7 @@ public partial class CompanionWindow : Window
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(1) };
     private readonly Stopwatch _elapsed = new();
     private readonly ReminderEngine _reminders = new(TimeSpan.FromSeconds(30));
-    private readonly FptVietnameseVoiceService _voice = new();
+    private readonly FreeVietnameseVoiceService _voice = new();
     private readonly MediaPlayer _player = new() { Volume = 0.7 };
     private readonly Queue<string> _audioQueue = new();
     private CancellationTokenSource? _preparation;
@@ -91,12 +91,12 @@ public partial class CompanionWindow : Window
     {
         var phrases = SelectedPhrases();
         var ready = phrases.Count(_voice.IsReady);
-        TestVoiceButton.IsEnabled = _voice.IsReady(MapPhrase);
+        TestVoiceButton.IsEnabled = phrases.Any(_voice.IsReady);
         if (!_started && _preparation is null)
-            VoiceStatus.Text = $"Giọng AI Ban Mai (nữ miền Bắc): đã lưu {ready}/{phrases.Length} lời nhắc. " +
+            VoiceStatus.Text = $"Giọng nữ tiếng Việt Hoài My: đã lưu {ready}/{phrases.Length} lời nhắc. " +
                 (ready == phrases.Length && ready > 0
-                    ? "Có thể phát offline."
-                    : "Nhập API key FPT.AI, bấm Tạo và lưu giọng tiếng Việt.");
+                    ? "Sẵn sàng phát offline (âm lượng 70%)."
+                    : "Bấm 'Tạo giọng tiếng Việt miễn phí' khi có Internet; không cần API key.");
     }
 
     private async void PrepareVoiceClick(object sender, RoutedEventArgs e)
@@ -108,13 +108,6 @@ public partial class CompanionWindow : Window
             MessageBox.Show(this, "Hãy chọn ít nhất một nhóm nhắc.", "Chưa chọn lời nhắc");
             return;
         }
-        var key = ApiKeyBox.Password;
-        if (phrases.Any(p => !_voice.IsReady(p)) && string.IsNullOrWhiteSpace(key))
-        {
-            MessageBox.Show(this, "Nhập API key FPT.AI vào ô mật khẩu. Không gửi API key vào ChatGPT hay GitHub.",
-                "Thiếu API key");
-            return;
-        }
         using var preparation = new CancellationTokenSource();
         _preparation = preparation;
         PrepareVoiceButton.IsEnabled = false;
@@ -122,12 +115,12 @@ public partial class CompanionWindow : Window
         {
             for (var i = 0; i < phrases.Length; i++)
             {
-                VoiceStatus.Text = $"Đang chuẩn bị giọng nữ miền Bắc: {i + 1}/{phrases.Length}...";
-                await _voice.PrepareAsync(phrases[i], key, preparation.Token);
+                VoiceStatus.Text = $"Đang tạo giọng tiếng Việt miễn phí: {i + 1}/{phrases.Length}...";
+                await _voice.PrepareAsync(phrases[i], preparation.Token);
+                if (_closed) return;
             }
-            ApiKeyBox.Clear(); // Never persist API credentials.
-            VoiceStatus.Text = "Đã tạo giọng nữ miền Bắc cho tất cả lời nhắc. Có thể chơi offline.";
-            TestVoiceButton.IsEnabled = true;
+            VoiceStatus.Text = "Đã tạo đủ các câu nhắc tiếng Việt. Nhấn Nghe thử rồi Bắt đầu nhắc.";
+            TestVoiceButton.IsEnabled = phrases.Any(_voice.IsReady);
         }
         catch (OperationCanceledException)
         {
@@ -135,7 +128,8 @@ public partial class CompanionWindow : Window
         }
         catch (Exception ex)
         {
-            if (!_closed) VoiceStatus.Text = "Không tạo được giọng AI: " + ex.Message;
+            if (!_closed) VoiceStatus.Text = "Dịch vụ tạo giọng miễn phí chưa hoạt động: " + ex.Message +
+                " Có thể thử lại khi có Internet; HUD chữ vẫn dùng được.";
         }
         finally
         {
@@ -146,8 +140,8 @@ public partial class CompanionWindow : Window
 
     private void TestVoiceClick(object sender, RoutedEventArgs e)
     {
-        if (!_voice.IsReady(MapPhrase)) return;
-        PlayVoice(new[] { MapPhrase });
+        var sample = SelectedPhrases().FirstOrDefault(_voice.IsReady);
+        if (sample is not null) PlayVoice(new[] { sample });
     }
 
     private void StartClick(object sender, RoutedEventArgs e)
@@ -162,9 +156,9 @@ public partial class CompanionWindow : Window
         if (VoiceCheck.IsChecked == true && !AllVoicesReady())
         {
             MessageBox.Show(this,
-                "Chưa tạo đủ giọng AI tiếng Việt cho các mục nhắc đã chọn. " +
-                "Nhập API key và nhấn 'Tạo và lưu giọng tiếng Việt', hoặc bỏ chọn giọng nói để chỉ hiển thị thông báo. " +
-                "Ứng dụng KHÔNG tự chuyển sang giọng tiếng Anh.",
+                "Chưa tạo đủ giọng tiếng Việt miễn phí cho các mục nhắc đã chọn. " +
+                "Nhấn 'Tạo giọng tiếng Việt miễn phí' khi có Internet, hoặc bỏ chọn giọng nói để chỉ hiển thị thông báo. " +
+                "Ứng dụng KHÔNG dùng giọng tiếng Anh làm dự phòng.",
                 "Chưa có âm thanh tiếng Việt");
             return;
         }
@@ -305,7 +299,6 @@ public partial class CompanionWindow : Window
         _timer.Stop();
         _elapsed.Stop();
         StopVoice();
-        _voice.Dispose();
         base.OnClosed(e);
     }
 }
