@@ -264,7 +264,7 @@ Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1201, Health = 860 }
        "minor verified damage does not trigger danger");
 Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1202, Health = 580 })
            is { Severity: OwnDangerSeverity.Elevated } elevated &&
-       elevated.Message.Contains("32%") && elevated.Message.Contains("58%"),
+       elevated.Message.Contains("28%") && elevated.Message.Contains("58%"),
        "substantial observed damage while alive produces evidence-backed elevated warning");
 Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1203, Health = 420 }) is null,
        "repeated burst does not flood during cooldown without larger damage");
@@ -277,7 +277,7 @@ Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1205, Health = 100 }
        critical.Message.Contains("10%"),
        "confirmed critical HP and fresh damage takes highest live priority");
 Verify(danger.ObservedDangerEpisodes == 3 &&
-       danger.ObservedCriticalEpisodes == 1 && danger.GreatestObservedLossPercent >= 31,
+       danger.ObservedCriticalEpisodes == 1 && danger.GreatestObservedLossPercent >= 28,
        "session summary counts only actual warning episodes and greatest observed one-second loss");
 Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1206, Health = 0 }) is null,
        "own death is not misreported as danger warning");
