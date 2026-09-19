@@ -23,6 +23,7 @@ public partial class SelfStatsWindow : Window
         new("vision", "Kiểm tra tầm nhìn khu vực sông.", TimeSpan.FromMinutes(3))
     };
     private int _eventPollCount;
+    private bool _eventFetching;
     private bool _fetching;
     private bool _closed;
 
@@ -138,20 +139,6 @@ public partial class SelfStatsWindow : Window
             if (_hud is not null && personalWarnings.Count > 0)
                 _hud.ShowNotice(string.Join(" ", personalWarnings), priority: true);
 
-            if (EventsCheck.IsChecked == true && ++_eventPollCount % 2 == 0)
-            {
-                try
-                {
-                    var eventsJson = await _local.ReadEventsJsonAsync(_cancel.Token);
-                    if (_closed) return;
-                    var eventMessage = _publicEvents.Observe(eventsJson, snapshot.GameTimeSeconds);
-                    if (_hud is not null && eventMessage is not null)
-                        _hud.ShowNotice(eventMessage);
-                }
-                catch (OperationCanceledException) when (_closed || _cancel.IsCancellationRequested) { }
-                catch (Exception) { /* This optional feed must never break personal stats. */ }
-            }
-
             GameClock.Text = SelfStatsSnapshot.Clock(snapshot.GameTimeSeconds);
             LevelValue.Text = snapshot.Level.ToString();
             HealthValue.Text = $"{snapshot.Health:0} / {snapshot.MaxHealth:0}  ({snapshot.HealthPercent:0}%)";
@@ -165,6 +152,9 @@ public partial class SelfStatsWindow : Window
                 ? Math.Clamp(snapshot.ResourcePercent, 0, 100) : 0;
             GoldValue.Text = $"{snapshot.Gold:0} vàng";
             ApValue.Text = $"{snapshot.AbilityPower:0} AP";
+
+            if (EventsCheck.IsChecked == true && ++_eventPollCount % 2 == 0)
+                _ = PollPublicEventsAsync(snapshot.GameTimeSeconds);
 
             ConnectionStatus.Text = $"Đã kết nối API Riot trên máy · cập nhật lúc {DateTime.Now:HH:mm:ss}";
             SummaryValue.Text =
@@ -187,6 +177,22 @@ public partial class SelfStatsWindow : Window
             }
         }
         finally { _fetching = false; }
+    }
+
+    private async Task PollPublicEventsAsync(double gameTime)
+    {
+        if (_eventFetching || _closed) return;
+        _eventFetching = true;
+        try
+        {
+            var json = await _local.ReadEventsJsonAsync(_cancel.Token);
+            if (_closed) return;
+            var message = _publicEvents.Observe(json, gameTime);
+            if (message is not null) _hud?.ShowNotice(message);
+        }
+        catch (OperationCanceledException) when (_closed || _cancel.IsCancellationRequested) { }
+        catch (Exception) { /* Optional feed cannot interrupt stats or reminders. */ }
+        finally { _eventFetching = false; }
     }
 
     private void WindowClosed(object sender, EventArgs e)
