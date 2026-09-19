@@ -1,59 +1,41 @@
-# Xerath Support Assistant · Aim Lab V0.1
+# Xerath Support Assistant · Companion V0.2
 
-An initial, **working-source C#/.NET 8 WPF project** that demonstrates a reusable Q/W/E/R target-prediction engine in an independent practice arena. The UI and on-screen descriptions are in Vietnamese.
+Ứng dụng Windows C#/.NET 8/WPF, chạy **cùng lúc với Liên Minh Huyền Thoại** để nhắc các công việc SP bằng lời nói. Màn hình mặc định đã đổi sang **Companion**; màn hình Aim Lab V0.1 vẫn có thể mở bằng nút **Mở Aim Lab V0.1**.
 
-## What V0.1 actually does
+## Sử dụng trong lúc chơi
 
-- Simulated target moves continuously; enable random direction changes, alter speed or drag the target with the mouse.
-- Predict a Q line aim after an adjustable *already elapsed* charge duration; W and R AoE centers; E projectile interception with cast windup and an optional blocking minion.
-- Visualize a predicted aim point, skill line/area and target's current movement vector.
-- Cast each simulated spell and compare its fixed prediction against the target's **actual later position**; track hit/miss results.
-- Run a dependency-free console test program for the C# core.
+1. Trên Windows, cài .NET 8 SDK và mở Liên Minh Huyền Thoại, vào trận (hoặc mở game sau).
+2. Mở `RUN_WINDOWS.cmd` ở thư mục gốc dự án, hoặc chạy `dotnet run --project src/XerathAssistant.Desktop/XerathAssistant.Desktop.csproj`.
+3. Ứng dụng hiển thị trạng thái phát hiện **tiến trình Windows** của game/client. Chọn các mục nhắc bạn cần, bật giọng nói và nhấn **Bắt đầu nhắc**.
+4. Quay lại game. Trợ lý phát lời nhắc độc lập ở nền; dùng **Tạm dừng / Tiếp tục / Kết thúc** trên cửa sổ trợ lý khi cần. Nếu chưa phát hiện trận, bạn vẫn có thể chủ động chạy bộ nhắc sau khi xác nhận.
 
-## Not included in this first version
+Các mục nhắc mặc định: minimap 45 giây; tầm nhìn 3 phút; kiểm tra rừng đồng minh 90 giây; ADC 2 phút; năng lượng và vị trí Xerath 2 phút 30 giây; mục tiêu lớn 3 phút. Những lời nhắc đến hạn cùng lúc được gộp, cách nhau tối thiểu 30 giây. Hệ thống dùng đồng hồ phiên chơi; khi tạm dừng, đồng hồ cũng dừng.
 
-This prototype **does not capture the League client, analyze the live game, draw an in-game overlay, send input, handle summoner spell tracking, or provide live gank alerts**. Its distances, cast delays and collision shapes are intentionally practice-space values, **not verified League of Legends patch data**. The near/arrived ally-jungle alert (Vietnamese voice at 70%, 30-second suppression) is a planned separate module, not a delivered feature here.
+Giọng nói dùng System.Speech của Windows, âm lượng 70%. Nếu máy không có giọng tiếng Việt, vào Windows Settings cài thêm giọng đọc tiếng Việt; chương trình sẽ báo tình trạng giọng đọc. Cần mạng để khôi phục gói NuGet System.Speech ở lần build đầu.
 
-Direct live aiming assistance and timing opponents' spells can violate Riot's third-party software rules and carry account risk. This project does not circumvent Vanguard. Evaluate policies/permissions before considering any live gameplay integration.
+## Phạm vi và giới hạn
 
-## Requirements
+- V0.2 chỉ kiểm tra **tên tiến trình Windows** để hiển thị game/client có đang chạy; không tự khởi chạy Liên Minh, tự biết bạn đã chọn Xerath hay tự xác định trận đã bắt đầu chính xác.
+- Các câu như “kiểm tra rừng đồng minh” là lời nhắc chung theo giờ, **không phải** nhận diện rừng đang gank, cũng không phải cảnh báo Near/Arrived đã xác nhận.
+- Không đọc bộ nhớ/trạng thái trận, không chụp hay xử lý màn hình game, không hiển thị hướng ngắm trực tiếp lên game, không gửi phím/chuột/ping, không can thiệp Vanguard.
+- Aim Lab vẫn là mô phỏng độc lập, dùng thông số luyện tập không phải chỉ số kỹ năng LoL theo patch.
 
-- Windows 10/11, .NET 8 SDK (desktop development / WPF support).
-- No extra NuGet dependencies, model downloads, game installation or elevated permissions.
-
-## Run on Windows
-
-```powershell
-cd .\XerathSupportAssistant\src\XerathAssistant.Desktop
-dotnet run
-```
-
-Or open `src/XerathAssistant.Desktop/XerathAssistant.Desktop.csproj` in Visual Studio with the `.NET desktop development` workload and press F5.
-
-Use the spell dropdown, Q charge and speed sliders. Enable `Đổi hướng` to increase difficulty; turn on `Lính chắn E` to test blockers. Click `Thử tung chiêu` to cast. Drag the red target to set up a situation.
-
-## Core tests
+## Mã nguồn và kiểm thử
 
 ```powershell
-cd .\XerathSupportAssistant\tests\XerathAssistant.CoreTests
-dotnet run
+dotnet build src/XerathAssistant.Desktop/XerathAssistant.Desktop.csproj
+dotnet run --project tests/XerathAssistant.CoreTests/XerathAssistant.CoreTests.csproj
+dotnet run --project src/XerathAssistant.Desktop/XerathAssistant.Desktop.csproj
 ```
 
-This runs 11 assertion-based core math tests without a test framework or external packages.
+CI: `.github/workflows/windows-build.yml`. Chạy trên Windows 10/11; cần .NET 8 SDK. Gửi log lỗi build hoặc ảnh ứng dụng nếu có lỗi; mã này chưa được chạy GUI trong môi trường ChatGPT.
 
-## Folder structure
+## Cấu trúc
 
-```
-src/XerathAssistant.Core/      pure .NET math, prediction and collision checks
-src/XerathAssistant.Desktop/   WPF Windows desktop practice visualization
-tests/XerathAssistant.CoreTests/ executable smoke tests for prediction math
-```
+- `src/XerathAssistant.Desktop/CompanionWindow.*`: giao diện chơi cùng game, bộ nhắc và tổng hợp giọng nói.
+- `src/XerathAssistant.Core/ReminderEngine.cs`: lịch nhắc độc lập, gộp thông báo và chống lặp.
+- `src/XerathAssistant.Desktop/MainWindow.*`: Aim Lab V0.1 độc lập.
+- `src/XerathAssistant.Core/AimEngine.cs`: thuật toán mô phỏng Q/W/E/R của Aim Lab.
+- `tests/XerathAssistant.CoreTests/Program.cs`: bài kiểm thử toán học và lịch nhắc.
 
-## Next implementation milestones
-
-1. Add video-file input, image-to-screen calibration and a manually labeled target detector; measure prediction error on replayable sequences.
-2. Implement minimap analysis on **recorded video** with explicit player/side calibration and stable identity tracking.
-3. Add a separate ally-jungle Near/Arrived state machine, configurable Vietnamese TTS (70%) and a 30-second per-approach cooldown, tested against labeled clips.
-4. Add offline reference/calculation data for Xerath's skills/damage, maintain patch-specific source and versioning, then use that data in the practice app.
-
-This is V0.1, **not** an assertion that later modules or game integration are already implemented.
+Các chức năng đọc minimap trực tiếp, dự đoán ngắm Q/W/E/R trong trận và theo dõi phép bổ trợ đối thủ **không có trong phiên bản này**; chúng có thể vi phạm chính sách phần mềm bên thứ ba của Riot và gây rủi ro cho tài khoản.
