@@ -4,6 +4,7 @@ using System.Numerics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
