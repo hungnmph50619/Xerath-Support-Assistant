@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
 namespace XerathAssistant.Desktop;
@@ -43,6 +44,17 @@ public sealed class MinimapSampleStore
             SearchOption.TopDirectoryOnly).ToArray();
         if (imageFiles.Length >= MaxSamples)
             throw new IOException("Đã đạt 250 mẫu. Hãy kiểm tra hoặc xóa thủ công trước khi lưu tiếp.");
+        // Prevent an accidental second save of the EXACT same JPEG. Near-identical
+        // frames may carry different champion icons; never discard them automatically.
+        var incomingHash = SHA256.HashData(jpeg);
+        foreach (var existing in imageFiles)
+        {
+            var item = new FileInfo(existing);
+            if (item.Attributes.HasFlag(FileAttributes.ReparsePoint) ||
+                item.Length != jpeg.Length || item.Length > 2 * 1024 * 1024) continue;
+            if (SHA256.HashData(File.ReadAllBytes(existing)).SequenceEqual(incomingHash))
+                throw new IOException("Ảnh JPG này đã tồn tại trong thư viện; không lưu bản sao y hệt.");
+        }
         long used = 0;
         foreach (var path in Directory.EnumerateFiles(_root, "sample-*",
                      SearchOption.TopDirectoryOnly))
