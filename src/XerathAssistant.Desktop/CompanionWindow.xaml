@@ -1,7 +1,7 @@
 <Window x:Class="XerathAssistant.Desktop.CompanionWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Xerath Support Assistant · Companion V0.9.1" Width="980" Height="760"
+        Title="Xerath Support Assistant · Companion V1.0" Width="980" Height="760"
         MinWidth="720" MinHeight="600" Background="#0B1521" FontFamily="Segoe UI">
   <Window.Resources>
     <Style x:Key="CompanionSectionTitle" TargetType="TextBlock">
@@ -102,7 +102,7 @@
             <TextBlock Style="{StaticResource CompanionSectionTitle}" Text="4 · Công cụ bổ sung"/>
             <WrapPanel>
               <Button Style="{StaticResource CompanionButton}" Click="OpenHudClick"
-                      Background="#23705B" Content="Bật HUD và thông báo trên game"/>
+                      Background="#23705B" Content="Bật HUD theo tình huống trong game"/>
               <Button Style="{StaticResource CompanionButton}" Click="OpenSelfStatsClick"
                       Content="Chỉ số trực tiếp &amp; tổng hợp · tùy chỉnh HUD"/>
               <Button Style="{StaticResource CompanionButton}" Click="OpenLabClick" Content="Mở Aim Lab V0.1"/>
@@ -112,7 +112,7 @@
                       Content="Phân tích thế lính &amp; giao tranh"/>
             </WrapPanel>
             <TextBlock FontSize="12" Foreground="{StaticResource MutedBrush}"
-                       Text="HUD cập nhật chỉ số cá nhân khoảng mỗi giây, hiện lời nhắc đã chọn và điểm hạ gục đã xảy ra (không nhận diện vị trí giao tranh hay theo dõi rừng địch). HUD không nhận chuột; có thể tắt hoặc đổi góc ở mục Chỉ số trực tiếp."/>
+                       Text="HUD mặc định ưu tiên thông báo theo dữ liệu trận: máu của bạn giảm nhanh, máu/năng lượng chạm ngưỡng và hạ gục đã xảy ra. Lời nhắc theo giờ trên HUD mặc định tắt và có thể bật lại trong Chỉ số trực tiếp. Chưa có AI xác định giao tranh hoặc vị trí rừng địch."/>
           </StackPanel>
         </Border>
       </StackPanel>
