@@ -107,14 +107,14 @@
                       Content="Chỉ số trực tiếp &amp; tổng hợp · tùy chỉnh HUD"/>
               <Button Style="{StaticResource CompanionButton}" Click="OpenLabClick" Content="Mở Aim Lab V0.1"/>
               <Button Style="{StaticResource CompanionButton}" Click="OpenMinimapTrainingClick"
-                      Content="Mắt nhìn AI V1.8 · RAM + chọn lưu mẫu để gắn nhãn (cần đồng ý gửi Gemini)"/>
+                      Content="Mắt nhìn AI V1.8 · Giao diện 3 bước, xem trước &amp; thu 5 ảnh không cần Gemini"/>
               <Button Style="{StaticResource CompanionButton}" Click="OpenLastSeenReviewClick"
                       Content="Xem lại vị trí Rừng / Mid · nghe tiếng Việt"/>
               <Button Style="{StaticResource CompanionButton}" Click="OpenWaveFightAdvisorClick"
                       Content="Phân tích thế lính &amp; giao tranh"/>
             </WrapPanel>
             <TextBlock FontSize="12" Foreground="{StaticResource MutedBrush}"
-                       Text="V1.8: không tự lưu ảnh minimap. Sau khi Gemini phân tích (cần bạn đồng ý gửi ảnh cho cả phiên), chỉ ảnh bạn xem, ghi nhãn và xác nhận riêng mới lưu cục bộ; tối đa 250 ảnh/200 MB. Ghi rõ quan sát trực tiếp khác với giả thuyết Mid đảo đường, rừng gank hay tướng nấp bụi. Không biến giả thuyết thành lời cảnh báo trên HUD."/>
+                       Text="Mắt nhìn AI V1.8: căn khung và xem ảnh bên cạnh nhau; thu chuỗi 5 ảnh trong RAM không cần Gemini. Chỉ ảnh bạn chọn mới lưu cục bộ (tối đa 250 ảnh/200 MB). Gửi ảnh cho Gemini là thẻ tùy chọn riêng, luôn cần đồng ý. Không phát giả thuyết vị trí địch thành cảnh báo trên HUD."/>
           </StackPanel>
         </Border>
       </StackPanel>
