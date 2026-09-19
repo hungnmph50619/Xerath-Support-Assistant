@@ -31,10 +31,10 @@
           <CheckBox Name="HealthChangeCheck" IsChecked="False" Margin="0,5,0,0"
                     Content="Hiện cảnh báo máu giảm nhanh dạng cũ (tùy chọn, có thể trùng phân tích nguy hiểm)"/>
           <CheckBox Name="DangerAnalysisCheck" IsChecked="True" Margin="0,8,0,0"
-                    Content="Phân tích mức nguy hiểm theo máu đang mất và máu còn lại; ưu tiên cảnh báo mới thay lời nhắc theo giờ"/>
+                    Content="V1.7 · Gom các lần mất máu liên tiếp thành một đợt; chỉ nhắc khi xuất hiện hoặc tăng mức nguy hiểm"/>
           <TextBlock Name="DangerAnalysisStatus" Foreground="{StaticResource MutedBrush}"
                      Margin="20,3,0,4" TextWrapping="Wrap"
-                     Text="Chờ hai mẫu chỉ số liên tiếp để đánh giá diễn biến máu của bạn. Không nhận diện rừng, Mid hoặc giao tranh."/>
+                     Text="Đang chờ các mẫu máu liên tiếp. Không suy ra đối thủ, vị trí Rừng/Mid hoặc an toàn khi hết cảnh báo."/>
           <CheckBox Name="HudVoiceCheck" IsChecked="True" Margin="0,8,0,0"
                     Content="Đọc tiếng Việt khi HUD có cảnh báo theo tình huống (không cần Bắt đầu nhắc)"/>
           <WrapPanel Margin="0,5,0,0">
