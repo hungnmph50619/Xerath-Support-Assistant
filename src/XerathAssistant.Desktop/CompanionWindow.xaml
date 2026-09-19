@@ -1,7 +1,7 @@
 <Window x:Class="XerathAssistant.Desktop.CompanionWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Xerath Support Assistant · Companion V0.6" Width="980" Height="760"
+        Title="Xerath Support Assistant · Companion V0.7" Width="980" Height="760"
         MinWidth="720" MinHeight="600" Background="#0B1521" FontFamily="Segoe UI">
   <Window.Resources>
     <Style x:Key="CompanionSectionTitle" TargetType="TextBlock">
@@ -104,8 +104,10 @@
           <StackPanel>
             <TextBlock Style="{StaticResource CompanionSectionTitle}" Text="4 · Công cụ bổ sung"/>
             <WrapPanel>
+              <Button Style="{StaticResource CompanionButton}" Click="OpenHudClick"
+                      Background="#23705B" Content="Bật HUD chỉ số trên game"/>
               <Button Style="{StaticResource CompanionButton}" Click="OpenSelfStatsClick"
-                      Background="#23705B" Content="Chỉ số trực tiếp &amp; tổng hợp"/>
+                      Content="Chỉ số trực tiếp &amp; tổng hợp · tùy chỉnh HUD"/>
               <Button Style="{StaticResource CompanionButton}" Click="OpenLabClick" Content="Mở Aim Lab V0.1"/>
               <Button Style="{StaticResource CompanionButton}" Click="OpenLastSeenReviewClick"
                       Content="Xem lại vị trí rừng địch"/>
@@ -113,7 +115,7 @@
                       Content="Phân tích thế lính &amp; giao tranh"/>
             </WrapPanel>
             <TextBlock FontSize="12" Foreground="{StaticResource MutedBrush}"
-                       Text="Chỉ số cá nhân dùng dữ liệu trận công khai trên máy; các công cụ còn lại dùng để luyện tập hoặc xem lại tình huống, không tự đưa lời khuyên trong trận."/>
+                       Text="HUD chỉ số cá nhân hiển thị trên cửa sổ game Không viền (Borderless) và không nhận chuột. HUD không theo dõi rừng địch hay ra quyết định chiến thuật. Trong cửa sổ Chỉ số trực tiếp, bạn có thể tắt HUD và chọn góc màn hình."/>
           </StackPanel>
         </Border>
       </StackPanel>
