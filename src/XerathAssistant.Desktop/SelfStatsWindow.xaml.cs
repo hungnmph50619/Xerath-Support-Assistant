@@ -1,6 +1,8 @@
 using System.Net.Http;
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Threading;
 using XerathAssistant.Core;
 
@@ -10,6 +12,12 @@ public partial class SelfStatsWindow : Window
 {
     private readonly RiotLocalSelfStatsClient _local = new();
     private readonly PersonalAiBridgeClient _bridge = new();
+    private readonly OwnLifeStateDetector _life = new();
+    private readonly FreeVietnameseVoiceService _voice = new();
+    private readonly MediaPlayer _hudPlayer = new() { Volume = 0.7 };
+    private DateTime _lastHudSpeechUtc = DateTime.MinValue;
+    private string? _lastHudSpeechPhrase;
+    private double _latestLifeTransitionTime = -1;
     private readonly SelfStatsSession _session = new();
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(1) };
     private readonly CancellationTokenSource _cancel = new();
@@ -32,6 +40,13 @@ public partial class SelfStatsWindow : Window
     public SelfStatsWindow()
     {
         InitializeComponent();
+        _hudPlayer.MediaEnded += (_, _) => _hudPlayer.Close();
+        _hudPlayer.MediaFailed += (_, _) =>
+        {
+            if (!_closed) HudVoiceStatus.Text = "Không phát được tệp âm thanh tiếng Việt. Hãy thử nút Nghe thử.";
+            _hudPlayer.Close();
+        };
+        UpdateHudVoiceStatus();
         _timer.Tick += async (_, _) =>
         {
             ShowDueHudReminder();
@@ -88,6 +103,8 @@ public partial class SelfStatsWindow : Window
             StartHudReminders();
         }
         RefreshCheck.IsChecked = true;
+        _hud.SetLifeState(_life.IsDead);
+        UpdateHudVoiceStatus();
         _timer.Start();
         ToggleHudButton.Content = "Tắt HUD";
         HudHint.Text = "HUD đang bật: chỉ hiện khi Liên Minh là cửa sổ được chọn. Mở lại Chỉ số trực tiếp & tổng hợp để tắt hoặc đổi góc.";
@@ -98,6 +115,8 @@ public partial class SelfStatsWindow : Window
     private void DisableHud()
     {
         _hudElapsed.Reset();
+        _hudPlayer.Stop();
+        _hudPlayer.Close();
         _hud?.Close();
         _hud = null;
         ToggleHudButton.Content = "Bật HUD trên game";
@@ -119,6 +138,56 @@ public partial class SelfStatsWindow : Window
             _hud.SetCorner(corner);
     }
 
+    private void UpdateHudVoiceStatus()
+    {
+        var ready = InGameVoicePrompts.All.Count(_voice.IsReady);
+        HudVoiceStatus.Text = ready == InGameVoicePrompts.All.Length
+            ? "Đã lưu đủ giọng cảnh báo HUD bằng tiếng Việt; sẽ phát offline khi sự kiện xuất hiện."
+            : $"Đã lưu {ready}/{InGameVoicePrompts.All.Length} câu cảnh báo HUD. Trong Companion nhấn Tạo giọng tiếng Việt miễn phí trước khi chơi.";
+    }
+
+    private void TestHudVoiceClick(object sender, RoutedEventArgs e)
+    {
+        if (!PlayHudVoice(InGameVoicePrompts.HealthLow, test: true))
+            UpdateHudVoiceStatus();
+    }
+
+    /// <summary>Only plays a pre-generated Vietnamese file; never calls TTS over the network in a match.</summary>
+    private bool PlayHudVoice(string phrase, bool urgent = false, bool test = false)
+    {
+        if (_closed || (!test && (HudVoiceCheck.IsChecked != true ||
+            _hud is null || !_hud.IsVisible ||
+            (_hud.IsDead && phrase != InGameVoicePrompts.Died))))
+            return false;
+        if (!_voice.IsReady(phrase))
+        {
+            HudVoiceStatus.Text = "Thiếu âm thanh cảnh báo HUD. Trong Companion nhấn Tạo giọng tiếng Việt miễn phí rồi Nghe thử; HUD chữ vẫn hoạt động.";
+            return false;
+        }
+
+        var now = DateTime.UtcNow;
+        if (!test && !urgent && now - _lastHudSpeechUtc < TimeSpan.FromSeconds(5)) return false;
+        if (!test && phrase == _lastHudSpeechPhrase &&
+            now - _lastHudSpeechUtc < TimeSpan.FromSeconds(10)) return false;
+        try
+        {
+            _hudPlayer.Stop();
+            _hudPlayer.Close();
+            _hudPlayer.Open(new Uri(Path.GetFullPath(_voice.CachePath(phrase))));
+            _hudPlayer.Volume = 0.7;
+            _hudPlayer.Play();
+            _lastHudSpeechPhrase = phrase;
+            _lastHudSpeechUtc = now;
+            if (test) HudVoiceStatus.Text = "Đang nghe thử tiếng Việt. Nếu không nghe thấy, kiểm tra âm lượng Windows và tệp âm thanh.";
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or ArgumentException)
+        {
+            HudVoiceStatus.Text = "Chưa phát được giọng tiếng Việt: " + ex.Message;
+            return false;
+        }
+    }
+
     private async void CheckAiBridgeClick(object sender, RoutedEventArgs e)
     {
         AiBridgeStatus.Text = "Đang kiểm tra kết nối AI cá nhân trên máy...";
@@ -137,11 +206,15 @@ public partial class SelfStatsWindow : Window
         double? healthPercent, string localMessage, bool priority = false)
     {
         var hud = _hud;
-        if (hud is null || _closed) return;
+        if (hud is null || _closed || _life.IsDead ||
+            gameTime < _latestLifeTransitionTime) return;
+        var startedAt = DateTime.UtcNow;
 
         if (AiBridgeCheck.IsChecked != true)
         {
-            hud.ShowNotice(localMessage, priority);
+            if (hud.ShowNotice(localMessage, priority))
+                PlayHudVoice(kind == "own-health-loss"
+                    ? InGameVoicePrompts.HealthLoss : InGameVoicePrompts.CompletedKill, priority);
             return;
         }
 
@@ -156,8 +229,12 @@ public partial class SelfStatsWindow : Window
             return;
         }
 
-        if (_closed || !ReferenceEquals(_hud, hud)) return;
-        hud.ShowNotice(bridgeMessage ?? localMessage, priority);
+        if (_closed || !ReferenceEquals(_hud, hud) || _life.IsDead ||
+            gameTime < _latestLifeTransitionTime ||
+            DateTime.UtcNow - startedAt > TimeSpan.FromSeconds(2)) return;
+        if (hud.ShowNotice(bridgeMessage ?? localMessage, priority))
+            PlayHudVoice(kind == "own-health-loss"
+                ? InGameVoicePrompts.HealthLoss : InGameVoicePrompts.CompletedKill, priority);
     }
 
     private async void FetchNowClick(object sender, RoutedEventArgs e) => await ReadNowAsync();
@@ -178,17 +255,44 @@ public partial class SelfStatsWindow : Window
             if (_closed) return;
             _session.Add(snapshot);
             _hud?.SetSnapshot(snapshot);
-            var personalWarnings = _personalAlerts.Observe(snapshot);
-            var healthLoss = _healthChangeDetector.Observe(snapshot);
-            if (_hud is not null)
+            var lifeTransition = _life.Observe(snapshot);
+            if (lifeTransition != OwnLifeTransition.None)
             {
-                // One concise message per sample, ordered by urgency.
-                if (healthLoss is not null && HealthChangeCheck.IsChecked == true)
-                    _ = ShowContextNoticeAsync("own-health-loss",
-                        snapshot.GameTimeSeconds, snapshot.HealthPercent,
-                        healthLoss, priority: true);
-                else if (personalWarnings.Count > 0)
-                    _hud.ShowNotice(string.Join(" ", personalWarnings), priority: true);
+                _latestLifeTransitionTime = snapshot.GameTimeSeconds;
+                _personalAlerts.Reset();
+                _healthChangeDetector.Reset();
+            }
+            // Death is the highest priority: pin its notice, suppress stale warnings,
+            // then clear it on confirmed respawn.
+            _hud?.SetLifeState(_life.IsDead);
+            if (lifeTransition == OwnLifeTransition.Died)
+                PlayHudVoice(InGameVoicePrompts.Died, urgent: true);
+            else if (lifeTransition == OwnLifeTransition.Respawned &&
+                     _hud?.ShowNotice(InGameVoicePrompts.Respawned, priority: true) == true)
+                PlayHudVoice(InGameVoicePrompts.Respawned, urgent: true);
+
+            if (!_life.IsDead)
+            {
+                var personalWarnings = _personalAlerts.Observe(snapshot);
+                var healthLoss = _healthChangeDetector.Observe(snapshot);
+                if (_hud is not null && lifeTransition != OwnLifeTransition.Respawned)
+                {
+                    // One alert per observation: rapid damage precedes threshold reminders.
+                    if (healthLoss is not null && HealthChangeCheck.IsChecked == true)
+                        _ = ShowContextNoticeAsync("own-health-loss",
+                            snapshot.GameTimeSeconds, snapshot.HealthPercent,
+                            healthLoss, priority: true);
+                    else if (personalWarnings.Count > 0 &&
+                             _hud.ShowNotice(string.Join(" ", personalWarnings), priority: true))
+                    {
+                        if (personalWarnings.Any(w => w.StartsWith("Máu", StringComparison.Ordinal)))
+                            PlayHudVoice(InGameVoicePrompts.HealthLow, urgent: true);
+                        else if (personalWarnings.Any(w => w.StartsWith("Năng lượng", StringComparison.Ordinal)))
+                            PlayHudVoice(InGameVoicePrompts.ManaLow);
+                        else if (personalWarnings.Any(w => w.StartsWith("Vàng", StringComparison.Ordinal)))
+                            PlayHudVoice(InGameVoicePrompts.GoldHigh);
+                    }
+                }
             }
 
             GameClock.Text = SelfStatsSnapshot.Clock(snapshot.GameTimeSeconds);
@@ -257,8 +361,11 @@ public partial class SelfStatsWindow : Window
         _hud = null;
         _timer.Stop();
         _cancel.Cancel();
+        _hudPlayer.Stop();
+        _hudPlayer.Close();
         _local.Dispose();
         _bridge.Dispose();
+        _voice.Dispose();
         _cancel.Dispose();
     }
 }
