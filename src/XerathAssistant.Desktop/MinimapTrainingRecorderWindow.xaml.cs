@@ -49,6 +49,8 @@ public partial class MinimapTrainingRecorderWindow : Window
     private Rectangle _previewClient;
     private readonly DispatcherTimer _previewTimer = new() { Interval = TimeSpan.FromMilliseconds(500) };
     private DateTime _previewUntilUtc;
+    private bool _autoDetectPreview;
+    private bool _suppressCropSliderChanged;
     private byte[]? _selectedFrame;
     private double? _markX;
     private double? _markY;
@@ -67,10 +69,7 @@ public partial class MinimapTrainingRecorderWindow : Window
         _previewTimer.Tick += PreviewCropTick;
         _sequenceTimer.Tick += CaptureSequenceTick;
         _cropProfile = _cropStore.Load();
-        CropLeftSlider.Value = _cropProfile.Left * 100;
-        CropTopSlider.Value = _cropProfile.Top * 100;
-        CropWidthSlider.Value = _cropProfile.Width * 100;
-        CropHeightSlider.Value = _cropProfile.Height * 100;
+        ApplyCropToSliders(_cropProfile);
         CropStatusText.Text = _cropProfile.ConfirmedClientWidth > 0
             ? $"Đã lưu khung cho cửa sổ game {_cropProfile.ConfirmedClientWidth}×{_cropProfile.ConfirmedClientHeight}. " +
               "Nếu đổi kích thước game hoặc vị trí minimap, hãy xem trước và xác nhận lại."
@@ -456,10 +455,23 @@ public partial class MinimapTrainingRecorderWindow : Window
     }
 
     private MinimapCropProfile CurrentCropDraft() => new(
-        Math.Round(CropLeftSlider.Value / 100d, 2),
-        Math.Round(CropTopSlider.Value / 100d, 2),
-        Math.Round(CropWidthSlider.Value / 100d, 2),
-        Math.Round(CropHeightSlider.Value / 100d, 2));
+        Math.Round(CropLeftSlider.Value / 100d, 3),
+        Math.Round(CropTopSlider.Value / 100d, 3),
+        Math.Round(CropWidthSlider.Value / 100d, 3),
+        Math.Round(CropHeightSlider.Value / 100d, 3));
+
+    private void ApplyCropToSliders(MinimapCropProfile profile)
+    {
+        _suppressCropSliderChanged = true;
+        try
+        {
+            CropLeftSlider.Value = profile.Left * 100;
+            CropTopSlider.Value = profile.Top * 100;
+            CropWidthSlider.Value = profile.Width * 100;
+            CropHeightSlider.Value = profile.Height * 100;
+        }
+        finally { _suppressCropSliderChanged = false; }
+    }
 
     private static bool SameCrop(MinimapCropProfile a, MinimapCropProfile b) =>
         a.Left == b.Left && a.Top == b.Top &&
@@ -470,6 +482,7 @@ public partial class MinimapTrainingRecorderWindow : Window
         CropLeftSlider.IsEnabled = CropTopSlider.IsEnabled =
             CropWidthSlider.IsEnabled = CropHeightSlider.IsEnabled = enabled;
         PreviewCropButton.IsEnabled = enabled;
+        AutoDetectButton.IsEnabled = enabled;
         SaveCropButton.IsEnabled = enabled && _previewProfile is not null &&
             _previewClient.Width >= 640 && _selectedFrame is not null;
     }
@@ -477,12 +490,33 @@ public partial class MinimapTrainingRecorderWindow : Window
     private void CropSliderChanged(object sender,
         System.Windows.RoutedPropertyChangedEventArgs<double> e)
     {
+        if (_suppressCropSliderChanged) return;
         // Any adjustment invalidates the old preview; it is never proof that the
         // NEW bounds actually show a minimap at the current game resolution.
         _previewProfile = null;
         if (SaveCropButton is not null) SaveCropButton.IsEnabled = false;
         if (CropStatusText is not null && _cropProfile.ConfirmedClientWidth > 0)
             CropStatusText.Text = "Khung vừa được chỉnh sửa: cần xem trước và xác nhận lại trước khi phân tích.";
+    }
+
+    private void AutoDetectMinimapClick(object sender, RoutedEventArgs e)
+    {
+        if (_running || _busy || _previewTimer.IsEnabled ||
+            _sequenceTimer.IsEnabled || _sequenceFrames.Count > 0) return;
+        if (!IsGameRunning())
+        {
+            CropStatusText.Text = "Chưa vào trận Liên Minh. Hãy vào Phòng Tập hoặc xem lại trước.";
+            return;
+        }
+        ClearPendingFrame();
+        _autoDetectPreview = true;
+        _previewProfile = CurrentCropDraft();
+        _previewClient = Rectangle.Empty;
+        SaveCropButton.IsEnabled = false;
+        _previewUntilUtc = DateTime.UtcNow.AddMinutes(2);
+        _previewTimer.Start();
+        CropStatusText.Text = "Chuyển về cửa sổ trận Liên Minh. Phần mềm sẽ thử tìm " +
+            "minimap từ một ảnh cục bộ trong RAM; không gửi Gemini hoặc lưu ảnh.";
     }
 
     private void PreviewCropClick(object sender, RoutedEventArgs e)
@@ -502,6 +536,7 @@ public partial class MinimapTrainingRecorderWindow : Window
             return;
         }
         ClearPendingFrame();
+        _autoDetectPreview = false;
         _previewProfile = draft;
         _previewClient = Rectangle.Empty;
         SaveCropButton.IsEnabled = false;
@@ -523,6 +558,30 @@ public partial class MinimapTrainingRecorderWindow : Window
         if (!TryGetForegroundGameClient(out var client)) return;
         try
         {
+            var finding = "";
+            if (_autoDetectPreview)
+            {
+                if (client.Width > 5000 || client.Height > 3000 ||
+                    (long)client.Width * client.Height > 12_000_000)
+                    throw new InvalidOperationException("Cửa sổ game quá lớn để tự tìm khung.");
+
+                // One local frame in RAM; it is never sent to Gemini or written to disk.
+                using var fullFrame = new Bitmap(client.Width, client.Height,
+                    PixelFormat.Format24bppRgb);
+                using (var graphics = Graphics.FromImage(fullFrame))
+                    graphics.CopyFromScreen(client.Location, System.Drawing.Point.Empty,
+                        client.Size, CopyPixelOperation.SourceCopy);
+
+                var detected = MinimapAutoCropDetector.Detect(fullFrame);
+                var selected = detected is { Confident: true } 
+                    ? detected.Crop
+                    : MinimapAutoCropDetector.CornerSuggestion(client.Width, client.Height);
+                ApplyCropToSliders(selected);
+                _previewProfile = CurrentCropDraft();
+                finding = detected is { Confident: true }
+                    ? "Đã dò được khung có dấu hiệu là minimap. "
+                    : "Chưa đủ chắc chắn: đây là khung gợi ý ở góc phải. ";
+            }
             var region = _previewProfile.Crop(client);
             region.Intersect(client);
             region.Intersect(System.Windows.Forms.SystemInformation.VirtualScreen);
@@ -540,7 +599,7 @@ public partial class MinimapTrainingRecorderWindow : Window
             SetPendingFrame(buffer.ToArray());
             SaveCropButton.IsEnabled = true;
             AnalysisText.Text = "Ảnh xem trước chỉ tồn tại trong RAM; chưa gửi AI để phân tích.";
-            CropStatusText.Text = $"Ảnh xem trước của cửa sổ {client.Width}×{client.Height} đã sẵn sàng. " +
+            CropStatusText.Text = finding + $"Ảnh xem trước của cửa sổ {client.Width}×{client.Height} đã sẵn sàng. " +
                 "Quay lại đây, xem ảnh và CHỈ xác nhận nếu khung đúng minimap. " +
                 "Nếu còn lệch, chỉnh thanh trượt và xem trước lần nữa.";
         }
@@ -550,7 +609,11 @@ public partial class MinimapTrainingRecorderWindow : Window
             _previewProfile = null;
             CropStatusText.Text = "Chưa xem được vùng minimap: " + ex.Message;
         }
-        finally { _previewTimer.Stop(); }
+        finally
+        {
+            _autoDetectPreview = false;
+            _previewTimer.Stop();
+        }
     }
 
     private void SaveCropClick(object sender, RoutedEventArgs e)

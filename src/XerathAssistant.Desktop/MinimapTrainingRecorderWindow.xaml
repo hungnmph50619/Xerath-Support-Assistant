@@ -103,42 +103,44 @@
               <TextBlock Text="1 · Kiểm tra minimap" FontSize="17" FontWeight="Bold"
                          Margin="0,0,0,5"/>
               <TextBlock Foreground="#CADDED" FontSize="12" Margin="0,0,0,10"
-                         Text="Bấm Xem trước → chuyển về game 2–3 giây → quay lại xem ảnh bên trái. Chỉ xác nhận nếu ảnh chứa đúng toàn bộ minimap."/>
+                         Text="Bấm Tự tìm minimap → chuyển về game 2–3 giây → quay lại kiểm tra ảnh bên trái. Phần mềm tìm khung cục bộ trong RAM, không gửi Gemini. Chỉ xác nhận khi khung chứa đúng toàn bộ minimap."/>
               <WrapPanel>
+                <Button Name="AutoDetectButton" Click="AutoDetectMinimapClick"
+                        Content="Tự tìm minimap" Background="#315F84"/>
                 <Button Name="PreviewCropButton" Click="PreviewCropClick"
-                        Content="Xem trước ảnh" Background="#315F84"/>
+                        Content="Xem trước lại" ToolTip="Dùng vùng đã lưu hoặc vùng chỉnh tay hiện tại"/>
                 <Button Name="SaveCropButton" Click="SaveCropClick" IsEnabled="False"
-                        Content="Ảnh đúng → Lưu khung" Background="#23705B"/>
+                        Content="Dùng khung này" Background="#23705B"/>
               </WrapPanel>
               <TextBlock Name="CropStatusText" Foreground="#8FE1C3" FontSize="12"
-                         Text="Chưa có vùng minimap được kiểm tra." Margin="0,1,0,8"/>
-              <Expander Header="Ảnh bị lệch? Chỉnh vùng cắt" IsExpanded="False"
+                         Text="Chưa tìm khung. Nhấn Tự tìm minimap trước." Margin="0,1,0,8"/>
+              <Expander Header="Tự tìm chưa đúng? Chỉnh vùng cắt thủ công" IsExpanded="False"
                         Foreground="#E8F0F9" Margin="0,0,0,10">
                 <StackPanel Margin="8,8,0,4">
                   <Button Click="PresetCropClick" Content="Thử khung gợi ý ở góc phải"
                           HorizontalAlignment="Left"/>
                   <TextBlock Foreground="#B9CCDF" FontSize="12" Margin="0,0,0,7"
-                             Text="Đây chỉ là khung gợi ý. Sau khi chỉnh, bấm Xem trước để xác nhận bằng mắt."/>
+                             Text="Khi tự dò chưa đúng, bạn có thể chọn khung gợi ý hoặc kéo thanh rồi bấm Xem trước lại."/>
                   <UniformGrid Columns="2">
                     <StackPanel Margin="0,0,14,6">
                       <TextBlock Text="Mép trái (%)"/>
                       <Slider Name="CropLeftSlider" ValueChanged="CropSliderChanged"
-                              Minimum="0" Maximum="90" Value="78" TickFrequency="1"
-                              IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft" Margin="0,2,0,9"/>
+                              Minimum="0" Maximum="90" Value="78" TickFrequency="0.1"
+                              IsSnapToTickEnabled="False" AutoToolTipPlacement="TopLeft" Margin="0,2,0,9"/>
                       <TextBlock Text="Chiều rộng (%)"/>
                       <Slider Name="CropWidthSlider" ValueChanged="CropSliderChanged"
-                              Minimum="8" Maximum="50" Value="22" TickFrequency="1"
-                              IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft" Margin="0,2,0,7"/>
+                              Minimum="8" Maximum="50" Value="22" TickFrequency="0.1"
+                              IsSnapToTickEnabled="False" AutoToolTipPlacement="TopLeft" Margin="0,2,0,7"/>
                     </StackPanel>
                     <StackPanel Margin="0,0,6,6">
                       <TextBlock Text="Mép trên (%)"/>
                       <Slider Name="CropTopSlider" ValueChanged="CropSliderChanged"
-                              Minimum="0" Maximum="90" Value="70" TickFrequency="1"
-                              IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft" Margin="0,2,0,9"/>
+                              Minimum="0" Maximum="90" Value="70" TickFrequency="0.1"
+                              IsSnapToTickEnabled="False" AutoToolTipPlacement="TopLeft" Margin="0,2,0,9"/>
                       <TextBlock Text="Chiều cao (%)"/>
                       <Slider Name="CropHeightSlider" ValueChanged="CropSliderChanged"
-                              Minimum="8" Maximum="50" Value="30" TickFrequency="1"
-                              IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft" Margin="0,2,0,7"/>
+                              Minimum="8" Maximum="50" Value="30" TickFrequency="0.1"
+                              IsSnapToTickEnabled="False" AutoToolTipPlacement="TopLeft" Margin="0,2,0,7"/>
                     </StackPanel>
                   </UniformGrid>
                 </StackPanel>

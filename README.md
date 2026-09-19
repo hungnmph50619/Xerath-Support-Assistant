@@ -1,5 +1,15 @@
 # Xerath Support Assistant · V1.8 — Trợ lý trận đấu & thu mẫu minimap
 
+## V1.8 — Tự tìm khung minimap trên máy (thử nghiệm)
+
+Trong **Mắt nhìn AI → Thu ảnh**, nhấn **Tự tìm minimap**, chuyển về cửa sổ trận Liên Minh khoảng 2–3 giây rồi quay lại. Ứng dụng chỉ lấy **một ảnh cửa sổ game vào RAM**, thu nhỏ tạm thời và dò cục bộ các khung gần vuông có đường viền/chi tiết ở góc dưới bên phải. Ảnh cửa sổ đầy đủ **không gửi tới Gemini, không lưu vào ổ cứng**. Ảnh xem trước sau khi cắt hiển thị bên trái.
+
+Nếu dấu hiệu thị giác không đủ rõ, chương trình **không tuyên bố đã nhận diện thành công** mà thử khung gợi ý theo hình học góc phải; bạn có thể mở mục **Tự tìm chưa đúng? Chỉnh vùng cắt thủ công**, điều chỉnh và bấm **Xem trước lại**. **Chỉ sau khi bạn tự nhìn thấy đúng toàn bộ minimap và bấm Dùng khung này**, ứng dụng mới lưu cấu hình cục bộ để sử dụng cho phiên thu 5 ảnh hoặc phiên gửi Gemini có sự đồng ý riêng. Khi đổi kích thước game, cấu hình cũ phải được kiểm tra lại. Đây là bộ dò xử lý ảnh heuristic, **không phải mô hình AI đã huấn luyện hay nhận diện biểu tượng tướng**, không bảo đảm tìm đúng trên tất cả HUD/skin/độ phân giải. Nếu bản xem trước sai, tuyệt đối không xác nhận hoặc thu ảnh huấn luyện.
+
+**Kiểm thử thủ công:** thử ở cửa sổ game đang hiển thị minimap góc phải với nhiều độ phân giải, minimap scale và trạng thái giao diện. Kiểm tra trường hợp không mở game, không foreground, cửa sổ đổi kích thước, ảnh minimap bị lệch và từ chối xác nhận; chỉ cần quan sát sau khi quay lại phần mềm, không cần cung cấp khóa Gemini cho bước tự tìm.
+
+---
+
 ## V1.8 — Giao diện chính đơn giản theo tác vụ (đợt tinh gọn)
 
 **Companion chỉ còn hai tác vụ hiển thị nổi bật:** (1) **Bật HUD cảnh báo** dựa trên máu thực của chính bạn, kèm nút phụ **Xem chỉ số & cài đặt HUD**; (2) **Mở minimap · Xem trước & thu ảnh**, không cần Gemini. Phần tạo và nghe thử giọng tiếng Việt, sáu lịch nhắc theo giờ (mặc định tắt), cùng Aim Lab và các công cụ xem lại được chuyển vào nhóm mở rộng; không bị xóa hoặc tự bật. Nút **Bắt đầu nhắc theo giờ** chỉ dành cho lời nhắc định kỳ, **không** phải điều kiện để bật HUD theo tình huống.
