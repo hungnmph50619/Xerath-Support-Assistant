@@ -1,7 +1,7 @@
 <Window x:Class="XerathAssistant.Desktop.CompanionWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Xerath Support Assistant · Companion V1.1 · AI Bridge" Width="980" Height="760"
+        Title="Xerath Support Assistant · Companion V1.2 · Giọng cảnh báo HUD" Width="980" Height="760"
         MinWidth="720" MinHeight="600" Background="#0B1521" FontFamily="Segoe UI">
   <Window.Resources>
     <Style x:Key="CompanionSectionTitle" TargetType="TextBlock">
@@ -66,7 +66,7 @@
             <CheckBox Name="VoiceCheck" IsChecked="True" Margin="0,0,0,5"
                       Content="Giọng đọc tiếng Việt miễn phí (âm lượng 70%)"/>
             <TextBlock Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="0,0,0,9"
-                       Text="Không cần tài khoản/API key: thử giọng tiếng Việt trực tuyến miễn phí. Nếu dịch vụ lỗi và đã cài eSpeak NG, trợ lý sẽ tạo giọng tiếng Việt offline (hơi máy móc)."/>
+                       Text="Tạo trước tiếng Việt cho cả lời nhắc theo giờ và 7 cảnh báo HUD (máu thấp, máu giảm nhanh, hạ gục, hồi sinh...). Khi chơi, HUD chỉ phát tệp đã lưu, không gọi dịch vụ tạo giọng. Nếu dịch vụ trực tuyến lỗi, có thể dùng eSpeak NG miễn phí."/>
             <WrapPanel>
               <Button Name="PrepareVoiceButton" Style="{StaticResource CompanionButton}" Click="PrepareVoiceClick"
                       Background="#23705B" Content="Tạo giọng tiếng Việt miễn phí"/>
@@ -74,7 +74,7 @@
                       Content="Nghe thử" IsEnabled="False"/>
             </WrapPanel>
             <TextBlock Name="VoiceStatus" Foreground="{StaticResource MutedBrush}" FontSize="12"
-                       Text="Bấm Tạo giọng tiếng Việt miễn phí → Nghe thử → Bắt đầu nhắc. Nếu dịch vụ trực tuyến lỗi, cài eSpeak NG miễn phí rồi nhấn tạo lại; HUD chữ vẫn hoạt động."/>
+                       Text="Bấm Tạo giọng tiếng Việt miễn phí rồi Nghe thử. Muốn HUD tự phát lời khi có sự kiện, bật giọng trong mục Chỉ số trực tiếp: KHÔNG cần nhấn Bắt đầu nhắc. Bắt đầu nhắc chỉ dành cho bộ hẹn giờ."/>
           </StackPanel>
         </Border>
 
@@ -112,7 +112,7 @@
                       Content="Phân tích thế lính &amp; giao tranh"/>
             </WrapPanel>
             <TextBlock FontSize="12" Foreground="{StaticResource MutedBrush}"
-                       Text="HUD ưu tiên thông báo theo dữ liệu trận. Trong Chỉ số trực tiếp, bạn có thể thử kết nối API AI cá nhân chạy trên máy để xử lý hai tín hiệu đã xác nhận (máu giảm nhanh, điểm hạ gục). Chưa có AI đọc màn hình, theo dõi rừng hoặc đưa chỉ dẫn chiến thuật."/>
+                       Text="HUD ưu tiên trạng thái bị hạ gục, hồi sinh và biến động máu thực; có thể phát tiếng Việt đã tạo sẵn và hiện chữ ngay trong game. Chọn bật giọng, nghe thử hoặc thử kết nối AI cá nhân trong Chỉ số trực tiếp. Chưa có AI đọc màn hình hay theo dõi rừng địch."/>
           </StackPanel>
         </Border>
       </StackPanel>
