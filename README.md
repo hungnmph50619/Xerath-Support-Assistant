@@ -1,4 +1,14 @@
-# Xerath Support Assistant · Companion V0.3 — Vietnamese AI voice
+# Xerath Support Assistant · Companion V0.4 — Last Seen Review
+
+**Mới trong V0.4:** nút **Xem lại vị trí rừng địch** mở cửa sổ riêng để chọn ảnh trận đã lưu và tự bấm đánh dấu vị trí rừng đối phương trên minimap của ảnh. Nhập mốc thời gian game ở ảnh (mm:ss), ghi chú, tùy chọn mốc xem lại, và xóa/thay dấu khi có ảnh mới. Đây là dấu trong **ảnh đã lưu**, không phải vị trí thực tế hiện tại, không tự nhận diện từ live game và không overlay lên trận. Mô-đun sử dụng `LastSeenReview.cs` cùng các bài kiểm thử dữ liệu và thời gian.
+
+**Cập nhật trên Windows:** đóng trợ lý đang chạy, mở PowerShell tại thư mục dự án, chạy `git pull origin main`, rồi `.\\RUN_WINDOWS.cmd` (hoặc `dotnet run --project src/XerathAssistant.Desktop/XerathAssistant.Desktop.csproj`). Trong cửa sổ Companion, chọn **Xem lại vị trí rừng địch**, mở ảnh đã lưu bằng nút tương ứng rồi tự bấm vào vị trí trên minimap trong ảnh. Nếu muốn xem lại sau trận, bạn không cần mở Liên Minh. Tính năng xem lại không ghi màn hình hay ảnh vào GitHub.
+
+**Phạm vi:** Bản này chưa tự cảnh báo giao tranh Top/Mid, vị trí rừng địch hay xuống gank trong trận; phần hỗ trợ trực tiếp phải được xem xét riêng về cách lấy dữ liệu và chính sách Riot. Các lời nhắc hiện tại vẫn chạy theo đồng hồ.
+
+---
+
+## V0.3 — Vietnamese AI voice
 
 Ứng dụng C#/.NET 8/WPF chạy cùng lúc với Liên Minh Huyền Thoại và nhắc những công việc của Xerath SP. Phiên bản này thay bộ đọc System.Speech tiếng Anh bằng **giọng AI Ban Mai — nữ miền Bắc** của FPT.AI. Âm lượng phát mặc định 70%.
 
