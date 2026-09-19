@@ -4,6 +4,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
+using MessageBox = System.Windows.MessageBox;
 using System.Windows.Threading;
 
 namespace XerathAssistant.Desktop;
