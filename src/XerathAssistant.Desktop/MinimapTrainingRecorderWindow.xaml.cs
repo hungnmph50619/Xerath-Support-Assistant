@@ -360,10 +360,7 @@ public partial class MinimapTrainingRecorderWindow : Window
             _sequenceTimer.Stop();
             if (!_closed)
             {
-                SequenceStatus.Text = "Hết thời gian thu chuỗi; các ảnh đã lấy vẫn nằm trong RAM " +
-                    "để bạn chọn. Bấm Xóa chuỗi khi không còn cần.";
-                SetCropControls(true);
-                SequenceStartButton.IsEnabled = true;
+                FinishSequenceCapture("Đã kết thúc thời gian thu chuỗi. ");
             }
             return;
         }
@@ -372,11 +369,7 @@ public partial class MinimapTrainingRecorderWindow : Window
         {
             if (!_cropProfile.MatchesConfirmedResolution(client))
             {
-                _sequenceTimer.Stop();
-                SetCropControls(true);
-                SequenceStartButton.IsEnabled = true;
-                SequenceStatus.Text = "Kích thước game đã thay đổi. Hãy xóa chuỗi và " +
-                    "xem trước vùng cắt trước khi thu lại.";
+                FinishSequenceCapture("Kích thước game đã thay đổi; cần xác nhận khung trước khi thu tiếp. ");
                 return;
             }
             var region = _cropProfile.Crop(client);
@@ -398,28 +391,30 @@ public partial class MinimapTrainingRecorderWindow : Window
                 "không gửi Gemini và không lưu JPG tự động.";
             if (_sequenceFrames.Count >= 5)
             {
-                _sequenceTimer.Stop();
-                SetCropControls(true);
-                SequenceStartButton.IsEnabled = true;
-                SequenceFrameBox.Items.Clear();
-                for (var i = 0; i < _sequenceFrames.Count; i++)
-                    SequenceFrameBox.Items.Add($"Khung {i + 1}/5 · " +
-                        _sequenceFrames[i].TakenAt.ToLocalTime().ToString("HH:mm:ss"));
-                SequenceFrameBox.SelectedIndex = 0;
-                SequenceStatus.Text = "Đã có chuỗi 5 ảnh trong RAM. Chọn từng khung ở ô bên trên, " +
-                    "xem, đánh dấu rồi chỉ lưu ảnh bạn muốn. " +
-                    "Các ảnh khác tự xóa khi đóng hoặc bấm Xóa chuỗi.";
+                FinishSequenceCapture("Đã thu đủ 5 ảnh. ");
             }
         }
         catch (Exception ex) when (ex is IOException or ExternalException or
                                    ArgumentException or InvalidOperationException)
         {
-            _sequenceTimer.Stop();
-            SetCropControls(true);
-            SequenceStartButton.IsEnabled = true;
-            SequenceStatus.Text = "Thu chuỗi chưa hoàn tất: " + ex.Message +
-                ". Bấm Xóa chuỗi để giải phóng bộ nhớ.";
+            FinishSequenceCapture("Thu chuỗi chưa hoàn tất: " + ex.Message + ". ");
         }
+    }
+
+    private void FinishSequenceCapture(string reason)
+    {
+        _sequenceTimer.Stop();
+        SetCropControls(true);
+        SequenceStartButton.IsEnabled = true;
+        SequenceFrameBox.Items.Clear();
+        for (var i = 0; i < _sequenceFrames.Count; i++)
+            SequenceFrameBox.Items.Add($"Khung {i + 1}/{_sequenceFrames.Count} · " +
+                _sequenceFrames[i].TakenAt.ToLocalTime().ToString("HH:mm:ss"));
+        if (_sequenceFrames.Count > 0) SequenceFrameBox.SelectedIndex = 0;
+        SequenceStatus.Text = reason + (_sequenceFrames.Count > 0
+            ? $"Có {_sequenceFrames.Count} ảnh trong RAM. Chọn từng khung để xem và chỉ lưu ảnh bạn chọn; " +
+              "các ảnh khác bị xóa khi đóng cửa sổ hoặc bấm Xóa chuỗi."
+            : "Chưa lấy được ảnh nào. Kiểm tra cửa sổ trận rồi thử lại.");
     }
 
     private void SequenceFrameChanged(object sender, SelectionChangedEventArgs e)
