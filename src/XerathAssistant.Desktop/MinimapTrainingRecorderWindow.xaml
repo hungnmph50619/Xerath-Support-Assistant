@@ -21,22 +21,22 @@
           <UniformGrid Columns="2">
             <StackPanel Margin="0,0,10,8">
               <TextBlock Text="Từ mép trái (%)"/>
-              <Slider Name="CropLeftSlider" Minimum="0" Maximum="90" Value="78" TickFrequency="1"
+              <Slider Name="CropLeftSlider" ValueChanged="CropSliderChanged" Minimum="0" Maximum="90" Value="78" TickFrequency="1"
                       IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft"/>
             </StackPanel>
             <StackPanel Margin="0,0,10,8">
               <TextBlock Text="Từ mép trên (%)"/>
-              <Slider Name="CropTopSlider" Minimum="0" Maximum="90" Value="70" TickFrequency="1"
+              <Slider Name="CropTopSlider" ValueChanged="CropSliderChanged" Minimum="0" Maximum="90" Value="70" TickFrequency="1"
                       IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft"/>
             </StackPanel>
             <StackPanel Margin="0,0,10,8">
               <TextBlock Text="Chiều rộng vùng cắt (%)"/>
-              <Slider Name="CropWidthSlider" Minimum="8" Maximum="50" Value="22" TickFrequency="1"
+              <Slider Name="CropWidthSlider" ValueChanged="CropSliderChanged" Minimum="8" Maximum="50" Value="22" TickFrequency="1"
                       IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft"/>
             </StackPanel>
             <StackPanel Margin="0,0,10,8">
               <TextBlock Text="Chiều cao vùng cắt (%)"/>
-              <Slider Name="CropHeightSlider" Minimum="8" Maximum="50" Value="30" TickFrequency="1"
+              <Slider Name="CropHeightSlider" ValueChanged="CropSliderChanged" Minimum="8" Maximum="50" Value="30" TickFrequency="1"
                       IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft"/>
             </StackPanel>
           </UniformGrid>
