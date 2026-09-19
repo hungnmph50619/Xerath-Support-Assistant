@@ -12,6 +12,46 @@
                  Text="Khi bạn chủ động bật chế độ thử nghiệm, ứng dụng chụp duy nhất vùng minimap đang HIỂN THỊ của cửa sổ trận Liên Minh được chọn, đưa ảnh trực tiếp qua bộ nhớ tới AI cá nhân để phân tích rồi giải phóng ảnh. Mặc định không lưu tệp ảnh mới; chỉ ảnh bạn chủ động chọn mới được lưu để gắn nhãn. Chế độ tự dừng khi đóng game, hết giới hạn hoặc bạn bấm Dừng."/>
       <TextBlock TextWrapping="Wrap" Foreground="#F9CF90" Margin="0,0,0,14"
                  Text="MỖI ẢNH được gửi từ máy bạn qua AI cá nhân tới Google Gemini theo cấu hình hiện có; có thể phát sinh hạn mức hoặc chi phí. Không có mô hình AI chạy hoàn toàn offline ở chế độ này. Chỉ thử ở trận luyện tập/xem lại. Kết quả có thể sai và KHÔNG được gửi thành cảnh báo vị trí đối thủ trên HUD hoặc giọng nói trong trận."/>
+      <Border Background="#122339" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+        <StackPanel>
+          <TextBlock Text="BƯỚC 1 · CĂN CHỈNH VÙNG CẮT (KHÔNG GỬI ẢNH)" FontWeight="SemiBold"
+                     FontSize="15" Margin="0,0,0,6"/>
+          <TextBlock TextWrapping="Wrap" Foreground="#F9CF90" FontSize="12" Margin="0,0,0,8"
+                     Text="Điều chỉnh 4 thanh trượt theo phần trăm vùng nội dung game. Bấm Xem trước rồi quay lại game: phần mềm chỉ lấy MỘT ảnh cục bộ, không gửi Gemini và không lưu JPG. Quay về đây để kiểm tra hình, sau đó xác nhận Lưu khung. Mỗi khi đổi độ phân giải, phải xem trước và xác nhận lại. Chỉ bấm Bắt đầu phân tích sau khi ảnh xem trước đúng minimap."/>
+          <UniformGrid Columns="2">
+            <StackPanel Margin="0,0,10,8">
+              <TextBlock Text="Từ mép trái (%)"/>
+              <Slider Name="CropLeftSlider" Minimum="0" Maximum="90" Value="78" TickFrequency="1"
+                      IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,10,8">
+              <TextBlock Text="Từ mép trên (%)"/>
+              <Slider Name="CropTopSlider" Minimum="0" Maximum="90" Value="70" TickFrequency="1"
+                      IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,10,8">
+              <TextBlock Text="Chiều rộng vùng cắt (%)"/>
+              <Slider Name="CropWidthSlider" Minimum="8" Maximum="50" Value="22" TickFrequency="1"
+                      IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,10,8">
+              <TextBlock Text="Chiều cao vùng cắt (%)"/>
+              <Slider Name="CropHeightSlider" Minimum="8" Maximum="50" Value="30" TickFrequency="1"
+                      IsSnapToTickEnabled="True" AutoToolTipPlacement="TopLeft"/>
+            </StackPanel>
+          </UniformGrid>
+          <WrapPanel>
+            <Button Name="PreviewCropButton" Click="PreviewCropClick"
+                    Content="Xem trước 1 ảnh (hãy chuyển về game)" Padding="12,8" Margin="0,0,8,8"
+                    Background="#345F83" Foreground="White"/>
+            <Button Name="SaveCropButton" Click="SaveCropClick" IsEnabled="False"
+                    Content="Xác nhận ảnh đúng minimap &amp; lưu khung" Padding="12,8" Margin="0,0,8,8"
+                    Background="#23705B" Foreground="White"/>
+          </WrapPanel>
+          <TextBlock Name="CropStatusText" TextWrapping="Wrap" Foreground="#8FE1C3"
+                     Text="Chưa căn chỉnh hoặc chưa xác nhận vùng cắt minimap."/>
+        </StackPanel>
+      </Border>
       <WrapPanel Margin="0,0,0,12">
         <TextBlock VerticalAlignment="Center" Text="Chu kỳ gửi ảnh:" Margin="0,0,9,0"/>
         <ComboBox Name="IntervalBox" Width="200" SelectedIndex="1" Margin="0,0,15,0">
