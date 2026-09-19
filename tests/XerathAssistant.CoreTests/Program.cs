@@ -200,5 +200,8 @@ Verify(killTracker.Observe(twoKillEvents, 18) is string twoKills &&
        "group freshly completed kill events without calling them a live teamfight");
 Verify(killTracker.Observe(openingEvents, 0) is null,
        "new match game clock resets event stream without replaying old kills");
+Verify(killTracker.Observe(oneKillEvents, 14) is string newMatchKill &&
+       newMatchKill.Contains("hạ gục"),
+       "new match can announce newly completed kills after event ID reset");
 
 Console.WriteLine($"ALL {count} CORE TESTS PASSED");
