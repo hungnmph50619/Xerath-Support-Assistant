@@ -1,6 +1,7 @@
 using Condition = XerathAssistant.Core.Condition;
 using System.Windows;
 using System.Windows.Controls;
+using ComboBox = System.Windows.Controls.ComboBox;
 using XerathAssistant.Core;
 
 namespace XerathAssistant.Desktop;
