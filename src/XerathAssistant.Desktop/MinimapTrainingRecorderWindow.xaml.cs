@@ -35,6 +35,14 @@ public partial class MinimapTrainingRecorderWindow : Window
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "XerathSupportAssistant", "minimap-training");
     private readonly MinimapSampleStore _sampleStore = new();
+    private sealed record SequenceFrame(byte[] Jpeg, DateTimeOffset TakenAt);
+    private readonly List<SequenceFrame> _sequenceFrames = new();
+    private readonly DispatcherTimer _sequenceTimer = new() { Interval = TimeSpan.FromSeconds(2) };
+    private DateTime _sequenceUntilUtc;
+    private string? _sequenceGroup;
+    private string? _currentSequenceGroup;
+    private int? _currentSequenceIndex;
+    private DateTimeOffset? _currentFrameTakenAt;
     private readonly MinimapCropProfileStore _cropStore = new();
     private MinimapCropProfile _cropProfile = MinimapCropProfile.Default;
     private MinimapCropProfile? _previewProfile;
@@ -57,6 +65,7 @@ public partial class MinimapTrainingRecorderWindow : Window
         InitializeComponent();
         _timer.Tick += CaptureTick;
         _previewTimer.Tick += PreviewCropTick;
+        _sequenceTimer.Tick += CaptureSequenceTick;
         _cropProfile = _cropStore.Load();
         CropLeftSlider.Value = _cropProfile.Left * 100;
         CropTopSlider.Value = _cropProfile.Top * 100;
@@ -87,6 +96,11 @@ public partial class MinimapTrainingRecorderWindow : Window
     private void StartClick(object sender, RoutedEventArgs e)
     {
         if (_running) return;
+        if (_sequenceTimer.IsEnabled || _sequenceFrames.Count > 0)
+        {
+            StatusText.Text = "Hãy kết thúc và xóa chuỗi ảnh RAM trước khi bắt đầu gửi ảnh tới Gemini.";
+            return;
+        }
         if (_previewTimer.IsEnabled)
         {
             StatusText.Text = "Hãy chờ ảnh xem trước, kiểm tra và lưu khung minimap trước.";
@@ -141,6 +155,7 @@ public partial class MinimapTrainingRecorderWindow : Window
     {
         _timer.Stop();
         _previewTimer.Stop();
+        _sequenceTimer.Stop();
         _running = false;
         SetCropControls(true);
         ClearPendingFrame();
@@ -281,6 +296,146 @@ public partial class MinimapTrainingRecorderWindow : Window
         }
     }
 
+    private void ClearSequenceFrames()
+    {
+        _sequenceTimer.Stop();
+        foreach (var item in _sequenceFrames)
+            Array.Clear(item.Jpeg, 0, item.Jpeg.Length);
+        _sequenceFrames.Clear();
+        _sequenceGroup = null;
+        _currentSequenceGroup = null;
+        _currentSequenceIndex = null;
+        _currentFrameTakenAt = null;
+        if (SequenceFrameBox is not null) SequenceFrameBox.Items.Clear();
+        ClearPendingFrame();
+        if (!_running) SetCropControls(true);
+        if (SequenceStartButton is not null) SequenceStartButton.IsEnabled = !_running;
+    }
+
+    private void ClearSequenceClick(object sender, RoutedEventArgs e)
+    {
+        ClearSequenceFrames();
+        SequenceStatus.Text = "Đã xóa chuỗi chưa lưu khỏi RAM. " +
+            "Những ảnh bạn đã chủ động lưu trong thư viện không bị xóa.";
+    }
+
+    private void StartSequenceClick(object sender, RoutedEventArgs e)
+    {
+        if (_closed || _running || _busy || _previewTimer.IsEnabled ||
+            _sequenceTimer.IsEnabled) return;
+        if (!_cropProfile.IsValid || _cropProfile.ConfirmedClientWidth < 640 ||
+            !SameCrop(CurrentCropDraft(), _cropProfile))
+        {
+            SequenceStatus.Text = "Hãy xác nhận vùng cắt minimap trước khi thu chuỗi.";
+            return;
+        }
+        if (!IsGameRunning())
+        {
+            SequenceStatus.Text = "Chưa có trận luyện tập hoặc trận xem lại đang chạy.";
+            return;
+        }
+        if (MessageBox.Show(this, "Bạn đồng ý lấy TỐI ĐA 5 ảnh minimap " +
+            "cách nhau khoảng 2 giây khi cửa sổ TRẬN Liên Minh được chọn? " +
+            "Ảnh CHỈ ở RAM; không gửi tới Gemini, không lưu tự động, " +
+            "và sẽ xóa khi bạn chọn Xóa chuỗi hoặc đóng cửa sổ.",
+            "Xác nhận thu chuỗi ảnh minimap cục bộ",
+            MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            return;
+
+        ClearSequenceFrames();
+        _sequenceGroup = "seq-" + Guid.NewGuid().ToString("N")[..12];
+        _sequenceUntilUtc = DateTime.UtcNow.AddMinutes(2);
+        SetCropControls(false);
+        SequenceStartButton.IsEnabled = false;
+        _sequenceTimer.Start();
+        SequenceStatus.Text = "Đang chờ bạn chuyển về cửa sổ TRẬN Liên Minh. " +
+            "Sẽ lấy tối đa 5 ảnh trong RAM, không gửi AI. Trở về cửa sổ này sau khoảng 10 giây.";
+    }
+
+    private void CaptureSequenceTick(object? sender, EventArgs e)
+    {
+        if (_closed || _running || _sequenceGroup is null ||
+            DateTime.UtcNow >= _sequenceUntilUtc)
+        {
+            _sequenceTimer.Stop();
+            if (!_closed)
+            {
+                SequenceStatus.Text = "Hết thời gian thu chuỗi; các ảnh đã lấy vẫn nằm trong RAM " +
+                    "để bạn chọn. Bấm Xóa chuỗi khi không còn cần.";
+                SetCropControls(true);
+                SequenceStartButton.IsEnabled = true;
+            }
+            return;
+        }
+        if (!TryGetForegroundGameClient(out var client)) return;
+        try
+        {
+            if (!_cropProfile.MatchesConfirmedResolution(client))
+            {
+                _sequenceTimer.Stop();
+                SetCropControls(true);
+                SequenceStartButton.IsEnabled = true;
+                SequenceStatus.Text = "Kích thước game đã thay đổi. Hãy xóa chuỗi và " +
+                    "xem trước vùng cắt trước khi thu lại.";
+                return;
+            }
+            var region = _cropProfile.Crop(client);
+            region.Intersect(client);
+            region.Intersect(System.Windows.Forms.SystemInformation.VirtualScreen);
+            if (region.Width < 90 || region.Height < 90)
+                throw new InvalidOperationException("Vùng cắt minimap quá nhỏ.");
+            using var bitmap = new Bitmap(region.Width, region.Height, PixelFormat.Format24bppRgb);
+            using (var graphics = Graphics.FromImage(bitmap))
+                graphics.CopyFromScreen(region.Location, System.Drawing.Point.Empty,
+                    region.Size, CopyPixelOperation.SourceCopy);
+            using var memory = new MemoryStream();
+            bitmap.Save(memory, ImageFormat.Jpeg);
+            if (memory.Length is < 24 or > MaximumImageBytes)
+                throw new InvalidDataException("Ảnh vượt giới hạn 2 MB.");
+
+            _sequenceFrames.Add(new SequenceFrame(memory.ToArray(), DateTimeOffset.UtcNow));
+            SequenceStatus.Text = $"Đã lấy {_sequenceFrames.Count}/5 ảnh trong RAM; " +
+                "không gửi Gemini và không lưu JPG tự động.";
+            if (_sequenceFrames.Count >= 5)
+            {
+                _sequenceTimer.Stop();
+                SetCropControls(true);
+                SequenceStartButton.IsEnabled = true;
+                SequenceFrameBox.Items.Clear();
+                for (var i = 0; i < _sequenceFrames.Count; i++)
+                    SequenceFrameBox.Items.Add($"Khung {i + 1}/5 · " +
+                        _sequenceFrames[i].TakenAt.ToLocalTime().ToString("HH:mm:ss"));
+                SequenceFrameBox.SelectedIndex = 0;
+                SequenceStatus.Text = "Đã có chuỗi 5 ảnh trong RAM. Chọn từng khung ở ô bên trên, " +
+                    "xem, đánh dấu rồi chỉ lưu ảnh bạn muốn. " +
+                    "Các ảnh khác tự xóa khi đóng hoặc bấm Xóa chuỗi.";
+            }
+        }
+        catch (Exception ex) when (ex is IOException or ExternalException or
+                                   ArgumentException or InvalidOperationException)
+        {
+            _sequenceTimer.Stop();
+            SetCropControls(true);
+            SequenceStartButton.IsEnabled = true;
+            SequenceStatus.Text = "Thu chuỗi chưa hoàn tất: " + ex.Message +
+                ". Bấm Xóa chuỗi để giải phóng bộ nhớ.";
+        }
+    }
+
+    private void SequenceFrameChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var index = SequenceFrameBox.SelectedIndex;
+        if (index < 0 || index >= _sequenceFrames.Count || _sequenceGroup is null ||
+            _sequenceTimer.IsEnabled) return;
+        var frame = _sequenceFrames[index];
+        SetPendingFrame(frame.Jpeg.ToArray());
+        _currentSequenceGroup = _sequenceGroup;
+        _currentSequenceIndex = index;
+        _currentFrameTakenAt = frame.TakenAt;
+        AnalysisText.Text = $"Khung {index + 1}: ảnh minimap cục bộ, không gửi Gemini. " +
+            "Bạn cần tự xác minh tên tướng và các điểm đã nhìn thấy.";
+    }
+
     private MinimapCropProfile CurrentCropDraft() => new(
         Math.Round(CropLeftSlider.Value / 100d, 2),
         Math.Round(CropTopSlider.Value / 100d, 2),
@@ -313,7 +468,8 @@ public partial class MinimapTrainingRecorderWindow : Window
 
     private void PreviewCropClick(object sender, RoutedEventArgs e)
     {
-        if (_running || _busy || _previewTimer.IsEnabled) return;
+        if (_running || _busy || _previewTimer.IsEnabled ||
+            _sequenceTimer.IsEnabled || _sequenceFrames.Count > 0) return;
         var draft = CurrentCropDraft();
         if (!draft.IsValid)
         {
@@ -418,6 +574,9 @@ public partial class MinimapTrainingRecorderWindow : Window
     {
         if (_selectedFrame is not null) Array.Clear(_selectedFrame, 0, _selectedFrame.Length);
         _selectedFrame = null;
+        _currentSequenceGroup = null;
+        _currentSequenceIndex = null;
+        _currentFrameTakenAt = null;
         _markX = _markY = null;
         _marks.Clear();
         if (ChampionMarksStatus is not null)
@@ -549,7 +708,9 @@ public partial class MinimapTrainingRecorderWindow : Window
         {
             var evidenceKind = (EvidenceTypeBox.SelectedItem as ComboBoxItem)?.Tag?.ToString()
                 ?? "uncertain";
-            var (name, count) = _sampleStore.SaveSelected(_selectedFrame, label, evidenceKind, _marks);
+            var (name, count) = _sampleStore.SaveSelected(_selectedFrame, label,
+                evidenceKind, _marks, _currentSequenceGroup, _currentSequenceIndex,
+                _currentFrameTakenAt);
             TrainingStatus.Text = $"Đã lưu mẫu {name} ({count}/250) cùng nhãn thủ công tại: " +
                                   _sampleStore.Folder;
             ClearPendingFrame(); // A given preview must not be saved repeatedly by accident.
@@ -663,6 +824,7 @@ public partial class MinimapTrainingRecorderWindow : Window
     {
         _closed = true;
         _previewTimer.Stop();
+        ClearSequenceFrames();
         StopRecording("Cửa sổ đã đóng.");
         ClearPendingFrame();
         _sessionCancellation?.Dispose();
