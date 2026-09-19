@@ -558,6 +558,30 @@ public partial class MinimapTrainingRecorderWindow : Window
         if (!TryGetForegroundGameClient(out var client)) return;
         try
         {
+            var finding = "";
+            if (_autoDetectPreview)
+            {
+                if (client.Width > 5000 || client.Height > 3000 ||
+                    (long)client.Width * client.Height > 12_000_000)
+                    throw new InvalidOperationException("Cửa sổ game quá lớn để tự tìm khung.");
+
+                // One local frame in RAM; it is never sent to Gemini or written to disk.
+                using var fullFrame = new Bitmap(client.Width, client.Height,
+                    PixelFormat.Format24bppRgb);
+                using (var graphics = Graphics.FromImage(fullFrame))
+                    graphics.CopyFromScreen(client.Location, System.Drawing.Point.Empty,
+                        client.Size, CopyPixelOperation.SourceCopy);
+
+                var detected = MinimapAutoCropDetector.Detect(fullFrame);
+                var selected = detected is { Confident: true } 
+                    ? detected.Crop
+                    : MinimapAutoCropDetector.CornerSuggestion(client.Width, client.Height);
+                ApplyCropToSliders(selected);
+                _previewProfile = CurrentCropDraft();
+                finding = detected is { Confident: true }
+                    ? "Đã dò được khung có dấu hiệu là minimap. "
+                    : "Chưa đủ chắc chắn: đây là khung gợi ý ở góc phải. ";
+            }
             var region = _previewProfile.Crop(client);
             region.Intersect(client);
             region.Intersect(System.Windows.Forms.SystemInformation.VirtualScreen);
@@ -575,7 +599,7 @@ public partial class MinimapTrainingRecorderWindow : Window
             SetPendingFrame(buffer.ToArray());
             SaveCropButton.IsEnabled = true;
             AnalysisText.Text = "Ảnh xem trước chỉ tồn tại trong RAM; chưa gửi AI để phân tích.";
-            CropStatusText.Text = $"Ảnh xem trước của cửa sổ {client.Width}×{client.Height} đã sẵn sàng. " +
+            CropStatusText.Text = finding + $"Ảnh xem trước của cửa sổ {client.Width}×{client.Height} đã sẵn sàng. " +
                 "Quay lại đây, xem ảnh và CHỈ xác nhận nếu khung đúng minimap. " +
                 "Nếu còn lệch, chỉnh thanh trượt và xem trước lần nữa.";
         }
@@ -585,7 +609,11 @@ public partial class MinimapTrainingRecorderWindow : Window
             _previewProfile = null;
             CropStatusText.Text = "Chưa xem được vùng minimap: " + ex.Message;
         }
-        finally { _previewTimer.Stop(); }
+        finally
+        {
+            _autoDetectPreview = false;
+            _previewTimer.Stop();
+        }
     }
 
     private void SaveCropClick(object sender, RoutedEventArgs e)
