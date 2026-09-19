@@ -88,13 +88,15 @@ public static class WaveFightAdvisor
             if (s.EnemyJungle == JungleState.Unknown) safetyMissing.Add("Thông tin rừng địch");
             if (s.AllyPosition == AllyState.Unknown) safetyMissing.Add("Vị trí ADC");
             if (s.EnemyEngage == EnemyEngageState.Unknown) safetyMissing.Add("Kỹ năng mở giao tranh địch");
+            if (s.Objective == ObjectiveState.Unknown) safetyMissing.Add("Thời điểm mục tiêu lớn");
             if (safetyMissing.Count > 0) return MissingInfo("Đẩy lính rồi về", safetyMissing.ToArray());
 
             if (s.Health == Condition.Healthy && s.Mana == Condition.Healthy &&
                 s.Vision == VisionState.Controlled &&
                 s.EnemyJungle == JungleState.RecentlySeenTop &&
                 s.AllyPosition == AllyState.Together &&
-                s.EnemyEngage == EnemyEngageState.RecentlyUsed)
+                s.EnemyEngage == EnemyEngageState.RecentlyUsed &&
+                s.Objective == ObjectiveState.NotSoon)
                 return Advice(AdviceState.ConditionalOpportunity,
                     "Thế lính: có thể trao đổi với ADC về việc đẩy vào trụ rồi về",
                     "Đây chỉ là cơ hội có điều kiện: cần xác nhận đủ thời gian dọn hết lính, khả năng chống trả và thời điểm rừng địch hiện tại. Vị trí nhìn thấy trước đó không bảo đảm an toàn.",
@@ -103,7 +105,7 @@ public static class WaveFightAdvisor
 
             return Advice(AdviceState.Caution,
                 "Thế lính: chưa đủ điều kiện an toàn để đề xuất đẩy nhanh",
-                "Kế hoạch về nhà cần cân đối với tầm nhìn, tài nguyên và nguy cơ bị mở giao tranh. Phối hợp với ADC; không mặc định cứ muốn về là nên dâng cao đẩy lính.",
+                "Kế hoạch về nhà cần cân đối với tầm nhìn, tài nguyên, mục tiêu lớn sắp xuất hiện và nguy cơ bị mở giao tranh. Phối hợp với ADC; không mặc định cứ muốn về là nên dâng cao đẩy lính.",
                 "ADC dự định đẩy vào trụ rồi về.", "Một hoặc nhiều điều kiện an toàn chưa thuận lợi.");
         }
 
