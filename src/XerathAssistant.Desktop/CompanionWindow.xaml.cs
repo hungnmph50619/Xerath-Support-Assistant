@@ -85,29 +85,28 @@ public partial class CompanionWindow : Window
 
     private string[] SelectedPhrases() => SelectedReminders().Select(x => x.Message).ToArray();
 
+    private string[] VoicePreparationPhrases() =>
+        SelectedPhrases().Concat(InGameVoicePrompts.All).Distinct(StringComparer.Ordinal).ToArray();
+
     private bool AllVoicesReady() => SelectedPhrases().All(_voice.IsReady);
 
     private void RefreshVoiceReadiness()
     {
         var phrases = SelectedPhrases();
         var ready = phrases.Count(_voice.IsReady);
-        TestVoiceButton.IsEnabled = phrases.Any(_voice.IsReady);
+        var hudReady = InGameVoicePrompts.All.Count(_voice.IsReady);
+        TestVoiceButton.IsEnabled = phrases.Concat(InGameVoicePrompts.All).Any(_voice.IsReady);
         if (!_started && _preparation is null)
-            VoiceStatus.Text = $"Giọng đọc tiếng Việt miễn phí: đã lưu {ready}/{phrases.Length} lời nhắc. " +
-                (ready == phrases.Length && ready > 0
-                    ? "Sẵn sàng phát offline (âm lượng 70%)."
-                    : "Bấm 'Tạo giọng tiếng Việt miễn phí'; nếu dịch vụ mạng lỗi, có thể cài eSpeak NG để tạo giọng offline.");
+            VoiceStatus.Text = $"Giọng nhắc theo giờ {ready}/{phrases.Length} · giọng cảnh báo HUD {hudReady}/{InGameVoicePrompts.All.Length}. " +
+                (hudReady == InGameVoicePrompts.All.Length && ready == phrases.Length
+                    ? "Đã lưu đủ âm thanh tiếng Việt, sẵn sàng phát offline."
+                    : "Bấm Tạo giọng tiếng Việt miễn phí để tạo cả lời nhắc HUD; nếu dịch vụ lỗi, có thể cài eSpeak NG.");
     }
 
     private async void PrepareVoiceClick(object sender, RoutedEventArgs e)
     {
         if (_preparation is not null) return;
-        var phrases = SelectedPhrases();
-        if (phrases.Length == 0)
-        {
-            MessageBox.Show(this, "Hãy chọn ít nhất một nhóm nhắc.", "Chưa chọn lời nhắc");
-            return;
-        }
+        var phrases = VoicePreparationPhrases();
         using var preparation = new CancellationTokenSource();
         _preparation = preparation;
         PrepareVoiceButton.IsEnabled = false;
@@ -119,7 +118,7 @@ public partial class CompanionWindow : Window
                 await _voice.PrepareAsync(phrases[i], preparation.Token);
                 if (_closed) return;
             }
-            VoiceStatus.Text = "Đã tạo đủ các câu nhắc tiếng Việt. Nhấn Nghe thử rồi Bắt đầu nhắc.";
+            VoiceStatus.Text = "Đã tạo đủ tiếng Việt cho cả lời nhắc HUD và lời nhắc theo giờ. Nhấn Nghe thử; HUD sẽ tự đọc sự kiện khi bạn bật tùy chọn giọng.";
             TestVoiceButton.IsEnabled = phrases.Any(_voice.IsReady);
         }
         catch (OperationCanceledException)
@@ -140,7 +139,7 @@ public partial class CompanionWindow : Window
 
     private void TestVoiceClick(object sender, RoutedEventArgs e)
     {
-        var sample = SelectedPhrases().FirstOrDefault(_voice.IsReady);
+        var sample = InGameVoicePrompts.All.Concat(SelectedPhrases()).FirstOrDefault(_voice.IsReady);
         if (sample is not null) PlayVoice(new[] { sample });
     }
 
