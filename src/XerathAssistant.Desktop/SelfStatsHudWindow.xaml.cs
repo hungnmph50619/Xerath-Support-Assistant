@@ -20,7 +20,8 @@ public partial class SelfStatsHudWindow : Window
     private const int WsExNoActivate = 0x08000000;
     private readonly DispatcherTimer _foregroundTimer = new() { Interval = TimeSpan.FromMilliseconds(500) };
     private HudCorner _corner = HudCorner.TopRight;
-    private bool _ready;
+    private DateTime _noticeUntilUtc = DateTime.MinValue;
+    private DateTime _lastNoticeUtc = DateTime.MinValue;
     private bool _closed;
 
     [DllImport("user32.dll")]
@@ -38,7 +39,12 @@ public partial class SelfStatsHudWindow : Window
     public SelfStatsHudWindow()
     {
         InitializeComponent();
-        _foregroundTimer.Tick += (_, _) => RefreshVisibility();
+        _foregroundTimer.Tick += (_, _) =>
+        {
+            RefreshVisibility();
+            if (AlertBorder.Visibility == Visibility.Visible && DateTime.UtcNow >= _noticeUntilUtc)
+                AlertBorder.Visibility = Visibility.Collapsed;
+        };
         _foregroundTimer.Start();
         Closed += (_, _) =>
         {
@@ -68,7 +74,6 @@ public partial class SelfStatsHudWindow : Window
     public void SetSnapshot(SelfStatsSnapshot stats)
     {
         if (_closed) return;
-        _ready = true;
         ClockText.Text = SelfStatsSnapshot.Clock(stats.GameTimeSeconds);
         HealthText.Text = $"HP {stats.HealthPercent:0}% ({stats.Health:0})";
         ManaText.Text = stats.MaxResource > 0
@@ -76,16 +81,27 @@ public partial class SelfStatsHudWindow : Window
             : "Mana —";
         GoldText.Text = $"Vàng: {stats.Gold:0}";
         LevelApText.Text = $"Lv {stats.Level} · AP {stats.AbilityPower:0}";
-        StatusText.Text = "Chỉ số cá nhân · cập nhật mỗi 5 giây";
+        StatusText.Text = "Chỉ số cá nhân · cập nhật mỗi 1 giây";
         RefreshVisibility();
     }
 
     public void MarkUnavailable()
     {
         if (_closed) return;
-        _ready = false;
         StatusText.Text = "Mất kết nối API trận · số liệu có thể đã cũ";
         RefreshVisibility();
+    }
+
+    /// <summary>Brief factual message drawn inside the existing HUD. Never blocks the game.</summary>
+    public void ShowNotice(string message, bool priority = false)
+    {
+        if (_closed || string.IsNullOrWhiteSpace(message)) return;
+        var now = DateTime.UtcNow;
+        if (!priority && now - _lastNoticeUtc < TimeSpan.FromSeconds(5)) return;
+        AlertText.Text = message.Length > 150 ? message[..147] + "…" : message;
+        AlertBorder.Visibility = Visibility.Visible;
+        _lastNoticeUtc = now;
+        _noticeUntilUtc = now.AddSeconds(priority ? 7 : 5);
     }
 
     private static bool GameIsForeground()
