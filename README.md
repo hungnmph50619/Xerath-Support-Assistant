@@ -1,4 +1,25 @@
-# Xerath Support Assistant · Companion V0.8 — HUD thông báo và cập nhật khoảng 1 giây
+# Xerath Support Assistant · Companion V0.9 — Giọng nói tiếng Việt miễn phí
+
+**Thay đổi ở V0.9:** hệ thống nhắc bằng giọng nói không còn yêu cầu API key FPT.AI. Trong Companion tích chọn **Giọng nữ tiếng Việt miễn phí (Hoài My, âm lượng 70%)**, bấm **Tạo giọng tiếng Việt miễn phí**, chờ hoàn tất, sau đó bấm **Nghe thử** và **Bắt đầu nhắc**. Việc chuẩn bị âm thanh cần Internet ở lần đầu; các câu MP3 đã lưu được phát offline khi chơi, không tốn phí dịch vụ trên mỗi lần phát. Giọng Hoài My được liệt kê là giọng nữ tiếng Việt; **chưa xác nhận giọng vùng miền Bắc** trên máy người dùng.
+
+**Nguồn tạo giọng:** thư viện cộng đồng `Edge_tts_sharp` 1.1.7 dùng dịch vụ đọc văn bản trực tuyến của Microsoft Edge, không yêu cầu API key hay tài khoản trả phí. Đây **không phải API công khai có cam kết duy trì hoặc được Microsoft bảo đảm miễn phí lâu dài**; có thể không hoạt động vì thay đổi phía dịch vụ, mạng hoặc giới hạn sử dụng. Khi đó phần mềm hiện thông báo lỗi, không tự dùng giọng tiếng Anh và **HUD/nhắc bằng chữ vẫn chạy bình thường**. Đừng nhập bí mật trong câu nhắc: câu chữ sẽ gửi tới dịch vụ trực tuyến để tạo âm thanh, sau đó chỉ lưu MP3 trên máy bạn.
+
+**Cập nhật trên Windows:** đóng ứng dụng cũ; tại thư mục repository chạy:
+
+```powershell
+git pull origin main
+.\RUN_WINDOWS.cmd
+```
+
+Lần đầu biên dịch cần mạng để tải gói NuGet miễn phí. Tại phần **2 · Giọng nói tiếng Việt**, giữ tích giọng nói và chọn **Tạo giọng tiếng Việt miễn phí**. Chờ dòng trạng thái báo đã tạo đủ câu nhắc, nhấn **Nghe thử**, nhấn **Bắt đầu nhắc**, rồi quay lại game. Để chỉ dùng HUD thông báo bằng chữ, bỏ tích giọng nói; HUD không phụ thuộc vào mạng hoặc dịch vụ tạo âm thanh sau khi đã lấy được dữ liệu trận từ API cục bộ.
+
+**Vị trí tệp:** `%LOCALAPPDATA%\XerathSupportAssistant\voice\edge-hoaimy-v1`. Tệp MP3 đã tạo được tái sử dụng trong các lần sau; câu nhắc chưa tạo sẽ cần Internet để tạo thêm. Tệp FPT.AI từ V0.3, nếu có, không bị xóa nhưng V0.9 không tự sử dụng. Giọng nói hiện áp dụng cho **bộ nhắc theo lịch sau khi nhấn Bắt đầu nhắc**; các thông báo chỉ số và hạ gục mới trên HUD vẫn **chỉ hiển thị bằng chữ**. Nếu dùng HUD nhắc giờ cùng bộ nhắc giọng, có thể gặp thông báo chữ và tiếng cùng lúc.
+
+**Kiểm tra:** `dotnet build src/XerathAssistant.Desktop/XerathAssistant.Desktop.csproj` và `dotnet run --project tests/XerathAssistant.CoreTests/XerathAssistant.CoreTests.csproj`. Mã nguồn đã cập nhật nhưng **chưa xác nhận đã biên dịch hoặc phát giọng thành công trên máy Windows của bạn**. Nếu lỗi biên dịch hoặc dịch vụ tạo giọng không trả lời, chụp dòng báo lỗi (không cần cung cấp bất kỳ API key nào).
+
+---
+
+## V0.8 — HUD thông báo và cập nhật khoảng 1 giây
 
 **Mới trên màn hình game:** HUD không chỉ hiện các chỉ số cá nhân mà còn tự hiện lời nhắc đã chọn và cảnh báo khi máu/năng lượng của **chính bạn** vừa xuống dưới ngưỡng, hoặc vàng hiện có vừa đạt ngưỡng tham khảo. HUD tự ẩn thông báo sau 5–7 giây, chống lặp khi chỉ số vẫn thấp. Không cần chuyển tab để xem các thông báo. Vẫn có thể dùng HUD chữ mà **không có FPT.AI API key**.
 
