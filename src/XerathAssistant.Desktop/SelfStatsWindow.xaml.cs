@@ -25,6 +25,7 @@ public partial class SelfStatsWindow : Window
     private readonly PersonalStatAlerts _personalAlerts = new();
     private readonly OwnHealthChangeDetector _healthChangeDetector = new();
     private readonly OwnDangerAnalyzer _dangerAnalyzer = new();
+    private readonly OwnHealthTrendAnalyzer _dangerTrend = new();
     private readonly OwnDangerEpisodeTracker _dangerEpisodes = new();
     private double _dangerStatusUntilGameTime = double.NegativeInfinity;
     private readonly PublicKillEventTracker _publicEvents = new();
@@ -246,6 +247,7 @@ public partial class SelfStatsWindow : Window
     {
         _session.Reset();
         _dangerAnalyzer.Reset();
+        _dangerTrend.Reset();
         _dangerEpisodes.Reset();
         _dangerStatusUntilGameTime = double.NegativeInfinity;
         DangerAnalysisStatus.Text = "Đã xóa thống kê nguy hiểm của phiên. Chờ các mẫu mới.";
@@ -269,6 +271,7 @@ public partial class SelfStatsWindow : Window
                 _personalAlerts.Reset();
                 _healthChangeDetector.Reset();
                 _dangerAnalyzer.ResetBaseline();
+                _dangerTrend.Reset();
                 _dangerEpisodes.ResetBaseline();
             }
             // Death is the highest priority: pin its notice, suppress stale warnings,
@@ -287,6 +290,10 @@ public partial class SelfStatsWindow : Window
                 // Always maintain an accurate local baseline while alive, even if
                 // the user temporarily switches this optional HUD alert off.
                 var detectedDanger = _dangerAnalyzer.Observe(snapshot);
+                var trendDanger = _dangerTrend.Observe(snapshot);
+                if (trendDanger is not null &&
+                    (detectedDanger is null || trendDanger.Severity >= detectedDanger.Severity))
+                    detectedDanger = trendDanger;
                 var episodeWasActive = _dangerEpisodes.IsActive;
                 var danger = _dangerEpisodes.Observe(snapshot, detectedDanger);
                 var episodeJustClosed = episodeWasActive && !_dangerEpisodes.IsActive;
