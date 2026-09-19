@@ -23,6 +23,7 @@ public partial class CompanionWindow : Window
     private readonly MediaPlayer _player = new() { Volume = 0.7 };
     private readonly Queue<string> _audioQueue = new();
     private CancellationTokenSource? _preparation;
+    private SelfStatsWindow? _statsWindow;
     private bool _started;
     private bool _paused;
     private bool _isMatchRunning;
@@ -272,8 +273,28 @@ public partial class CompanionWindow : Window
     private void OpenWaveFightAdvisorClick(object sender, RoutedEventArgs e) =>
         new WaveFightAdvisorWindow { Owner = this }.Show();
 
-    private void OpenSelfStatsClick(object sender, RoutedEventArgs e) =>
-        new SelfStatsWindow { Owner = this }.Show();
+    private SelfStatsWindow GetStatsWindow()
+    {
+        if (_statsWindow is not null) return _statsWindow;
+        var window = new SelfStatsWindow { Owner = this };
+        window.Closed += (_, _) => _statsWindow = null;
+        _statsWindow = window;
+        return window;
+    }
+
+    private void OpenSelfStatsClick(object sender, RoutedEventArgs e)
+    {
+        var window = GetStatsWindow();
+        window.Show();
+        window.Activate();
+    }
+
+    private void OpenHudClick(object sender, RoutedEventArgs e)
+    {
+        var window = GetStatsWindow();
+        if (!window.IsLoaded) window.Show();
+        window.EnableHud(hidePanel: true);
+    }
 
     protected override void OnClosed(EventArgs e)
     {
