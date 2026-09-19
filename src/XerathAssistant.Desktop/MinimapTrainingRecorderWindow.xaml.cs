@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using MessageBox = System.Windows.MessageBox;
@@ -41,6 +42,9 @@ public partial class MinimapTrainingRecorderWindow : Window
     private readonly DispatcherTimer _previewTimer = new() { Interval = TimeSpan.FromMilliseconds(500) };
     private DateTime _previewUntilUtc;
     private byte[]? _selectedFrame;
+    private double? _markX;
+    private double? _markY;
+    private readonly List<MinimapChampionMark> _marks = new();
     private CancellationTokenSource? _sessionCancellation;
     private DateTime _lastGameFocusedUtc;
     private int _sent;
@@ -414,6 +418,12 @@ public partial class MinimapTrainingRecorderWindow : Window
     {
         if (_selectedFrame is not null) Array.Clear(_selectedFrame, 0, _selectedFrame.Length);
         _selectedFrame = null;
+        _markX = _markY = null;
+        _marks.Clear();
+        if (ChampionMarksStatus is not null)
+            ChampionMarksStatus.Text = "Chưa có điểm đánh dấu. Nhấp lên biểu tượng nhìn thấy được rồi Thêm điểm.";
+        if (MarkCoordinateStatus is not null)
+            MarkCoordinateStatus.Text = "Chưa chọn tọa độ.";
         if (SamplePreview is not null) SamplePreview.Source = null;
         if (SaveSampleButton is not null) SaveSampleButton.IsEnabled = false;
     }
@@ -447,6 +457,74 @@ public partial class MinimapTrainingRecorderWindow : Window
         }
     }
 
+    private void SamplePreviewClick(object sender, MouseButtonEventArgs e)
+    {
+        if (_selectedFrame is null || SamplePreview.Source is not BitmapSource source) return;
+        var panel = SamplePreview;
+        var pos = e.GetPosition(panel);
+        if (panel.ActualWidth <= 0 || panel.ActualHeight <= 0 ||
+            source.PixelWidth <= 0 || source.PixelHeight <= 0) return;
+
+        // Stretch=Uniform may letterbox the JPEG inside the Image layout.
+        // Convert from rendered pixels (not entire Image bounds) to normalized
+        // JPEG coordinates; clicking the blank margin is never treated as an icon.
+        var scale = Math.Min(panel.ActualWidth / source.PixelWidth,
+            panel.ActualHeight / source.PixelHeight);
+        var shownWidth = scale * source.PixelWidth;
+        var shownHeight = scale * source.PixelHeight;
+        var left = (panel.ActualWidth - shownWidth) / 2;
+        var top = (panel.ActualHeight - shownHeight) / 2;
+        if (pos.X < left || pos.X > left + shownWidth ||
+            pos.Y < top || pos.Y > top + shownHeight) return;
+
+        _markX = Math.Clamp((pos.X - left) / shownWidth, 0, 1);
+        _markY = Math.Clamp((pos.Y - top) / shownHeight, 0, 1);
+        MarkCoordinateStatus.Text =
+            $"Đã chọn tọa độ ảnh x={_markX:P1}, y={_markY:P1}. " +
+            "Chọn tên, đội, vai trò (không rõ thì giữ Chưa rõ), sau đó nhấn Thêm điểm.";
+        e.Handled = true;
+    }
+
+    private void AddChampionMarkClick(object sender, RoutedEventArgs e)
+    {
+        if (_selectedFrame is null || _markX is null || _markY is null)
+        {
+            TrainingStatus.Text = "Chưa chọn điểm: hãy nhấp lên biểu tượng nhìn thấy được trong ảnh hiện tại.";
+            return;
+        }
+        if (_marks.Count >= 10)
+        {
+            TrainingStatus.Text = "Giới hạn tối đa 10 điểm biểu tượng trong một ảnh.";
+            return;
+        }
+        try
+        {
+            var team = (ChampionTeamBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "unknown";
+            var role = (ChampionRoleBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "unknown";
+            var mark = MinimapChampionMark.Checked(_markX.Value, _markY.Value,
+                ChampionNameBox.Text, team, role);
+            _marks.Add(mark);
+            EvidenceTypeBox.SelectedIndex = 0;
+            ChampionMarksStatus.Text = $"Đã chọn {_marks.Count} điểm trên ảnh hiện tại. " +
+                string.Join("; ", _marks.Select(m =>
+                    $"{m.Champion} ({m.X:P0}, {m.Y:P0}; {m.Team}, {m.Role})"));
+            _markX = _markY = null;
+            MarkCoordinateStatus.Text = "Đã thêm điểm; hãy nhấp lên vị trí khác để tiếp tục.";
+        }
+        catch (ArgumentException ex)
+        {
+            TrainingStatus.Text = "Không thêm được điểm: " + ex.Message;
+        }
+    }
+
+    private void ClearChampionMarksClick(object sender, RoutedEventArgs e)
+    {
+        _marks.Clear();
+        _markX = _markY = null;
+        ChampionMarksStatus.Text = "Đã xóa toàn bộ điểm trên ảnh đang xem; chưa thay đổi mẫu đã lưu.";
+        MarkCoordinateStatus.Text = "Chưa chọn tọa độ.";
+    }
+
     private void SaveSampleClick(object sender, RoutedEventArgs e)
     {
         if (_selectedFrame is null)
@@ -471,7 +549,7 @@ public partial class MinimapTrainingRecorderWindow : Window
         {
             var evidenceKind = (EvidenceTypeBox.SelectedItem as ComboBoxItem)?.Tag?.ToString()
                 ?? "uncertain";
-            var (name, count) = _sampleStore.SaveSelected(_selectedFrame, label, evidenceKind);
+            var (name, count) = _sampleStore.SaveSelected(_selectedFrame, label, evidenceKind, _marks);
             TrainingStatus.Text = $"Đã lưu mẫu {name} ({count}/250) cùng nhãn thủ công tại: " +
                                   _sampleStore.Folder;
             ClearPendingFrame(); // A given preview must not be saved repeatedly by accident.
