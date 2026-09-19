@@ -2,97 +2,144 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Windows;
-using MessageBox = System.Windows.MessageBox;
+using System.Windows.Controls;
 using System.Windows.Threading;
+using MessageBox = System.Windows.MessageBox;
 
 namespace XerathAssistant.Desktop;
 
 /// <summary>
-/// Opt-in, LOCAL training-data collection. Samples only the visible bottom-right
-/// minimap region of the foreground League window during practice/replay.
-/// No neural model, tracking, background desktop recording or live HUD advice.
+/// Opt-in minimap still-frame REVIEW during a practice match. Pixels and JPEG bytes
+/// are never written to a file. One frame at a time is sent to the user's configured
+/// PersonalAI local endpoint, which forwards it to Gemini. Not suitable for live HUD
+/// advice, opponent tracking or automatic role inference.
 /// </summary>
 public partial class MinimapTrainingRecorderWindow : Window
 {
-    private const int MaximumSamples = 120;
-    private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(3) };
-    private readonly string _root = Path.Combine(
+    private const int MaximumFramesPerSession = 45;
+    private const int MaximumImageBytes = 2 * 1024 * 1024;
+    private readonly DispatcherTimer _timer = new();
+    private readonly HttpClient _visionClient = new()
+    {
+        BaseAddress = new Uri("http://127.0.0.1:5188/"),
+        Timeout = TimeSpan.FromSeconds(45)
+    };
+    private readonly string _legacyRoot = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "XerathSupportAssistant", "minimap-training");
-    private string? _session;
-    private int _count;
+    private CancellationTokenSource? _sessionCancellation;
+    private DateTime _lastGameFocusedUtc;
+    private int _sent;
     private bool _running;
+    private bool _busy;
+    private bool _closed;
 
     public MinimapTrainingRecorderWindow()
     {
         InitializeComponent();
         _timer.Tick += CaptureTick;
-        FolderText.Text = "Nơi lưu: " + _root +
-            "\nChỉ lưu ảnh minimap; không gửi dữ liệu ra mạng và không nhận diện đối thủ.";
+        FolderText.Text = "Ảnh mới chỉ nằm trong bộ nhớ trong lúc xử lý, KHÔNG ghi ra ổ đĩa. " +
+            "Thư mục ảnh của phiên bản cũ: " + _legacyRoot;
+    }
+
+    private static bool IsGameRunning()
+    {
+        try
+        {
+            using var game = Process.GetProcessesByName("League of Legends").FirstOrDefault();
+            return game is not null && !game.HasExited;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or
+                                   System.ComponentModel.Win32Exception)
+        {
+            return false;
+        }
     }
 
     private void StartClick(object sender, RoutedEventArgs e)
     {
         if (_running) return;
+        if (!IsGameRunning())
+        {
+            StatusText.Text = "Chưa phát hiện trận Liên Minh. Hãy vào trận luyện tập trước khi bật phân tích.";
+            return;
+        }
+        var seconds = IntervalBox.SelectedIndex switch { 0 => 30, 2 => 120, _ => 60 };
         var answer = MessageBox.Show(this,
-            "Bạn đồng ý lưu ảnh minimap của cửa sổ Liên Minh đang hiển thị trên máy " +
-            "mỗi 3 giây (tối đa 120 ảnh) để tự xem lại hoặc chuẩn bị dữ liệu kiểm thử AI? " +
-            "Không gửi ảnh lên máy chủ hay hiện cảnh báo vị trí rừng địch trong trận.",
-            "Cho phép thu ảnh luyện tập?", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            $"Bạn đồng ý cho ứng dụng tự động chụp phần minimap đang HIỂN THỊ của cửa sổ game được chọn, " +
+            $"và GỬI TỐI ĐA {MaximumFramesPerSession} ảnh (mỗi {seconds} giây) tới AI cá nhân rồi " +
+            "tới Google Gemini để phân tích trong phiên luyện tập này? " +
+            "Mỗi ảnh sẽ được giải phóng khỏi bộ nhớ sau xử lý, không có tệp ảnh mới được lưu trên máy. " +
+            "Gemini là dịch vụ bên ngoài: có thể sử dụng hạn mức/phát sinh chi phí và có chính sách " +
+            "xử lý dữ liệu riêng. Kết quả KHÔNG dùng để báo vị trí địch hoặc phát lời nhắc trong game. " +
+            "Bạn có thể bấm Dừng bất cứ lúc nào.",
+            "Xác nhận gửi ảnh minimap trong một phiên luyện tập",
+            MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (answer != MessageBoxResult.Yes) return;
 
-        try
-        {
-            Directory.CreateDirectory(_root);
-            _session = Path.Combine(_root,
-                $"{DateTime.UtcNow:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}");
-            Directory.CreateDirectory(_session);
-            _count = 0;
-            _running = true;
-            StartButton.IsEnabled = false;
-            StopButton.IsEnabled = true;
-            StatusText.Text = "Đang chờ bạn chuyển sang cửa sổ trận Liên Minh; " +
-                "ảnh chỉ được lưu khi trò chơi là cửa sổ được chọn.";
-            _timer.Start();
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            StatusText.Text = "Không thể tạo thư mục ảnh: " + ex.Message;
-        }
+        _sessionCancellation?.Dispose();
+        _sessionCancellation = new CancellationTokenSource();
+        _sent = 0;
+        _running = true;
+        _lastGameFocusedUtc = DateTime.UtcNow;
+        _timer.Interval = TimeSpan.FromSeconds(seconds);
+        _timer.Start();
+        StartButton.IsEnabled = false;
+        StopButton.IsEnabled = true;
+        IntervalBox.IsEnabled = false;
+        AnalysisText.Text = "Đang chờ ảnh minimap đầu tiên. Kết quả chỉ tồn tại trong phiên hiện tại.";
+        StatusText.Text = $"Đang theo dõi cửa sổ game được chọn · tối đa {MaximumFramesPerSession} ảnh · " +
+            $"mỗi {seconds} giây. Không lưu ảnh trên ổ đĩa.";
     }
 
-    private void StopClick(object sender, RoutedEventArgs e) => StopRecording();
+    private void StopClick(object sender, RoutedEventArgs e) =>
+        StopRecording("Đã dừng. Đã giải phóng ảnh trong bộ nhớ của phiên này.");
 
-    private void StopRecording()
+    private void StopRecording(string reason)
     {
         _timer.Stop();
         _running = false;
+        _sessionCancellation?.Cancel();
         StartButton.IsEnabled = true;
         StopButton.IsEnabled = false;
-        StatusText.Text = $"Đã dừng. Đã lưu {_count} ảnh minimap vào: {_session ?? "chưa có thư mục"}";
+        IntervalBox.IsEnabled = true;
+        if (!_closed)
+        {
+            StatusText.Text = $"{reason} Số ảnh đã gửi trong phiên: {_sent}. " +
+                "Ứng dụng không tạo tệp ảnh mới.";
+            AnalysisText.Text = "Đã xóa kết quả phiên khỏi giao diện; ảnh không được lưu vào tệp.";
+        }
     }
 
-    private void CaptureTick(object? sender, EventArgs e)
+    private async void CaptureTick(object? sender, EventArgs e)
     {
-        if (!_running || _session is null) return;
-        if (_count >= MaximumSamples)
+        if (!_running || _busy || _closed) return;
+        if (!IsGameRunning())
         {
-            StopRecording();
+            StopRecording("Trận đã đóng; ứng dụng tự dừng.");
             return;
         }
-
-        // Do not capture an unrelated foreground window, even if LoL is running
-        // in the background. All captured pixels come from its visible client area.
         if (!TryGetForegroundGameClient(out var client))
         {
-            StatusText.Text = $"Đã lưu {_count} ảnh. Đang chờ cửa sổ Liên Minh được chọn...";
+            if (DateTime.UtcNow - _lastGameFocusedUtc > TimeSpan.FromMinutes(3))
+                StopRecording("Cửa sổ game không được chọn quá 3 phút; ứng dụng tự dừng.");
+            else
+                StatusText.Text = "Tạm dừng chụp vì cửa sổ game không được chọn. " +
+                    "Ứng dụng không đọc nội dung của cửa sổ khác.";
+            return;
+        }
+        _lastGameFocusedUtc = DateTime.UtcNow;
+        if (_sent >= MaximumFramesPerSession)
+        {
+            StopRecording("Đã đạt giới hạn ảnh/phiên; tự dừng để tránh tăng chi phí.");
             return;
         }
 
-        // Percentage-based region is an uncalibrated, bounded training crop, not
-        // a detector. A future model must calibrate the actual minimap boundaries.
         var region = new Rectangle(
             client.Left + (int)(client.Width * 0.78),
             client.Top + (int)(client.Height * 0.70),
@@ -102,47 +149,130 @@ public partial class MinimapTrainingRecorderWindow : Window
         region.Intersect(System.Windows.Forms.SystemInformation.VirtualScreen);
         if (region.Width < 90 || region.Height < 90)
         {
-            StatusText.Text = "Cửa sổ trò chơi quá nhỏ hoặc không hiển thị đủ minimap.";
+            StatusText.Text = "Minimap nằm ngoài vùng hiển thị hoặc cửa sổ quá nhỏ.";
             return;
         }
 
+        _busy = true; // At most one image and one cloud request in flight.
+        var cancellationToken = _sessionCancellation!.Token;
         try
         {
-            using var bitmap = new Bitmap(region.Width, region.Height, PixelFormat.Format24bppRgb);
+            // Pixels and compressed JPEG stay in short-lived RAM buffers only.
+            using var bitmap = new Bitmap(region.Width, region.Height,
+                PixelFormat.Format24bppRgb);
             using (var graphics = Graphics.FromImage(bitmap))
             {
                 graphics.CopyFromScreen(region.Location, System.Drawing.Point.Empty,
                     region.Size, CopyPixelOperation.SourceCopy);
             }
-            var filename = Path.Combine(_session, $"minimap_{++_count:000}_{DateTime.UtcNow:HHmmss}.jpg");
-            bitmap.Save(filename, ImageFormat.Jpeg);
-            StatusText.Text = $"Đã lưu {_count}/{MaximumSamples} ảnh minimap từ cửa sổ game. " +
-                "Đây là dữ liệu thô để xem lại, chưa có AI nhận diện rừng địch.";
-            if (_count >= MaximumSamples) StopRecording();
+            using var jpeg = new MemoryStream();
+            bitmap.Save(jpeg, ImageFormat.Jpeg);
+            if (jpeg.Length is < 24 or > MaximumImageBytes)
+            {
+                StatusText.Text = "Ảnh minimap vượt giới hạn 2 MB hoặc không hợp lệ; không gửi ảnh.";
+                return;
+            }
+            jpeg.Position = 0;
+            using var form = new MultipartFormDataContent();
+            form.Add(new StringContent("true"), "confirmed");
+            var imageContent = new StreamContent(jpeg);
+            imageContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+            form.Add(imageContent, "image", "minimap.jpg");
+
+            StatusText.Text = $"Đang phân tích ảnh thứ {_sent + 1}/{MaximumFramesPerSession}. " +
+                "Không có tệp ảnh mới được lưu.";
+            using var response = await _visionClient.PostAsync(
+                "api/vision/minimap/analyze", form, cancellationToken);
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (!_running || _closed || cancellationToken.IsCancellationRequested) return;
+
+            if (!response.IsSuccessStatusCode)
+            {
+                string message;
+                try
+                {
+                    using var doc = JsonDocument.Parse(body);
+                    message = doc.RootElement.TryGetProperty("error", out var error)
+                        ? error.GetString() ?? "Không có lời giải thích." : "Không có lời giải thích.";
+                }
+                catch (JsonException) { message = "Không có lời giải thích."; }
+                StopRecording($"AI chưa xử lý được ảnh (HTTP {(int)response.StatusCode}): " +
+                    message[..Math.Min(180, message.Length)]);
+                return;
+            }
+            using var result = JsonDocument.Parse(body);
+            if (!result.RootElement.TryGetProperty("analysis", out var analysis) ||
+                analysis.ValueKind != JsonValueKind.String ||
+                !result.RootElement.TryGetProperty("suitableForLiveHud", out var liveHud) ||
+                liveHud.ValueKind != JsonValueKind.False)
+            {
+                StopRecording("AI cá nhân trả dữ liệu không phù hợp cho chế độ xem lại.");
+                return;
+            }
+
+            _sent++;
+            // Discard the previous text; keep no screenshot, replay log or video.
+            AnalysisText.Text = analysis.GetString() ?? "Không có kết quả.";
+            AnalysisNote.Text = "Kết quả từ một ảnh minimap vừa lấy, chưa được kiểm chứng " +
+                $"(mốc máy: {DateTime.Now:HH:mm:ss}). Không phải thông tin vị trí hiện tại đáng tin cậy.";
+            StatusText.Text = $"Đã nhận phân tích {_sent}/{MaximumFramesPerSession}. " +
+                "Ảnh vừa xử lý được giải phóng khi yêu cầu kết thúc; không ghi JPG/PNG ra đĩa.";
+            if (_sent >= MaximumFramesPerSession)
+                StopRecording("Đã đạt giới hạn ảnh/phiên; tự dừng để tránh tăng chi phí.");
         }
-        catch (Exception ex) when (ex is ExternalException or IOException or UnauthorizedAccessException
-                                   or ArgumentException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            StopRecording();
-            StatusText.Text = "Đã dừng vì không thể lưu ảnh: " + ex.Message;
+            // Stopped by user or by game closing. Never retry the old frame.
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or
+                                   IOException or ExternalException or JsonException or
+                                   ArgumentException or InvalidOperationException)
+        {
+            if (_running && !_closed)
+                StopRecording("Không thể phân tích ảnh (kiểm tra AI cá nhân/Gemini): " + ex.Message);
+        }
+        finally
+        {
+            _busy = false;
         }
     }
 
-    private void OpenFolderClick(object sender, RoutedEventArgs e)
+    private void DeleteOldImagesClick(object sender, RoutedEventArgs e)
     {
+        if (!Directory.Exists(_legacyRoot))
+        {
+            FolderText.Text = "Không thấy thư mục ảnh minimap cũ để xóa.";
+            return;
+        }
+        if (MessageBox.Show(this,
+                "Xóa vĩnh viễn chỉ các tệp minimap_*.jpg nằm trong các thư mục phiên cũ của Xerath " +
+                "Support Assistant? Ảnh bạn lưu từ bản trước sẽ không thể khôi phục bằng nút này. " +
+                "Ảnh mới của chế độ đang chạy không nằm trên đĩa.",
+                "Xác nhận xóa ảnh minimap cũ",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            return;
+        var deleted = 0;
         try
         {
-            Directory.CreateDirectory(_root);
-            var folder = _session is not null && Directory.Exists(_session) ? _session : _root;
-            Process.Start(new ProcessStartInfo("explorer.exe")
+            foreach (var session in Directory.EnumerateDirectories(_legacyRoot))
             {
-                UseShellExecute = true,
-                ArgumentList = { folder }
-            });
+                var directory = new DirectoryInfo(session);
+                if (directory.Attributes.HasFlag(FileAttributes.ReparsePoint)) continue;
+                foreach (var image in directory.EnumerateFiles("minimap_*.jpg",
+                             SearchOption.TopDirectoryOnly))
+                {
+                    if (image.Attributes.HasFlag(FileAttributes.ReparsePoint)) continue;
+                    image.Delete();
+                    deleted++;
+                }
+                if (!directory.EnumerateFileSystemInfos().Any()) directory.Delete();
+            }
+            FolderText.Text = $"Đã xóa {deleted} tệp JPG minimap cũ có tên minimap_*.jpg. " +
+                "Các tệp không khớp tên hoặc nằm ở thư mục khác vẫn được giữ nguyên.";
         }
-        catch (Exception ex) when (ex is IOException or System.ComponentModel.Win32Exception)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            StatusText.Text = "Không mở được thư mục ảnh: " + ex.Message;
+            FolderText.Text = $"Đã xóa {deleted} tệp; một số tệp chưa xóa được: {ex.Message}";
         }
     }
 
@@ -165,7 +295,6 @@ public partial class MinimapTrainingRecorderWindow : Window
         {
             return false;
         }
-
         if (!GetClientRect(window, out var rect)) return false;
         var topLeft = new NativePoint { X = 0, Y = 0 };
         if (!ClientToScreen(window, ref topLeft)) return false;
@@ -178,22 +307,18 @@ public partial class MinimapTrainingRecorderWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
-        _timer.Stop();
-        _running = false;
+        _closed = true;
+        StopRecording("Cửa sổ đã đóng.");
+        _sessionCancellation?.Dispose();
+        _visionClient.Dispose();
         base.OnClosed(e);
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct NativeRect
-    {
-        public int Left, Top, Right, Bottom;
-    }
+    private struct NativeRect { public int Left, Top, Right, Bottom; }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct NativePoint
-    {
-        public int X, Y;
-    }
+    private struct NativePoint { public int X, Y; }
 
     [DllImport("user32.dll")]
     private static extern IntPtr GetForegroundWindow();
