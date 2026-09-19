@@ -87,8 +87,32 @@
           <TextBlock Text="BỘ MẪU V1.8 · CHỈ LƯU KHI BẠN XÁC NHẬN" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,7"/>
           <TextBlock TextWrapping="Wrap" Foreground="#F9CF90" FontSize="12" Margin="0,0,0,8"
                      Text="Ảnh bên dưới chỉ giữ trong RAM đến lần phân tích kế tiếp hoặc khi bấm Dừng. Kiểm tra vùng cắt có đúng minimap không; ảnh có thể chứa chi tiết bên cạnh. Không mặc định lưu. Nhãn do bạn ghi là mô tả thủ công, CHƯA phải dữ liệu nhận diện tướng có tọa độ được kiểm chứng."/>
-          <Image Name="SamplePreview" MaxWidth="260" MaxHeight="220" HorizontalAlignment="Left"
-                 Stretch="Uniform" Margin="0,0,0,8"/>
+          <Image Name="SamplePreview" MaxWidth="300" MaxHeight="260" HorizontalAlignment="Left"
+                 Stretch="Uniform" Cursor="Cross" MouseLeftButtonDown="SamplePreviewClick"
+                 Margin="0,0,0,8"/>
+          <TextBlock Name="MarkCoordinateStatus" Text="Nhấp trực tiếp lên biểu tượng đang thấy rõ trong ảnh để chọn tọa độ."
+                     FontSize="12" Foreground="#8FE1C3" TextWrapping="Wrap" Margin="0,0,0,6"/>
+          <WrapPanel Margin="0,0,0,8">
+            <TextBox Name="ChampionNameBox" Width="130" MaxLength="50" Margin="0,0,8,6"
+                     ToolTip="Tên tướng; nhập không xác định nếu không chắc."/>
+            <ComboBox Name="ChampionTeamBox" Width="140" SelectedIndex="2" Margin="0,0,8,6">
+              <ComboBoxItem Content="Đồng minh" Tag="ally"/>
+              <ComboBoxItem Content="Đối thủ" Tag="enemy"/>
+              <ComboBoxItem Content="Chưa rõ đội" Tag="unknown"/>
+            </ComboBox>
+            <ComboBox Name="ChampionRoleBox" Width="140" SelectedIndex="5" Margin="0,0,8,6">
+              <ComboBoxItem Content="Top" Tag="top"/>
+              <ComboBoxItem Content="Rừng" Tag="jungle"/>
+              <ComboBoxItem Content="Mid" Tag="mid"/>
+              <ComboBoxItem Content="Bot/ADC" Tag="bottom"/>
+              <ComboBoxItem Content="Support" Tag="support"/>
+              <ComboBoxItem Content="Chưa rõ vai trò" Tag="unknown"/>
+            </ComboBox>
+            <Button Click="AddChampionMarkClick" Content="Thêm điểm" Padding="10,6" Margin="0,0,8,6"/>
+            <Button Click="ClearChampionMarksClick" Content="Xóa các điểm" Padding="10,6" Margin="0,0,8,6"/>
+          </WrapPanel>
+          <TextBlock Name="ChampionMarksStatus" Text="Chưa có điểm đánh dấu. Có thể lưu ảnh không có biểu tượng xác định."
+                     Foreground="#AFC3D8" TextWrapping="Wrap" FontSize="12" Margin="0,0,0,8"/>
           <TextBlock Text="Minimap có thể gợi ý Mid rời đường hoặc Rừng tiến gần bot khi có biểu tượng hiển thị qua nhiều ảnh; đây chưa phải bằng chứng họ sẽ gank. Không gắn nhãn chắc chắn địch trong bụi nếu không thấy họ được lộ tầm nhìn." TextWrapping="Wrap" FontSize="12" Foreground="#AFC3D8"/>
           <TextBlock Text="Phân loại thông tin: quan sát trực tiếp hay chỉ là suy luận?" Foreground="#D4E3F5" FontSize="12" Margin="0,6,0,4"/>
           <ComboBox Name="EvidenceTypeBox" SelectedIndex="2" Margin="0,0,0,8" Width="440" HorizontalAlignment="Left">
