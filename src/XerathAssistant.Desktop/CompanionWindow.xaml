@@ -1,7 +1,7 @@
 <Window x:Class="XerathAssistant.Desktop.CompanionWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Xerath Support Assistant · Companion V1.8 · Chọn lưu mẫu minimap" Width="980" Height="760"
+        Title="Xerath Support Assistant · Trợ lý trận đấu" Width="920" Height="660"
         MinWidth="720" MinHeight="600" Background="#0B1521" FontFamily="Segoe UI">
   <Window.Resources>
     <Style x:Key="CompanionSectionTitle" TargetType="TextBlock">
@@ -28,7 +28,7 @@
       <StackPanel MaxWidth="1020" HorizontalAlignment="Center">
         <TextBlock Text="XERATH · SUPPORT ASSISTANT" FontSize="24" FontWeight="Bold"/>
         <TextBlock Margin="0,4,0,14" Foreground="{StaticResource MutedBrush}"
-                   Text="Trợ lý đi cùng Liên Minh · Lời nhắc tùy chọn và bảng chỉ số cá nhân · Không điều khiển game."/>
+                   Text="Hai việc chính: cảnh báo theo máu và thu ảnh minimap có chọn lọc. Không điều khiển game."/>
 
         <Border Background="#122339" CornerRadius="10" Padding="14" Margin="0,0,0,10">
           <StackPanel>
@@ -38,9 +38,59 @@
           </StackPanel>
         </Border>
 
-        <Border Background="#122339" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+        <Border Background="#172D3D" CornerRadius="12" Padding="19" Margin="0,0,0,12">
           <StackPanel>
-            <TextBlock Style="{StaticResource CompanionSectionTitle}" Text="1 · Lịch nhắc việc Xerath SP"/>
+            <TextBlock Text="CẢNH BÁO TRONG TRẬN" Foreground="#8FE1C3" FontSize="13" FontWeight="Bold"/>
+            <TextBlock Text="Theo dõi máu của bạn và cảnh báo nguy hiểm" FontSize="19"
+                       FontWeight="SemiBold" Margin="0,5,0,6"/>
+            <TextBlock Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                       Margin="0,0,0,12" Text="Dựa trên chỉ số máu đã quan sát, không dự đoán Rừng/Mid hoặc gank."/>
+            <WrapPanel>
+              <Button Style="{StaticResource CompanionButton}" Click="OpenHudClick"
+                      Background="#23705B" Padding="15,11" Content="Bật HUD cảnh báo"/>
+              <Button Style="{StaticResource CompanionButton}" Click="OpenSelfStatsClick"
+                      Padding="15,11" Content="Xem chỉ số &amp; cài đặt HUD"/>
+            </WrapPanel>
+          </StackPanel>
+        </Border>
+        <Border Background="#172D3D" CornerRadius="12" Padding="19" Margin="0,0,0,14">
+          <StackPanel>
+            <TextBlock Text="MINIMAP · THU DỮ LIỆU" Foreground="#A9D5FC" FontSize="13" FontWeight="Bold"/>
+            <TextBlock Text="Xem minimap và chọn ảnh để AI học sau này" FontSize="19"
+                       FontWeight="SemiBold" Margin="0,5,0,6"/>
+            <TextBlock Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                       Margin="0,0,0,12" Text="Xem trước và thu tối đa 5 ảnh trong RAM; không cần Gemini, không tự lưu ảnh."/>
+            <Button Style="{StaticResource CompanionButton}" Click="OpenMinimapTrainingClick"
+                    Background="#315F84" Padding="15,11" HorizontalAlignment="Left"
+                    Content="Mở minimap · Xem trước &amp; thu ảnh"/>
+          </StackPanel>
+        </Border>
+        <Expander Header="Âm thanh tiếng Việt · mở khi cần tạo hoặc nghe thử" IsExpanded="False" Foreground="#EAF2FC" Background="#14263A" Padding="8" Margin="0,0,0,9">
+          <StackPanel>        <Border Background="#122339" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+          <StackPanel>
+            <TextBlock Style="{StaticResource CompanionSectionTitle}" Text="Giọng nói tiếng Việt"/>
+            <CheckBox Name="VoiceCheck" IsChecked="True" Margin="0,0,0,5"
+                      Content="Giọng đọc tiếng Việt miễn phí (âm lượng 70%)"/>
+            <TextBlock Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="0,0,0,9"
+                       Text="Tạo trước tiếng Việt cho cả lời nhắc theo giờ và 10 câu cảnh báo HUD, gồm ba mức nguy hiểm dựa trên máu thực, máu thấp, hạ gục và hồi sinh. Khi chơi, HUD chỉ phát tệp đã lưu, không gọi dịch vụ tạo giọng. Nếu dịch vụ trực tuyến lỗi, có thể dùng eSpeak NG miễn phí."/>
+            <WrapPanel>
+              <Button Name="PrepareVoiceButton" Style="{StaticResource CompanionButton}" Click="PrepareVoiceClick"
+                      Background="#23705B" Content="Tạo giọng tiếng Việt miễn phí"/>
+              <Button Name="TestVoiceButton" Style="{StaticResource CompanionButton}" Click="TestVoiceClick"
+                      Content="Nghe thử" IsEnabled="False"/>
+            </WrapPanel>
+            <TextBlock Name="VoiceStatus" Foreground="{StaticResource MutedBrush}" FontSize="12"
+                       Text="Bấm Tạo giọng tiếng Việt miễn phí rồi Nghe thử. Muốn HUD tự phát lời khi có sự kiện, bật giọng trong mục Chỉ số trực tiếp: KHÔNG cần nhấn Bắt đầu nhắc. Bắt đầu nhắc chỉ dành cho bộ hẹn giờ."/>
+          </StackPanel>
+        </Border>
+
+
+          </StackPanel>
+        </Expander>
+        <Expander Header="Lời nhắc theo giờ · tùy chọn, mặc định tắt" IsExpanded="False" Foreground="#EAF2FC" Background="#14263A" Padding="8" Margin="0,0,0,9">
+          <StackPanel>        <Border Background="#122339" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+          <StackPanel>
+            <TextBlock Style="{StaticResource CompanionSectionTitle}" Text="Lời nhắc theo giờ (mặc định tắt)"/>
             <TextBlock Margin="0,0,0,8" Foreground="{StaticResource MutedBrush}" FontSize="12"
                        Text="Các lời nhắc theo giờ mặc định tắt để tránh đọc lặp. Chỉ tích loại bạn muốn rồi nhấn Bắt đầu nhắc; cảnh báo nguy hiểm theo máu trên HUD chạy riêng."/>
             <UniformGrid Columns="2">
@@ -62,25 +112,7 @@
 
         <Border Background="#122339" CornerRadius="10" Padding="14" Margin="0,0,0,10">
           <StackPanel>
-            <TextBlock Style="{StaticResource CompanionSectionTitle}" Text="2 · Giọng nói tiếng Việt (tùy chọn)"/>
-            <CheckBox Name="VoiceCheck" IsChecked="True" Margin="0,0,0,5"
-                      Content="Giọng đọc tiếng Việt miễn phí (âm lượng 70%)"/>
-            <TextBlock Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="0,0,0,9"
-                       Text="Tạo trước tiếng Việt cho cả lời nhắc theo giờ và 10 câu cảnh báo HUD, gồm ba mức nguy hiểm dựa trên máu thực, máu thấp, hạ gục và hồi sinh. Khi chơi, HUD chỉ phát tệp đã lưu, không gọi dịch vụ tạo giọng. Nếu dịch vụ trực tuyến lỗi, có thể dùng eSpeak NG miễn phí."/>
-            <WrapPanel>
-              <Button Name="PrepareVoiceButton" Style="{StaticResource CompanionButton}" Click="PrepareVoiceClick"
-                      Background="#23705B" Content="Tạo giọng tiếng Việt miễn phí"/>
-              <Button Name="TestVoiceButton" Style="{StaticResource CompanionButton}" Click="TestVoiceClick"
-                      Content="Nghe thử" IsEnabled="False"/>
-            </WrapPanel>
-            <TextBlock Name="VoiceStatus" Foreground="{StaticResource MutedBrush}" FontSize="12"
-                       Text="Bấm Tạo giọng tiếng Việt miễn phí rồi Nghe thử. Muốn HUD tự phát lời khi có sự kiện, bật giọng trong mục Chỉ số trực tiếp: KHÔNG cần nhấn Bắt đầu nhắc. Bắt đầu nhắc chỉ dành cho bộ hẹn giờ."/>
-          </StackPanel>
-        </Border>
-
-        <Border Background="#122339" CornerRadius="10" Padding="14" Margin="0,0,0,10">
-          <StackPanel>
-            <TextBlock Style="{StaticResource CompanionSectionTitle}" Text="3 · Điều khiển phiên nhắc"/>
+            <TextBlock Style="{StaticResource CompanionSectionTitle}" Text="Điều khiển lời nhắc theo giờ"/>
             <WrapPanel>
               <Button Name="StartButton" Style="{StaticResource CompanionButton}" Click="StartClick"
                       Content="Bắt đầu nhắc" Background="#23705B"/>
@@ -97,26 +129,25 @@
           </StackPanel>
         </Border>
 
-        <Border Background="#122339" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+
+          </StackPanel>
+        </Expander>
+        <Expander Header="Công cụ thử nghiệm khác" IsExpanded="False" Foreground="#EAF2FC" Background="#14263A" Padding="8" Margin="0,0,0,9">
+          <StackPanel>        <Border Background="#122339" CornerRadius="10" Padding="14" Margin="0,0,0,10">
           <StackPanel>
-            <TextBlock Style="{StaticResource CompanionSectionTitle}" Text="4 · Công cụ bổ sung"/>
+            <TextBlock Style="{StaticResource CompanionSectionTitle}" Text="Công cụ thử nghiệm khác"/>
             <WrapPanel>
-              <Button Style="{StaticResource CompanionButton}" Click="OpenHudClick"
-                      Background="#23705B" Content="Bật HUD theo tình huống trong game"/>
-              <Button Style="{StaticResource CompanionButton}" Click="OpenSelfStatsClick"
-                      Content="Chỉ số trực tiếp &amp; tổng hợp · tùy chỉnh HUD"/>
               <Button Style="{StaticResource CompanionButton}" Click="OpenLabClick" Content="Mở Aim Lab V0.1"/>
-              <Button Style="{StaticResource CompanionButton}" Click="OpenMinimapTrainingClick"
-                      Content="Mắt nhìn AI V1.8 · Giao diện 3 bước, xem trước &amp; thu 5 ảnh không cần Gemini"/>
               <Button Style="{StaticResource CompanionButton}" Click="OpenLastSeenReviewClick"
                       Content="Xem lại vị trí Rừng / Mid · nghe tiếng Việt"/>
               <Button Style="{StaticResource CompanionButton}" Click="OpenWaveFightAdvisorClick"
                       Content="Phân tích thế lính &amp; giao tranh"/>
             </WrapPanel>
-            <TextBlock FontSize="12" Foreground="{StaticResource MutedBrush}"
-                       Text="Mắt nhìn AI V1.8: căn khung và xem ảnh bên cạnh nhau; thu chuỗi 5 ảnh trong RAM không cần Gemini. Chỉ ảnh bạn chọn mới lưu cục bộ (tối đa 250 ảnh/200 MB). Gửi ảnh cho Gemini là thẻ tùy chọn riêng, luôn cần đồng ý. Không phát giả thuyết vị trí địch thành cảnh báo trên HUD."/>
           </StackPanel>
         </Border>
+
+          </StackPanel>
+        </Expander>
       </StackPanel>
     </Grid>
   </ScrollViewer>
