@@ -25,7 +25,7 @@ public partial class CompanionWindow : Window
     private bool _started;
     private bool _paused;
     private bool _isMatchRunning;
-        private bool _closed;
+    private bool _closed;
 
     public CompanionWindow()
     {
@@ -261,7 +261,6 @@ public partial class CompanionWindow : Window
         _audioQueue.Clear();
         _player.Stop();
         _player.Close();
-        _playing = false;
     }
 
     private void OpenLabClick(object sender, RoutedEventArgs e) => new MainWindow().Show();
