@@ -561,6 +561,12 @@ public partial class MinimapTrainingRecorderWindow : Window
         }
     }
 
+    private void OpenSampleLibraryClick(object sender, RoutedEventArgs e)
+    {
+        new MinimapSampleLibraryWindow { Owner = this }.ShowDialog();
+        TrainingStatus.Text = "Đã đóng thư viện mẫu. Ảnh đang xem trong RAM vẫn không được tự lưu.";
+    }
+
     private void DeleteTrainingSamplesClick(object sender, RoutedEventArgs e)
     {
         if (_running)
