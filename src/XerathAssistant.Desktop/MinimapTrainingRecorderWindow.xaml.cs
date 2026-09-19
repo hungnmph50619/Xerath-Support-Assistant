@@ -49,6 +49,8 @@ public partial class MinimapTrainingRecorderWindow : Window
     private Rectangle _previewClient;
     private readonly DispatcherTimer _previewTimer = new() { Interval = TimeSpan.FromMilliseconds(500) };
     private DateTime _previewUntilUtc;
+    private bool _autoDetectPreview;
+    private bool _suppressCropSliderChanged;
     private byte[]? _selectedFrame;
     private double? _markX;
     private double? _markY;
