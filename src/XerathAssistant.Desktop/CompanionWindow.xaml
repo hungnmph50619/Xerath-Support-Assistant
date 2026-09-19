@@ -1,7 +1,7 @@
 <Window x:Class="XerathAssistant.Desktop.CompanionWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Xerath Support Assistant · Companion V0.2" Width="780" Height="650"
+        Title="Xerath Support Assistant · Companion V0.4" Width="780" Height="650"
         MinWidth="700" MinHeight="570" Background="#0B1521" FontFamily="Segoe UI">
   <ScrollViewer VerticalScrollBarVisibility="Auto">
     <StackPanel Margin="23">
@@ -46,6 +46,7 @@
             <Button Name="PauseButton" Click="PauseClick" Content="Tạm dừng" IsEnabled="False"/>
             <Button Name="StopButton" Click="StopClick" Content="Kết thúc" IsEnabled="False"/>
             <Button Click="OpenLabClick" Content="Mở Aim Lab V0.1"/>
+            <Button Click="OpenLastSeenReviewClick" Content="Xem lại vị trí rừng địch"/>
           </WrapPanel>
           <TextBlock Name="SessionStatus" Margin="0,12,0,0" Text="Chưa bắt đầu phiên chơi."/>
           <TextBlock Name="LastReminder" Margin="0,8,0,0" Foreground="#8FE1C3"
@@ -53,7 +54,7 @@
         </StackPanel>
       </Border>
       <TextBlock Foreground="{StaticResource MutedBrush}" FontSize="12"
-                 Text="V0.2 không chụp màn hình, không đọc minimap, không tự nhận diện gank Near/Arrived hay hỗ trợ ngắm chiêu trong trận. Chế độ luyện ngắm V0.1 vẫn mở riêng qua nút Aim Lab."/>
+                 Text="V0.4: Xem lại vị trí rừng địch trên ảnh trận đã lưu là công cụ riêng, đánh dấu thủ công sau trận, không overlay hoặc tự quan sát trong trận. Trợ lý vẫn chỉ nhắc việc theo lịch."/>
     </StackPanel>
   </ScrollViewer>
 </Window>
