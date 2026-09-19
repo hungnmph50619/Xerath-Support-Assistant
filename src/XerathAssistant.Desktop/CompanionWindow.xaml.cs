@@ -93,10 +93,10 @@ public partial class CompanionWindow : Window
         var ready = phrases.Count(_voice.IsReady);
         TestVoiceButton.IsEnabled = phrases.Any(_voice.IsReady);
         if (!_started && _preparation is null)
-            VoiceStatus.Text = $"Giọng nữ tiếng Việt Hoài My: đã lưu {ready}/{phrases.Length} lời nhắc. " +
+            VoiceStatus.Text = $"Giọng đọc tiếng Việt miễn phí: đã lưu {ready}/{phrases.Length} lời nhắc. " +
                 (ready == phrases.Length && ready > 0
                     ? "Sẵn sàng phát offline (âm lượng 70%)."
-                    : "Bấm 'Tạo giọng tiếng Việt miễn phí' khi có Internet; không cần API key.");
+                    : "Bấm 'Tạo giọng tiếng Việt miễn phí'; nếu dịch vụ mạng lỗi, có thể cài eSpeak NG để tạo giọng offline.");
     }
 
     private async void PrepareVoiceClick(object sender, RoutedEventArgs e)
@@ -128,8 +128,8 @@ public partial class CompanionWindow : Window
         }
         catch (Exception ex)
         {
-            if (!_closed) VoiceStatus.Text = "Dịch vụ tạo giọng miễn phí chưa hoạt động: " + ex.Message +
-                " Có thể thử lại khi có Internet; HUD chữ vẫn dùng được.";
+            if (!_closed) VoiceStatus.Text = "Chưa tạo được giọng tiếng Việt: " + ex.Message +
+                " HUD chữ vẫn dùng được.";
         }
         finally
         {
