@@ -1,4 +1,21 @@
-# Xerath Support Assistant · Companion V1.0 — HUD ưu tiên tình huống thực tế
+# Xerath Support Assistant · Companion V1.1 — Cầu nối AI cá nhân trên HUD
+
+**Tích hợp bước đầu:** HUD hiện có thể **tùy chọn** gửi hai loại sự kiện đã xác nhận sang ứng dụng AI-Ca-Nhan đang chạy trên **cùng máy**: máu của chính bạn vừa giảm nhanh và điểm hạ gục đã được công bố. AI Cá Nhân nhận dữ liệu dạng JSON qua API cục bộ và trả lại lời nhắc tiếng Việt dạng mẫu cố định để hiển thị trong HUD. Nếu API không phản hồi trong 750 ms hoặc không chạy, Xerath vẫn hiện lời nhắc cục bộ như trước. Không truyền ảnh màn hình, video, tệp cá nhân, API key hoặc vị trí đối thủ; không cần AI trả phí để thử kết nối.
+
+**Đây là kết nối API thử nghiệm, chưa phải trí tuệ nhân tạo quan sát trận đấu.** API của AI Cá Nhân hiện chỉ diễn đạt lại *hai tín hiệu đã xác nhận* theo mẫu an toàn, không gọi Gemini/OpenAI và không theo dõi rừng, đoán nơi giao tranh hoặc ra lệnh đi đâu/dùng Q/W/E/R. Khi bật chức năng kết nối, chỉ có hai sự kiện trên được gửi; thông tin vẫn phải lấy từ Riot Local API và bộ phát hiện cục bộ trước khi gửi.
+
+**Cách bật kết nối hai dự án:**
+
+1. Trên máy Windows, cập nhật dự án **AI-Ca-Nhan** tại thư mục mã nguồn của chính nó bằng `git pull origin main`, rồi chạy `dotnet run --project src/PersonalAI.Web --launch-profile PersonalAI.Web`. Giữ cửa sổ PowerShell đó mở. Địa chỉ HTTP cục bộ mặc định là `http://127.0.0.1:5188`. Nếu bạn chạy cấu hình hoặc cổng khác, cầu nối chưa hỗ trợ thay đổi cổng.
+2. Đóng Xerath Support Assistant đang chạy; trong thư mục dự án Xerath chạy `git pull origin main`, rồi `.\RUN_WINDOWS.cmd`.
+3. Nhấn **Chỉ số trực tiếp & tổng hợp · tùy chỉnh HUD** → **Kiểm tra kết nối AI cá nhân**. Khi dòng trạng thái báo đã kết nối, tích **Thử cầu nối AI cá nhân trên máy**. Sau đó nhấn **Bật HUD trên game**, chuyển lại Liên Minh ở chế độ **Cửa sổ / Không viền**.
+4. Khi bạn gặp tình huống khiến HP của chính bạn giảm nhanh hoặc có điểm hạ gục *đã xảy ra*, thông báo sẽ qua cầu nối khi đang bật; nếu máy chủ AI không chạy vẫn có thông báo nội bộ. Chỉ bấm **Bắt đầu nhắc** trong Companion khi cần các lời nhắc *bằng giọng nói theo giờ*; tính năng này chưa tự đọc các câu trả về từ AI Cá Nhân.
+
+**An toàn và giới hạn:** chỉ kết nối đến `http://127.0.0.1:5188`, chỉ khi người dùng chủ động bật tùy chọn. API nhận tín hiệu trên máy chưa có xác thực giữa các tiến trình; **không mở port ra mạng ngoài hoặc Internet**. Hãy thử trong buổi luyện tập và kiểm tra xem HUD cập nhật đúng, không che game hoặc lặp thông báo. Nếu AI cá nhân chạy bằng HTTPS ở cổng 7188 mà không mở HTTP 5188, nút kiểm tra sẽ báo chưa kết nối. Chưa kiểm tra tích hợp thực tế trên máy bạn.
+
+---
+
+## V1.0 — HUD ưu tiên tình huống thực tế
 
 **V1.0 — phần đã triển khai:** đọc chỉ số *chính bạn* từ API trận cục bộ khoảng 1 giây/lần và tự nhận ra khi máu vừa giảm ít nhất 22% tối đa trong 2,5 giây (ít nhất 100 HP). Khi có thay đổi được xác nhận, HUD thông báo ngắn bằng tiếng Việt ngay trên màn hình game, có chống lặp khoảng 8 giây. Cảnh báo máu xuống dưới 30%, năng lượng dưới 25%, vàng đạt 2.500 vẫn hoạt động như trước. Số liệu API có thể trả về trễ hoặc gián đoạn; đây là quan sát hai mẫu gần nhau, **không phải thuật toán phát hiện tướng địch đang ở đâu, cũng không phải nhận diện giao tranh**.
 
