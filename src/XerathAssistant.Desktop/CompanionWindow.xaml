@@ -1,7 +1,7 @@
 <Window x:Class="XerathAssistant.Desktop.CompanionWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Xerath Support Assistant · Companion V0.8" Width="980" Height="760"
+        Title="Xerath Support Assistant · Companion V0.9" Width="980" Height="760"
         MinWidth="720" MinHeight="600" Background="#0B1521" FontFamily="Segoe UI">
   <Window.Resources>
     <Style x:Key="CompanionSectionTitle" TargetType="TextBlock">
@@ -64,21 +64,17 @@
           <StackPanel>
             <TextBlock Style="{StaticResource CompanionSectionTitle}" Text="2 · Giọng nói tiếng Việt (tùy chọn)"/>
             <CheckBox Name="VoiceCheck" IsChecked="True" Margin="0,0,0,5"
-                      Content="Giọng AI nữ miền Bắc (Ban Mai, âm lượng 70%)"/>
+                      Content="Giọng nữ tiếng Việt miễn phí (Hoài My, âm lượng 70%)"/>
             <TextBlock Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="0,0,0,9"
-                       Text="Muốn chỉ xem lời nhắc bằng chữ? Bỏ chọn ô giọng nói; không cần API key."/>
-            <TextBlock Text="API key FPT.AI · chỉ nhập tại máy bạn, không đưa lên GitHub" FontSize="12"
-                       Margin="0,0,0,4"/>
-            <PasswordBox Name="ApiKeyBox" Height="31" Width="460" MaxWidth="460"
-                         HorizontalAlignment="Left" Margin="0,0,0,10"/>
+                       Text="Không cần tài khoản hay API key. Lần đầu cần Internet để tạo sẵn các câu nhắc; những lần sau phát âm thanh đã lưu offline. Dịch vụ trực tuyến miễn phí có thể gián đoạn."/>
             <WrapPanel>
               <Button Name="PrepareVoiceButton" Style="{StaticResource CompanionButton}" Click="PrepareVoiceClick"
-                      Background="#23705B" Content="Tạo và lưu giọng tiếng Việt"/>
+                      Background="#23705B" Content="Tạo giọng tiếng Việt miễn phí"/>
               <Button Name="TestVoiceButton" Style="{StaticResource CompanionButton}" Click="TestVoiceClick"
                       Content="Nghe thử" IsEnabled="False"/>
             </WrapPanel>
             <TextBlock Name="VoiceStatus" Foreground="{StaticResource MutedBrush}" FontSize="12"
-                       Text="Tạo âm thanh một lần qua Internet rồi phát offline; không dùng giọng tiếng Anh."/>
+                       Text="Bấm Tạo giọng tiếng Việt miễn phí → Nghe thử → Bắt đầu nhắc. Nếu không tạo được giọng, HUD và thông báo chữ vẫn sử dụng được."/>
           </StackPanel>
         </Border>
 
