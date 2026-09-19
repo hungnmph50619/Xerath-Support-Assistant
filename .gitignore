@@ -9,3 +9,11 @@
 *.snk
 *.log
 TestResults/
+
+# Dữ liệu, trọng số, ảnh huấn luyện minimap chỉ được giữ cục bộ.
+minimap-ai-work/
+**/minimap-ai-training/
+roi-*.png
+roi-*.txt
+minimap-detector.onnx
+*.pt
