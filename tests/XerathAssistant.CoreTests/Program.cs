@@ -125,4 +125,31 @@ Verify(WaveFightAdvisor.Evaluate(scenario with { Objective = ObjectiveState.Unkn
 Verify(WaveFightAdvisor.Evaluate(scenario with { Health = Condition.Low }).Fight.State ==
        AdviceState.Caution, "low health blocks favorable fight judgment");
 
+
+const string ownJson = """
+{"level":8,"currentGold":2304,"championStats":{"currentHealth":1164,"maxHealth":1265,"resourceValue":527,"resourceMax":527,"resourceType":"MANA","abilityPower":124}}
+""";
+const string gameJson = """{"gameTime":560.0}""";
+var own = SelfStatsParser.Parse(ownJson, gameJson);
+Verify(own.Level == 8 && own.Gold == 2304 && own.Health == 1164,
+       "read own level, gold and health from Riot sample-shaped JSON");
+Verify(Math.Abs(own.HealthPercent - (1164d / 1265d * 100d)) < 0.001 &&
+       own.ResourcePercent == 100 && SelfStatsSnapshot.Clock(560) == "09:20" &&
+       SelfStatsSnapshot.Clock(3660) == "61:00",
+       "self stats percentages and long game clock");
+var invalidSelfData = false;
+try { SelfStatsParser.Parse(ownJson.Replace("\"currentHealth\":1164", "\"currentHealth\":-5"), gameJson); }
+catch (FormatException) { invalidSelfData = true; }
+Verify(invalidSelfData, "reject invalid self-health values");
+var personalSession = new SelfStatsSession();
+personalSession.Add(own);
+personalSession.Add(own with { GameTimeSeconds = 565, Resource = 100, Health = 450, Gold = 2600 });
+personalSession.Add(own with { GameTimeSeconds = 570, Resource = 90, Health = 400, Gold = 500 });
+Verify(personalSession.Samples == 3 && personalSession.LowResourceObservedSeconds == 10 &&
+       personalSession.HighestObservedGold == 2600 && personalSession.LowestHealthPercent < 35,
+       "summarize observed resource shortages, health and peak carried gold");
+personalSession.Add(own with { GameTimeSeconds = 1 });
+Verify(personalSession.Samples == 1 && personalSession.LowResourceObservedSeconds == 0,
+       "new match resets previous in-memory summary");
+
 Console.WriteLine($"ALL {count} CORE TESTS PASSED");
