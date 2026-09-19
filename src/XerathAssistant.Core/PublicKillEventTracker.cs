@@ -44,7 +44,8 @@ public sealed class PublicKillEventTracker
                 recentKills++;
         }
 
-        if (_lastGameTime >= 0 && gameTime + 20 < _lastGameTime)
+        if (_lastGameTime >= 0 && (gameTime + 3 < _lastGameTime ||
+            (maxId >= 0 && maxId < _lastEventId && gameTime <= _lastGameTime)))
             _initialized = false;
         _lastGameTime = gameTime;
         if (!_initialized)
