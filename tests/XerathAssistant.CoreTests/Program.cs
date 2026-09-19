@@ -365,4 +365,46 @@ Verify(FeedEpisode(episodeSample with { GameTimeSeconds = 1700, Health = 800 }) 
        episodes.EpisodeCount == 0,
        "duplicate clock samples cannot introduce synthetic risk episodes");
 
+
+var trend = new OwnHealthTrendAnalyzer();
+var trendBase = own with { GameTimeSeconds = 1800, Health = 1000, MaxHealth = 1000 };
+Verify(trend.Observe(trendBase) is null &&
+       trend.Observe(trendBase with { GameTimeSeconds = 1801, Health = 920 }) is null &&
+       trend.Observe(trendBase with { GameTimeSeconds = 1802, Health = 845 }) is null,
+       "rolling analysis never warns from one or two individually small HP decreases");
+Verify(trend.Observe(trendBase with { GameTimeSeconds = 1803, Health = 765 })
+       is { Severity: OwnDangerSeverity.Elevated } compound &&
+       compound.Message.Contains("24%") && compound.Message.Contains("3") &&
+       compound.Message.Contains("76%"),
+       "three small fresh hits accumulating over three seconds produce a factual trend warning");
+trend.Reset();
+Verify(trend.Observe(trendBase with { GameTimeSeconds = 1900, Health = 500 }) is null &&
+       trend.Observe(trendBase with { GameTimeSeconds = 1901, Health = 450 }) is null &&
+       trend.Observe(trendBase with { GameTimeSeconds = 1902, Health = 390 }) is null &&
+       trend.Observe(trendBase with { GameTimeSeconds = 1903, Health = 250 })
+       is { Severity: OwnDangerSeverity.High },
+       "cumulative verified decreases can escalate when the current HP is low");
+Verify(trend.Observe(trendBase with { GameTimeSeconds = 1909, Health = 200 }) is null,
+       "sampling gaps cannot be described as a recent multi-hit trend");
+trend.Reset();
+Verify(trend.Observe(trendBase with { GameTimeSeconds = 2000, Health = 500 }) is null &&
+       trend.Observe(trendBase with { GameTimeSeconds = 2001, Health = 200 }) is null &&
+       trend.Observe(trendBase with { GameTimeSeconds = 2002, Health = 0 }) is null &&
+       trend.Observe(trendBase with { GameTimeSeconds = 2010, Health = 1000 }) is null &&
+       trend.Observe(trendBase with { GameTimeSeconds = 2011, Health = 600 }) is null &&
+       trend.Observe(trendBase with { GameTimeSeconds = 2012, Health = 550 }) is
+       { Severity: OwnDangerSeverity.Elevated },
+       "death and respawn clear prior rolling samples before assessing new damage");
+trend.Reset();
+Verify(trend.Observe(trendBase with { GameTimeSeconds = 2100, Health = 900 }) is null &&
+       trend.Observe(trendBase with { GameTimeSeconds = 2100, Health = 400 }) is null &&
+       trend.Observe(trendBase with { GameTimeSeconds = 2101, Health = 350 }) is null &&
+       trend.Observe(trendBase with { GameTimeSeconds = 2102, Health = 300 }) is null,
+       "duplicated clock data cannot fabricate a large multi-hit trend");
+trend.Reset();
+Verify(trend.Observe(trendBase with { GameTimeSeconds = 2200, Health = 1000 }) is null &&
+       trend.Observe(trendBase with { GameTimeSeconds = 2201, Health = 850, MaxHealth = 1300 }) is null &&
+       trend.Observe(trendBase with { GameTimeSeconds = 2202, Health = 700, MaxHealth = 1300 }) is null,
+       "sudden maximum HP changes reset trend comparisons instead of making fake risk");
+
 Console.WriteLine($"ALL {count} CORE TESTS PASSED");
