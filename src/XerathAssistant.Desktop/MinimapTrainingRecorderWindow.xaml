@@ -49,7 +49,13 @@
                      Text="Ảnh bên dưới chỉ giữ trong RAM đến lần phân tích kế tiếp hoặc khi bấm Dừng. Kiểm tra vùng cắt có đúng minimap không; ảnh có thể chứa chi tiết bên cạnh. Không mặc định lưu. Nhãn do bạn ghi là mô tả thủ công, CHƯA phải dữ liệu nhận diện tướng có tọa độ được kiểm chứng."/>
           <Image Name="SamplePreview" MaxWidth="260" MaxHeight="220" HorizontalAlignment="Left"
                  Stretch="Uniform" Margin="0,0,0,8"/>
-          <TextBlock Text="Ghi rõ điều thực sự nhìn thấy; tách suy luận khỏi bằng chứng (ví dụ: thấy Mid ở sông; KHÔNG kết luận địch trong bụi khi biểu tượng không hiện)." TextWrapping="Wrap" FontSize="12" Foreground="#AFC3D8"/>
+          <TextBlock Text="Minimap có thể gợi ý Mid rời đường hoặc Rừng tiến gần bot khi có biểu tượng hiển thị qua nhiều ảnh; đây chưa phải bằng chứng họ sẽ gank. Không gắn nhãn chắc chắn địch trong bụi nếu không thấy họ được lộ tầm nhìn." TextWrapping="Wrap" FontSize="12" Foreground="#AFC3D8"/>
+          <TextBlock Text="Phân loại thông tin: quan sát trực tiếp hay chỉ là suy luận?" Foreground="#D4E3F5" FontSize="12" Margin="0,6,0,4"/>
+          <ComboBox Name="EvidenceTypeBox" SelectedIndex="2" Margin="0,0,0,8" Width="440" HorizontalAlignment="Left">
+            <ComboBoxItem Tag="visible-observation" Content="Tôi nhìn thấy trực tiếp biểu tượng trên ảnh"/>
+            <ComboBoxItem Tag="hypothesis" Content="Giả thuyết (ví dụ: Rừng có thể gank, Mid có thể đảo đường)"/>
+            <ComboBoxItem Tag="uncertain" Content="Không xác định: ảnh mờ, khuất hoặc không đủ dữ liệu"/>
+          </ComboBox>
           <TextBox Name="SampleLabelBox" MinHeight="50" MaxLength="300" TextWrapping="Wrap" AcceptsReturn="True"
                    VerticalScrollBarVisibility="Auto" Margin="0,7,0,8"/>
           <WrapPanel>
