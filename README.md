@@ -1,4 +1,18 @@
-# Xerath Support Assistant · Companion V0.9 — Giọng nói tiếng Việt miễn phí
+# Xerath Support Assistant · Companion V0.9.1 — Sửa lỗi giọng nói tiếng Việt miễn phí
+
+**Vấn đề đã sửa:** V0.9 dựa vào dịch vụ giọng Hoài My qua Edge TTS, nhưng trên máy người dùng dịch vụ không trả về âm thanh. V0.9.1 **không còn dùng thư viện Edge TTS đó**. Khi nhấn **Tạo giọng tiếng Việt miễn phí**, ứng dụng thử tạo MP3 tiếng Việt từ dịch vụ Google Translate TTS không cần API key; nếu không truy cập được, tự động chuyển sang **eSpeak NG đã cài trên máy** để tạo WAV tiếng Việt hoàn toàn offline. Giọng eSpeak NG nghe máy móc hơn giọng trực tuyến nhưng không phụ thuộc dịch vụ chuyển văn bản thành giọng nói khi đã cài đặt. Mỗi câu được lưu vào `%LOCALAPPDATA%\XerathSupportAssistant\voice\free-vietnamese-v2` để lần chơi sau không cần tạo lại.
+
+**Cách dùng trên Windows:** Đóng phần mềm cũ rồi chạy `git pull origin main` và `.\RUN_WINDOWS.cmd` trong thư mục dự án. Đợi cửa sổ hiển thị **V0.9.1**. Giữ tích **Giọng đọc tiếng Việt miễn phí**, nhấn **Tạo giọng tiếng Việt miễn phí**, đợi hiện thông báo đủ 6/6 câu nhắc, nhấn **Nghe thử** rồi **Bắt đầu nhắc**. HUD và bộ nhắc giọng hoạt động độc lập; muốn nghe tiếng bạn cần nhấn **Bắt đầu nhắc** ở mục 3. Các lời nhắc HUD vẫn hiện chữ kể cả chưa tạo được âm thanh.
+
+**Nếu giọng trực tuyến vẫn báo lỗi:** tải và cài **eSpeak NG x64** (bản phát hành Windows miễn phí tại https://github.com/espeak-ng/espeak-ng/releases), mở lại Companion và nhấn **Tạo giọng tiếng Việt miễn phí**. Ứng dụng sẽ tìm `espeak-ng.exe` trong `C:\Program Files\eSpeak NG` hoặc `C:\Program Files (x86)\eSpeak NG`, dùng ngôn ngữ **vi** và lưu WAV cho 6 câu nhắc. Có thể đọc offline sau khi cài và không cần tài khoản/API key. Nếu cài vào đường dẫn khác, phần mềm hiện chưa tự phát hiện được. **Không cài nếu bạn không muốn dùng phần mềm bên ngoài**; khi đó bạn vẫn có thể dùng HUD chữ hoặc thử lại giọng trực tuyến.
+
+**Lưu ý về độ tin cậy:** Google Translate TTS dành cho người tiêu dùng không phải API được cam kết duy trì cho ứng dụng của bên thứ ba, vì vậy có thể chặn yêu cầu hoặc ngừng hoạt động. eSpeak NG là bộ tổng hợp giọng nói nguồn mở hỗ trợ tiếng Việt; chất giọng có tính tổng hợp và phát âm có thể chưa tự nhiên. Không hứa bản mới đã phát tiếng thành công trên máy bạn: cần **Nghe thử** xác nhận. Không sử dụng tiếng Anh thay thế khi tiếng Việt chưa sẵn sàng. Câu nhắc gửi lên dịch vụ trực tuyến là các câu cố định trong ứng dụng, không phải mật khẩu hay nội dung cá nhân.
+
+**Kiểm thử:** chạy `dotnet build src/XerathAssistant.Desktop/XerathAssistant.Desktop.csproj` trên Windows. Chưa có kết quả thử phát giọng thành công trên máy người dùng. Nếu cả hai lựa chọn gặp lỗi, gửi ảnh **dòng thông báo lỗi** và ảnh thư mục cài eSpeak NG (nếu đã cài); không cần bất kỳ API key nào.
+
+---
+
+## V0.9 — Giọng nói tiếng Việt miễn phí (đã được V0.9.1 thay thế)
 
 **Thay đổi ở V0.9:** hệ thống nhắc bằng giọng nói không còn yêu cầu API key FPT.AI. Trong Companion tích chọn **Giọng nữ tiếng Việt miễn phí (Hoài My, âm lượng 70%)**, bấm **Tạo giọng tiếng Việt miễn phí**, chờ hoàn tất, sau đó bấm **Nghe thử** và **Bắt đầu nhắc**. Việc chuẩn bị âm thanh cần Internet ở lần đầu; các câu MP3 đã lưu được phát offline khi chơi, không tốn phí dịch vụ trên mỗi lần phát. Giọng Hoài My được liệt kê là giọng nữ tiếng Việt; **chưa xác nhận giọng vùng miền Bắc** trên máy người dùng.
 
