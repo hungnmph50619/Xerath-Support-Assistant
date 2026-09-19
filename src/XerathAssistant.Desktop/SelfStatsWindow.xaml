@@ -24,10 +24,12 @@
           </WrapPanel>
           <CheckBox Name="TimeRemindersCheck" IsChecked="False" Margin="0,9,0,0"
                     Content="Hiện thêm lời nhắc theo thời gian trên HUD (mặc định tắt để ưu tiên thông báo theo tình huống)"/>
-          <CheckBox Name="EventsCheck" IsChecked="True" Margin="0,9,0,0"
-                    Content="Hiện thông báo hạ gục đã xảy ra (không xác định vị trí giao tranh)"/>
-          <CheckBox Name="HealthChangeCheck" IsChecked="True" Margin="0,5,0,0"
-                    Content="Cảnh báo khi máu của bạn giảm nhanh theo chỉ số trận thực (không đoán vị trí đối thủ)"/>
+          <CheckBox Name="EventsCheck" IsChecked="False" Margin="0,9,0,0"
+                    Content="Hiện thông báo hạ gục công khai (tùy chọn, mặc định tắt để tránh nhiễu)"/>
+          <CheckBox Name="BasicWarningsCheck" IsChecked="False" Margin="0,5,0,0"
+                    Content="Hiện các lời nhắc cơ bản về máu thấp, mana và vàng (tùy chọn, mặc định tắt)"/>
+          <CheckBox Name="HealthChangeCheck" IsChecked="False" Margin="0,5,0,0"
+                    Content="Hiện cảnh báo máu giảm nhanh dạng cũ (tùy chọn, có thể trùng phân tích nguy hiểm)"/>
           <CheckBox Name="DangerAnalysisCheck" IsChecked="True" Margin="0,8,0,0"
                     Content="Phân tích mức nguy hiểm theo máu đang mất và máu còn lại; ưu tiên cảnh báo mới thay lời nhắc theo giờ"/>
           <TextBlock Name="DangerAnalysisStatus" Foreground="{StaticResource MutedBrush}"
