@@ -1,26 +1,38 @@
-# Xerath Support Assistant · Companion V0.2
+# Xerath Support Assistant · Companion V0.3 — Vietnamese AI voice
 
-Ứng dụng Windows C#/.NET 8/WPF, chạy **cùng lúc với Liên Minh Huyền Thoại** để nhắc các công việc SP bằng lời nói. Màn hình mặc định đã đổi sang **Companion**; màn hình Aim Lab V0.1 vẫn có thể mở bằng nút **Mở Aim Lab V0.1**.
+Ứng dụng C#/.NET 8/WPF chạy cùng lúc với Liên Minh Huyền Thoại và nhắc những công việc của Xerath SP. Phiên bản này thay bộ đọc System.Speech tiếng Anh bằng **giọng AI Ban Mai — nữ miền Bắc** của FPT.AI. Âm lượng phát mặc định 70%.
 
-## Sử dụng trong lúc chơi
+## Cập nhật trên Windows
 
-1. Trên Windows, cài .NET 8 SDK và mở Liên Minh Huyền Thoại, vào trận (hoặc mở game sau).
-2. Mở `RUN_WINDOWS.cmd` ở thư mục gốc dự án, hoặc chạy `dotnet run --project src/XerathAssistant.Desktop/XerathAssistant.Desktop.csproj`.
-3. Ứng dụng hiển thị trạng thái phát hiện **tiến trình Windows** của game/client. Chọn các mục nhắc bạn cần, bật giọng nói và nhấn **Bắt đầu nhắc**.
-4. Quay lại game. Trợ lý phát lời nhắc độc lập ở nền; dùng **Tạm dừng / Tiếp tục / Kết thúc** trên cửa sổ trợ lý khi cần. Nếu chưa phát hiện trận, bạn vẫn có thể chủ động chạy bộ nhắc sau khi xác nhận.
+Trong PowerShell, mở thư mục dự án đã clone và chạy:
 
-Các mục nhắc mặc định: minimap 45 giây; tầm nhìn 3 phút; kiểm tra rừng đồng minh 90 giây; ADC 2 phút; năng lượng và vị trí Xerath 2 phút 30 giây; mục tiêu lớn 3 phút. Những lời nhắc đến hạn cùng lúc được gộp, cách nhau tối thiểu 30 giây. Hệ thống dùng đồng hồ phiên chơi; khi tạm dừng, đồng hồ cũng dừng.
+```powershell
+git pull origin main
+.\RUN_WINDOWS.cmd
+```
 
-Giọng nói dùng System.Speech của Windows, âm lượng 70%. Nếu máy không có giọng tiếng Việt, vào Windows Settings cài thêm giọng đọc tiếng Việt; chương trình sẽ báo tình trạng giọng đọc. Cần mạng để khôi phục gói NuGet System.Speech ở lần build đầu.
+Cần Windows 10/11, .NET 8 SDK. Mở Liên Minh và vào trận, sau đó mở trợ lý.
 
-## Phạm vi và giới hạn
+## Tạo giọng tiếng Việt lần đầu (cần mạng và API key riêng)
 
-- V0.2 chỉ kiểm tra **tên tiến trình Windows** để hiển thị game/client có đang chạy; không tự khởi chạy Liên Minh, tự biết bạn đã chọn Xerath hay tự xác định trận đã bắt đầu chính xác.
-- Các câu như “kiểm tra rừng đồng minh” là lời nhắc chung theo giờ, **không phải** nhận diện rừng đang gank, cũng không phải cảnh báo Near/Arrived đã xác nhận.
-- Không đọc bộ nhớ/trạng thái trận, không chụp hay xử lý màn hình game, không hiển thị hướng ngắm trực tiếp lên game, không gửi phím/chuột/ping, không can thiệp Vanguard.
-- Aim Lab vẫn là mô phỏng độc lập, dùng thông số luyện tập không phải chỉ số kỹ năng LoL theo patch.
+1. Tạo tài khoản tại https://console.fpt.ai/ và bật **Text to Speech** trong dự án, tạo API key có quyền sử dụng TTS. Có thể có hạn mức hoặc chi phí dịch vụ tùy tài khoản; xem bảng giá tại nhà cung cấp.
+2. Trong **Xerath Support Assistant**, chọn các mục nhắc muốn dùng. Dán API key vào ô mật khẩu trong ứng dụng **trên máy của bạn**. Không gửi key qua ChatGPT, không commit lên GitHub.
+3. Nhấn **Tạo và lưu giọng tiếng Việt**. Đợi đến khi thông báo đã lưu đủ số lời nhắc (FPT.AI xử lý bất đồng bộ nên có thể mất vài phút). Nhấn **Nghe thử**.
+4. Nhấn **Bắt đầu nhắc** rồi quay lại game. Các bản MP3 đã tạo được lưu trong `%LOCALAPPDATA%\XerathSupportAssistant\voice\fpt-banmai-v1`. Những lần sau, không cần mạng hoặc API key để phát các câu đã lưu. Nếu bật thêm mục nhắc chưa có âm thanh, hãy nhập key và tạo phần còn thiếu.
 
-## Mã nguồn và kiểm thử
+Trợ lý **không dùng giọng Windows/tiếng Anh làm dự phòng**. Nếu chưa tạo đủ âm thanh cho các mục đã chọn, nút Bắt đầu sẽ yêu cầu chuẩn bị trước. Có thể bỏ chọn giọng nói để chỉ dùng thông báo chữ. Key chỉ giữ trong ô nhập tới lúc chuẩn bị xong rồi được xóa; ứng dụng không ghi key vào file cấu hình hoặc repository.
+
+Nhà cung cấp: FPT.AI TTS v5, API `https://api.fpt.ai/hmi/tts/v5`, giọng `banmai`; mã nguồn trong `src/XerathAssistant.Desktop/FptVietnameseVoiceService.cs`. Văn bản lời nhắc được gửi tới FPT.AI để tổng hợp âm thanh. Nếu không muốn gửi văn bản ra dịch vụ bên ngoài, tắt tính năng giọng nói.
+
+## Chức năng hiện tại
+
+- Giao diện Companion phát hiện **tiến trình Windows** của League Client và tiến trình trận (không đọc trạng thái hoặc nội dung game).
+- Lịch nhắc độc lập: minimap 45 giây; tầm nhìn 3 phút; rừng đồng minh 90 giây; ADC 2 phút; năng lượng/vị trí Xerath 2 phút 30 giây; mục tiêu lớn 3 phút. Gộp lời nhắc đồng thời, chống nhắc lặp tối thiểu 30 giây.
+- Giọng AI tiếng Việt đã lưu MP3, phát lần lượt nếu nhiều mục đến hạn cùng lúc; tạm dừng/kết thúc dừng âm thanh. Aim Lab V0.1 mở riêng qua nút **Mở Aim Lab V0.1**.
+
+**Chưa có** nhận diện gank Near/Arrived, tự đọc minimap, dự đoán Q/W/E/R trong trận hay điều khiển nhân vật. Các lời nhắc rừng đồng minh hiện là lời nhắc kiểm tra minimap theo giờ, không phải cảnh báo gank thực tế. Không can thiệp Vanguard.
+
+## Biên dịch và kiểm thử
 
 ```powershell
 dotnet build src/XerathAssistant.Desktop/XerathAssistant.Desktop.csproj
@@ -28,14 +40,6 @@ dotnet run --project tests/XerathAssistant.CoreTests/XerathAssistant.CoreTests.c
 dotnet run --project src/XerathAssistant.Desktop/XerathAssistant.Desktop.csproj
 ```
 
-CI: `.github/workflows/windows-build.yml`. Chạy trên Windows 10/11; cần .NET 8 SDK. Gửi log lỗi build hoặc ảnh ứng dụng nếu có lỗi; mã này chưa được chạy GUI trong môi trường ChatGPT.
+Workflow tự động: `.github/workflows/windows-build.yml`. Sau khi cập nhật, nếu có lỗi build hoặc phát âm thanh, chụp thông báo PowerShell/cửa sổ ứng dụng để xử lý. Bản cập nhật chưa được xác nhận chạy trên máy Windows của bạn.
 
-## Cấu trúc
-
-- `src/XerathAssistant.Desktop/CompanionWindow.*`: giao diện chơi cùng game, bộ nhắc và tổng hợp giọng nói.
-- `src/XerathAssistant.Core/ReminderEngine.cs`: lịch nhắc độc lập, gộp thông báo và chống lặp.
-- `src/XerathAssistant.Desktop/MainWindow.*`: Aim Lab V0.1 độc lập.
-- `src/XerathAssistant.Core/AimEngine.cs`: thuật toán mô phỏng Q/W/E/R của Aim Lab.
-- `tests/XerathAssistant.CoreTests/Program.cs`: bài kiểm thử toán học và lịch nhắc.
-
-Các chức năng đọc minimap trực tiếp, dự đoán ngắm Q/W/E/R trong trận và theo dõi phép bổ trợ đối thủ **không có trong phiên bản này**; chúng có thể vi phạm chính sách phần mềm bên thứ ba của Riot và gây rủi ro cho tài khoản.
+Tham khảo: https://docs.fpt.ai/docs/vi/speech/api/text-to-speech/
