@@ -6,6 +6,8 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 using System.Windows.Media;
+using Color = System.Windows.Media.Color;
+using ColorConverter = System.Windows.Media.ColorConverter;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using XerathAssistant.Core;
