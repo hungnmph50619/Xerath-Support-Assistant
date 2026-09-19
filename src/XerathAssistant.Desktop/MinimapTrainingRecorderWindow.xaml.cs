@@ -34,6 +34,12 @@ public partial class MinimapTrainingRecorderWindow : Window
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "XerathSupportAssistant", "minimap-training");
     private readonly MinimapSampleStore _sampleStore = new();
+    private readonly MinimapCropProfileStore _cropStore = new();
+    private MinimapCropProfile _cropProfile = MinimapCropProfile.Default;
+    private MinimapCropProfile? _previewProfile;
+    private Rectangle _previewClient;
+    private readonly DispatcherTimer _previewTimer = new() { Interval = TimeSpan.FromMilliseconds(500) };
+    private DateTime _previewUntilUtc;
     private byte[]? _selectedFrame;
     private CancellationTokenSource? _sessionCancellation;
     private DateTime _lastGameFocusedUtc;
@@ -46,6 +52,16 @@ public partial class MinimapTrainingRecorderWindow : Window
     {
         InitializeComponent();
         _timer.Tick += CaptureTick;
+        _previewTimer.Tick += PreviewCropTick;
+        _cropProfile = _cropStore.Load();
+        CropLeftSlider.Value = _cropProfile.Left * 100;
+        CropTopSlider.Value = _cropProfile.Top * 100;
+        CropWidthSlider.Value = _cropProfile.Width * 100;
+        CropHeightSlider.Value = _cropProfile.Height * 100;
+        CropStatusText.Text = _cropProfile.ConfirmedClientWidth > 0
+            ? $"Đã lưu khung cho cửa sổ game {_cropProfile.ConfirmedClientWidth}×{_cropProfile.ConfirmedClientHeight}. " +
+              "Nếu đổi kích thước game hoặc vị trí minimap, hãy xem trước và xác nhận lại."
+            : "Chưa có vùng minimap được kiểm tra. Hãy xem trước và xác nhận khung trước khi gửi ảnh Gemini.";
         FolderText.Text = "Ảnh phân tích mặc định không lưu. Chỉ mẫu bạn chọn mới ghi vào: " +
             _sampleStore.Folder + ". Ảnh từ phiên bản cũ: " + _legacyRoot;
     }
@@ -67,6 +83,18 @@ public partial class MinimapTrainingRecorderWindow : Window
     private void StartClick(object sender, RoutedEventArgs e)
     {
         if (_running) return;
+        if (_previewTimer.IsEnabled)
+        {
+            StatusText.Text = "Hãy chờ ảnh xem trước, kiểm tra và lưu khung minimap trước.";
+            return;
+        }
+        if (_cropProfile.ConfirmedClientWidth < 640 ||
+            !SameCrop(CurrentCropDraft(), _cropProfile))
+        {
+            StatusText.Text = "Chưa xác nhận vùng cắt minimap hoặc thanh trượt đã thay đổi. " +
+                "Bấm Xem trước, chuyển về game rồi xác nhận Lưu khung trước khi phân tích.";
+            return;
+        }
         if (!IsGameRunning())
         {
             StatusText.Text = "Chưa phát hiện trận Liên Minh. Hãy vào trận luyện tập trước khi bật phân tích.";
@@ -96,6 +124,7 @@ public partial class MinimapTrainingRecorderWindow : Window
         StartButton.IsEnabled = false;
         StopButton.IsEnabled = true;
         IntervalBox.IsEnabled = false;
+        SetCropControls(false);
         AnalysisText.Text = "Đang chờ ảnh minimap đầu tiên. Kết quả chỉ tồn tại trong phiên hiện tại.";
         StatusText.Text = $"Đang theo dõi cửa sổ game được chọn · tối đa {MaximumFramesPerSession} ảnh · " +
             $"mỗi {seconds} giây. Không lưu ảnh trên ổ đĩa.";
@@ -107,7 +136,9 @@ public partial class MinimapTrainingRecorderWindow : Window
     private void StopRecording(string reason)
     {
         _timer.Stop();
+        _previewTimer.Stop();
         _running = false;
+        SetCropControls(true);
         ClearPendingFrame();
         _sessionCancellation?.Cancel();
         StartButton.IsEnabled = true;
@@ -145,11 +176,12 @@ public partial class MinimapTrainingRecorderWindow : Window
             return;
         }
 
-        var region = new Rectangle(
-            client.Left + (int)(client.Width * 0.78),
-            client.Top + (int)(client.Height * 0.70),
-            Math.Max(1, (int)(client.Width * 0.22)),
-            Math.Max(1, (int)(client.Height * 0.30)));
+        if (!_cropProfile.MatchesConfirmedResolution(client))
+        {
+            StopRecording("Kích thước game đã thay đổi. Hãy xem trước và xác nhận lại khung minimap trước khi gửi thêm ảnh.");
+            return;
+        }
+        var region = _cropProfile.Crop(client);
         region.Intersect(client);
         region.Intersect(System.Windows.Forms.SystemInformation.VirtualScreen);
         if (region.Width < 90 || region.Height < 90)
@@ -242,6 +274,139 @@ public partial class MinimapTrainingRecorderWindow : Window
         finally
         {
             _busy = false;
+        }
+    }
+
+    private MinimapCropProfile CurrentCropDraft() => new(
+        Math.Round(CropLeftSlider.Value / 100d, 2),
+        Math.Round(CropTopSlider.Value / 100d, 2),
+        Math.Round(CropWidthSlider.Value / 100d, 2),
+        Math.Round(CropHeightSlider.Value / 100d, 2));
+
+    private static bool SameCrop(MinimapCropProfile a, MinimapCropProfile b) =>
+        a.Left == b.Left && a.Top == b.Top &&
+        a.Width == b.Width && a.Height == b.Height;
+
+    private void SetCropControls(bool enabled)
+    {
+        CropLeftSlider.IsEnabled = CropTopSlider.IsEnabled =
+            CropWidthSlider.IsEnabled = CropHeightSlider.IsEnabled = enabled;
+        PreviewCropButton.IsEnabled = enabled;
+        SaveCropButton.IsEnabled = enabled && _previewProfile is not null &&
+            _previewClient.Width >= 640 && _selectedFrame is not null;
+    }
+
+    private void CropSliderChanged(object sender,
+        System.Windows.RoutedPropertyChangedEventArgs<double> e)
+    {
+        // Any adjustment invalidates the old preview; it is never proof that the
+        // NEW bounds actually show a minimap at the current game resolution.
+        _previewProfile = null;
+        if (SaveCropButton is not null) SaveCropButton.IsEnabled = false;
+        if (CropStatusText is not null && _cropProfile.ConfirmedClientWidth > 0)
+            CropStatusText.Text = "Khung vừa được chỉnh sửa: cần xem trước và xác nhận lại trước khi phân tích.";
+    }
+
+    private void PreviewCropClick(object sender, RoutedEventArgs e)
+    {
+        if (_running || _busy || _previewTimer.IsEnabled) return;
+        var draft = CurrentCropDraft();
+        if (!draft.IsValid)
+        {
+            CropStatusText.Text = "Khung cắt vượt mép game hoặc quá nhỏ. " +
+                "Tổng vị trí + chiều rộng/chiều cao không được vượt 100%.";
+            return;
+        }
+        if (!IsGameRunning())
+        {
+            CropStatusText.Text = "Hãy vào trận luyện tập hoặc mở trận xem lại trước khi xem khung.";
+            return;
+        }
+        ClearPendingFrame();
+        _previewProfile = draft;
+        _previewClient = Rectangle.Empty;
+        SaveCropButton.IsEnabled = false;
+        _previewUntilUtc = DateTime.UtcNow.AddMinutes(2);
+        _previewTimer.Start();
+        CropStatusText.Text = "Đang chờ bạn chuyển về cửa sổ TRẬN Liên Minh được chọn. " +
+            "Ứng dụng sẽ lấy MỘT ảnh trong RAM để xem trước; không gửi Gemini hay lưu JPG.";
+    }
+
+    private void PreviewCropTick(object? sender, EventArgs e)
+    {
+        if (_closed || _running || _previewProfile is null ||
+            DateTime.UtcNow >= _previewUntilUtc)
+        {
+            _previewTimer.Stop();
+            if (!_closed) CropStatusText.Text = "Hết thời gian xem trước. Hãy thử lại.";
+            return;
+        }
+        if (!TryGetForegroundGameClient(out var client)) return;
+        try
+        {
+            var region = _previewProfile.Crop(client);
+            region.Intersect(client);
+            region.Intersect(System.Windows.Forms.SystemInformation.VirtualScreen);
+            if (region.Width < 90 || region.Height < 90)
+                throw new InvalidOperationException("Vùng cắt nhỏ hoặc nằm ngoài màn hình.");
+            using var bitmap = new Bitmap(region.Width, region.Height, PixelFormat.Format24bppRgb);
+            using (var graphics = Graphics.FromImage(bitmap))
+                graphics.CopyFromScreen(region.Location, System.Drawing.Point.Empty,
+                    region.Size, CopyPixelOperation.SourceCopy);
+            using var buffer = new MemoryStream();
+            bitmap.Save(buffer, ImageFormat.Jpeg);
+            if (buffer.Length is < 24 or > MaximumImageBytes)
+                throw new InvalidDataException("Ảnh xem trước vượt giới hạn 2 MB.");
+            _previewClient = client;
+            SetPendingFrame(buffer.ToArray());
+            SaveCropButton.IsEnabled = true;
+            AnalysisText.Text = "Ảnh xem trước chỉ tồn tại trong RAM; chưa gửi AI để phân tích.";
+            CropStatusText.Text = $"Ảnh xem trước của cửa sổ {client.Width}×{client.Height} đã sẵn sàng. " +
+                "Quay lại đây, xem ảnh và CHỈ xác nhận nếu khung đúng minimap. " +
+                "Nếu còn lệch, chỉnh thanh trượt và xem trước lần nữa.";
+        }
+        catch (Exception ex) when (ex is IOException or ExternalException or
+                                   ArgumentException or InvalidOperationException)
+        {
+            _previewProfile = null;
+            CropStatusText.Text = "Chưa xem được vùng minimap: " + ex.Message;
+        }
+        finally { _previewTimer.Stop(); }
+    }
+
+    private void SaveCropClick(object sender, RoutedEventArgs e)
+    {
+        if (_running || _previewTimer.IsEnabled || _previewProfile is null ||
+            _previewClient.Width < 640 || _selectedFrame is null ||
+            !SameCrop(CurrentCropDraft(), _previewProfile))
+        {
+            CropStatusText.Text = "Ảnh xem trước đã cũ hoặc thanh trượt đã thay đổi. Hãy xem trước lại.";
+            return;
+        }
+        if (MessageBox.Show(this,
+            "Bạn đã KIỂM TRA ảnh xem trước và xác nhận vùng này CHỈ chứa minimap " +
+            $"trên cửa sổ game {_previewClient.Width}×{_previewClient.Height}? " +
+            "Sau khi xác nhận, ứng dụng mới cho phép gửi ảnh theo khung này tới Gemini.",
+            "Xác nhận căn chỉnh minimap", MessageBoxButton.YesNo,
+            MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        try
+        {
+            var confirmed = _previewProfile with
+            {
+                ConfirmedClientWidth = _previewClient.Width,
+                ConfirmedClientHeight = _previewClient.Height
+            };
+            _cropStore.Save(confirmed);
+            _cropProfile = confirmed;
+            _previewProfile = null;
+            SaveCropButton.IsEnabled = false;
+            CropStatusText.Text = $"Đã lưu khung minimap cho {confirmed.ConfirmedClientWidth}×" +
+                $"{confirmed.ConfirmedClientHeight}. Bây giờ có thể bắt đầu phân tích.";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or
+                                   ArgumentException)
+        {
+            CropStatusText.Text = "Chưa lưu được cấu hình khung: " + ex.Message;
         }
     }
 
@@ -413,6 +578,7 @@ public partial class MinimapTrainingRecorderWindow : Window
     protected override void OnClosed(EventArgs e)
     {
         _closed = true;
+        _previewTimer.Stop();
         StopRecording("Cửa sổ đã đóng.");
         ClearPendingFrame();
         _sessionCancellation?.Dispose();
