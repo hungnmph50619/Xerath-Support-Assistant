@@ -265,6 +265,9 @@ public partial class CompanionWindow : Window
 
     private void OpenLabClick(object sender, RoutedEventArgs e) => new MainWindow().Show();
 
+    private void OpenLastSeenReviewClick(object sender, RoutedEventArgs e) =>
+        new LastSeenReviewWindow { Owner = this }.Show();
+
     protected override void OnClosed(EventArgs e)
     {
         _closed = true;
