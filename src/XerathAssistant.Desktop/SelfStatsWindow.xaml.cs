@@ -14,6 +14,7 @@ public partial class SelfStatsWindow : Window
     private readonly CancellationTokenSource _cancel = new();
     private SelfStatsHudWindow? _hud;
     private readonly PersonalStatAlerts _personalAlerts = new();
+    private readonly OwnHealthChangeDetector _healthChangeDetector = new();
     private readonly PublicKillEventTracker _publicEvents = new();
     private readonly ReminderEngine _hudReminders = new(TimeSpan.FromSeconds(15));
     private readonly Stopwatch _hudElapsed = new();
@@ -136,8 +137,15 @@ public partial class SelfStatsWindow : Window
             _session.Add(snapshot);
             _hud?.SetSnapshot(snapshot);
             var personalWarnings = _personalAlerts.Observe(snapshot);
-            if (_hud is not null && personalWarnings.Count > 0)
-                _hud.ShowNotice(string.Join(" ", personalWarnings), priority: true);
+            var healthLoss = _healthChangeDetector.Observe(snapshot);
+            if (_hud is not null)
+            {
+                // One concise message per sample, ordered by urgency.
+                if (healthLoss is not null && HealthChangeCheck.IsChecked == true)
+                    _hud.ShowNotice(healthLoss, priority: true);
+                else if (personalWarnings.Count > 0)
+                    _hud.ShowNotice(string.Join(" ", personalWarnings), priority: true);
+            }
 
             GameClock.Text = SelfStatsSnapshot.Clock(snapshot.GameTimeSeconds);
             LevelValue.Text = snapshot.Level.ToString();
