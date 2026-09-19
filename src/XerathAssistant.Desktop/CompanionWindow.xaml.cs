@@ -277,6 +277,7 @@ public partial class CompanionWindow : Window
     {
         if (_statsWindow is not null) return _statsWindow;
         var window = new SelfStatsWindow { Owner = this };
+        window.ConfigureHudReminders(SelectedReminders());
         window.Closed += (_, _) => _statsWindow = null;
         _statsWindow = window;
         return window;
@@ -292,6 +293,7 @@ public partial class CompanionWindow : Window
     private void OpenHudClick(object sender, RoutedEventArgs e)
     {
         var window = GetStatsWindow();
+        window.ConfigureHudReminders(SelectedReminders());
         if (!window.IsLoaded) window.Show();
         window.EnableHud(hidePanel: true);
     }
