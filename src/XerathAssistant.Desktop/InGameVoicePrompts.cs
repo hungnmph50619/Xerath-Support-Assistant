@@ -13,9 +13,13 @@ public static class InGameVoicePrompts
     public const string ManaLow = "Năng lượng của bạn đã xuống thấp.";
     public const string GoldHigh = "Vàng hiện có đã đạt ngưỡng nhắc.";
     public const string CompletedKill = "Vừa có một điểm hạ gục được ghi nhận.";
+    public const string DangerElevated = "Máu bạn vừa giảm mạnh. Hãy chú ý.";
+    public const string DangerHigh = "Cảnh báo nguy hiểm. Máu của bạn đang xuống nhanh.";
+    public const string DangerCritical = "Nguy hiểm cao. Máu của bạn đang rất thấp.";
 
     public static readonly string[] All =
     {
-        Died, Respawned, HealthLoss, HealthLow, ManaLow, GoldHigh, CompletedKill
+        Died, Respawned, HealthLoss, HealthLow, ManaLow, GoldHigh, CompletedKill,
+        DangerElevated, DangerHigh, DangerCritical
     };
 }
