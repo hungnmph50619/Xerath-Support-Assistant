@@ -1,5 +1,15 @@
 # Xerath Support Assistant · V1.8 — Lưu có chọn lọc ảnh minimap để kiểm thử nhận diện
 
+## Bổ sung V1.8 — Gắn tọa độ biểu tượng và thư viện mẫu cục bộ
+
+**Đã thêm đánh dấu điểm bằng chuột trên ảnh minimap đang xem.** Khi bạn chủ động chọn một ảnh trong RAM, hãy nhấp trực tiếp vào biểu tượng tướng nhìn thấy được; phần mềm tính tọa độ x/y chuẩn hóa trong vùng JPEG, hỗ trợ nhiều nhất 10 điểm/ảnh. Nhập tên tướng, đội, vai trò (nếu không chắc, chọn **Chưa rõ**), sau đó nhấn **Thêm điểm**. Bạn có thể xóa các điểm vừa chọn trước khi lưu. Những nhãn này là thông tin **do bạn tự xác nhận**, không phải kết quả AI đã nhận diện; tuyệt đối không đánh dấu vị trí đối thủ đang khuất tầm nhìn. Để lưu một ảnh có đánh dấu, hãy chọn loại bằng chứng **Quan sát trực tiếp**, nhập ghi chú và bấm lưu ảnh + nhãn thủ công. JSON của mỗi ảnh lưu các điểm và tọa độ tương ứng; ảnh không được tự gửi lên mạng khi bấm lưu.
+
+**Thư viện mẫu:** nhấn **Mở thư viện mẫu đã lưu** ngay trong Mắt nhìn AI để xem lại từng JPG, số điểm đã đánh dấu và ghi chú; bạn có thể sửa *ghi chú/loại bằng chứng* hoặc xóa từng ảnh + JSON sau khi xác nhận. Tọa độ và tên tướng đã gắn nhãn được giữ nguyên khi sửa ghi chú. Phần mềm từ chối lưu bản sao có **byte JPEG giống hệt** một ảnh đã lưu; hai ảnh nhìn gần giống nhưng có thể khác vị trí tướng sẽ **không bị tự xóa**. Giới hạn tổng thư viện vẫn là 250 ảnh / 200 MB và xóa toàn bộ vẫn yêu cầu xác nhận.
+
+**Còn thiếu:** V1.8 hiện **chưa có chế độ lưu chuỗi ảnh ngắn để xem lại nhiều khung liên tiếp**, chưa đánh dấu khung chữ nhật quanh icon, chưa có trang tự chấm độ chính xác nhận diện trên bộ kiểm thử, chưa có mô hình tự nhận diện tướng hoặc vị trí Rừng/Mid. Cần kiểm tra việc nhấp lên ảnh và thao tác thư viện trên máy Windows thực tế; CI xác nhận biên dịch và kiểm thử tự động hiện có, không chứng minh độ đúng của nhãn thủ công hoặc khả năng nhận diện biểu tượng.
+
+---
+
 ## Bổ sung V1.8 — Căn chỉnh vùng cắt trước khi gửi ảnh
 
 Trong Mắt nhìn AI, hãy điều chỉnh vị trí mép trái, mép trên, chiều rộng và chiều cao bằng bốn thanh trượt. Bấm **Xem trước 1 ảnh**, chuyển về cửa sổ trận Liên Minh để phần mềm lấy **một ảnh trong RAM và không gửi Gemini**, rồi quay lại xem ảnh. Nếu cắt sai vùng minimap, chỉnh lại thanh trượt và xem trước lần nữa. Chỉ khi ảnh đúng, bấm **Xác nhận ảnh đúng minimap & lưu khung**. Bản này dùng thanh trượt, chưa kéo trực tiếp khung trên ảnh.
