@@ -70,6 +70,15 @@ public sealed class MinimapSampleStore
             var info = new FileInfo(path);
             if (!info.Attributes.HasFlag(FileAttributes.ReparsePoint)) used += info.Length;
         }
+        // Reserve roughly one fifth of independently sampled frames for a
+        // held-out set. All frames from ONE short sequence share the same split,
+        // avoiding adjacent-frame leakage between future training and evaluation.
+        var name = "sample-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff") +
+                   "-" + Guid.NewGuid().ToString("N")[..8];
+        var groupKey = sequenceGroup ?? name;
+        var datasetSplit = SHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes(groupKey))[0] % 5 == 0
+            ? "test" : "train";
         var metadata = JsonSerializer.Serialize(new
         {
             schemaVersion = 1,
@@ -80,6 +89,7 @@ public sealed class MinimapSampleStore
             sequenceGroup,
             sequenceIndex,
             frameCapturedUtc,
+            datasetSplit,
             verification = "manual-note-not-verified-object-detection-ground-truth",
             capturedTimeUtc = DateTimeOffset.UtcNow,
             imageIsApproximateBottomRightCrop = true,
@@ -87,8 +97,7 @@ public sealed class MinimapSampleStore
         }, new JsonSerializerOptions { WriteIndented = true });
         if (used + jpeg.Length + System.Text.Encoding.UTF8.GetByteCount(metadata) >= MaxBytes)
             throw new IOException("Đã đạt giới hạn 200 MB; không tự xóa ảnh đã lưu.");
-        var name = "sample-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff") +
-                   "-" + Guid.NewGuid().ToString("N")[..8];
+
         var imagePath = Path.Combine(_root, name + ".jpg");
         var jsonPath = Path.Combine(_root, name + ".json");
         try
@@ -106,7 +115,7 @@ public sealed class MinimapSampleStore
     }
 
     public sealed record SampleItem(string Name, string Label, string EvidenceKind,
-        int MarkCount, long SizeBytes);
+        int MarkCount, long SizeBytes, string DatasetSplit);
 
     private static readonly Regex SampleName = new(
         @"^sample-[0-9]{8}-[0-9]{6}-[0-9]{3}-[0-9a-f]{8}$",
@@ -145,8 +154,10 @@ public sealed class MinimapSampleStore
                     ? evidence.GetString() ?? "uncertain" : "uncertain";
                 var marks = root.TryGetProperty("marks", out var array) &&
                     array.ValueKind == JsonValueKind.Array ? array.GetArrayLength() : 0;
+                var split = root.TryGetProperty("datasetSplit", out var splitValue)
+                    ? splitValue.GetString() ?? "unassigned" : "unassigned";
                 result.Add(new SampleItem(name, label, kind, marks,
-                    image.Length + new FileInfo(metadata).Length));
+                    image.Length + new FileInfo(metadata).Length, split));
             }
             catch (Exception ex) when (ex is IOException or JsonException or InvalidOperationException)
             {
