@@ -431,6 +431,20 @@ public partial class MinimapTrainingRecorderWindow : Window
             "Bạn cần tự xác minh tên tướng và các điểm đã nhìn thấy.";
     }
 
+    private void PresetCropClick(object sender, RoutedEventArgs e)
+    {
+        if (_running || _previewTimer.IsEnabled || _sequenceTimer.IsEnabled ||
+            _sequenceFrames.Count > 0) return;
+        // A starting point derived from the user's 1898x952 minimap preview, NOT
+        // proof that this rectangle fits another HUD size or minimap placement.
+        CropLeftSlider.Value = 87;
+        CropTopSlider.Value = 75;
+        CropWidthSlider.Value = 13;
+        CropHeightSlider.Value = 24;
+        CropStatusText.Text = "Đã điền khung GỢI Ý (87%, 75%, 13%, 24%). " +
+            "Hãy bấm Xem trước và nhìn ảnh bên trái; KHÔNG lưu nếu minimap bị cắt mép.";
+    }
+
     private MinimapCropProfile CurrentCropDraft() => new(
         Math.Round(CropLeftSlider.Value / 100d, 2),
         Math.Round(CropTopSlider.Value / 100d, 2),
@@ -556,7 +570,8 @@ public partial class MinimapTrainingRecorderWindow : Window
             _previewProfile = null;
             SaveCropButton.IsEnabled = false;
             CropStatusText.Text = $"Đã lưu khung minimap cho {confirmed.ConfirmedClientWidth}×" +
-                $"{confirmed.ConfirmedClientHeight}. Bây giờ có thể bắt đầu phân tích.";
+                $"{confirmed.ConfirmedClientHeight}. Bây giờ có thể thu 5 ảnh KHÔNG gửi AI.";
+            WorkflowTabs.SelectedIndex = 1;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or
                                    ArgumentException)
