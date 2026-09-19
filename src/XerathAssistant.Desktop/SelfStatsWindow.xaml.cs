@@ -356,9 +356,9 @@ public partial class SelfStatsWindow : Window
                 (snapshot.ResourceType.Equals("MANA", StringComparison.OrdinalIgnoreCase)
                     ? $"{_session.LowestResourcePercent:0}%." : "không áp dụng.") + "\n" +
                 $"Thời gian quan sát có năng lượng dưới 25%: {_session.LowResourceObservedSeconds:0} giây (xấp xỉ).\n" +
-                $"Lượng vàng hiện có cao nhất ghi nhận: {_session.HighestObservedGold:0}.\\n" +
+                $"Lượng vàng hiện có cao nhất ghi nhận: {_session.HighestObservedGold:0}.\n" +
                 $"Các đợt giảm máu gây cảnh báo đã quan sát: {_dangerAnalyzer.ObservedDangerEpisodes} " +
-                $"(nguy hiểm cao: {_dangerAnalyzer.ObservedCriticalEpisodes}).\\n" +
+                $"(nguy hiểm cao: {_dangerAnalyzer.ObservedCriticalEpisodes}).\n" +
                 $"Mức máu mất lớn nhất trong một khoảng lấy mẫu liên tiếp có cảnh báo: " +
                 $"{_dangerAnalyzer.GreatestObservedLossPercent:0}% máu tối đa."
         }
