@@ -252,4 +252,59 @@ Verify(life.Observe(lifeBase with { GameTimeSeconds = 3, Health = 1000 })
        == OwnLifeTransition.Respawned && !life.IsDead,
        "new match life-state stream can independently recover");
 
+
+var danger = new OwnDangerAnalyzer();
+var safeBaseline = own with { GameTimeSeconds = 1200, Health = 900, MaxHealth = 1000 };
+Verify(danger.Observe(safeBaseline with { Health = 190 }) is null,
+       "initial low-health sample is not a fabricated immediate danger");
+danger.Reset();
+Verify(danger.Observe(safeBaseline) is null,
+       "initial living sample builds danger baseline");
+Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1201, Health = 860 }) is null,
+       "minor verified damage does not trigger danger");
+Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1202, Health = 580 })
+           is { Severity: OwnDangerSeverity.Elevated } elevated &&
+       elevated.Message.Contains("32%") && elevated.Message.Contains("58%"),
+       "substantial observed damage while alive produces evidence-backed elevated warning");
+Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1203, Health = 420 }) is null,
+       "repeated burst does not flood during cooldown without larger damage");
+Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1204, Health = 310 })
+           is { Severity: OwnDangerSeverity.High } high &&
+       high.Message.Contains("31%"),
+       "confirmed loss below 40 percent escalates above earlier warning");
+Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1205, Health = 100 })
+           is { Severity: OwnDangerSeverity.Critical } critical &&
+       critical.Message.Contains("10%"),
+       "confirmed critical HP and fresh damage takes highest live priority");
+Verify(danger.ObservedDangerEpisodes == 3 &&
+       danger.ObservedCriticalEpisodes == 1 && danger.GreatestObservedLossPercent >= 31,
+       "session summary counts only actual warning episodes and greatest observed one-second loss");
+Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1206, Health = 0 }) is null,
+       "own death is not misreported as danger warning");
+Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1215, Health = 1000 }) is null,
+       "respawn creates a fresh baseline without a synthetic risk");
+danger.ResetBaseline();
+Verify(danger.ObservedDangerEpisodes == 3 && danger.ObservedCriticalEpisodes == 1,
+       "death/respawn baseline reset preserves per-match observed analysis");
+Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1220, Health = 200 }) is null,
+       "fresh baseline after life transition never interprets an old sample as damage");
+Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1221, Health = 190 })
+           is null, "low but steady HP does not invent an incoming threat");
+Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1210, Health = 40 }) is null &&
+       danger.ObservedDangerEpisodes == 0,
+       "backwards match clock resets risk history and does not compare stale values");
+danger.Reset();
+Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1300, Health = 950 }) is null &&
+       danger.Observe(safeBaseline with { GameTimeSeconds = 1300, Health = 250 }) is null,
+       "duplicated game time never triggers a danger warning");
+Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1310, Health = 120 }) is null,
+       "sampling gap cannot be described as an immediate damage burst");
+danger.Reset();
+Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1400, Health = 700 }) is null &&
+       danger.Observe(safeBaseline with { GameTimeSeconds = 1401, Health = 190 })
+           is { Severity: OwnDangerSeverity.Critical },
+       "fresh serious damage below 20 percent is announced precisely once");
+Verify(danger.Observe(safeBaseline with { GameTimeSeconds = 1402, Health = 170 }) is null,
+       "critical risk warning is not repeated merely because health stays low");
+
 Console.WriteLine($"ALL {count} CORE TESTS PASSED");
