@@ -53,4 +53,29 @@ reminder.Start(new[] { new ReminderItem("vision", "Kiểm tra mắt.", TimeSpan.
 Verify(reminder.Tick(TimeSpan.FromSeconds(5)) == "Kiểm tra mắt.", "restart resets previous session");
 Verify(reminder.Tick(TimeSpan.FromSeconds(10)) is null, "global suppression applies to rapid reminder");
 Verify(reminder.Tick(TimeSpan.FromSeconds(35)) == "Kiểm tra mắt.", "deferred reminder fires after gap");
+var review = new LastSeenReview();
+Verify(LastSeenReview.TryParseGameTime("09:20", out var at920) &&
+       at920 == TimeSpan.FromMinutes(9) + TimeSpan.FromSeconds(20),
+       "parse historical match timestamp");
+Verify(!LastSeenReview.TryParseGameTime("09:60", out _) &&
+       !LastSeenReview.TryParseGameTime("later", out _),
+       "reject invalid match times");
+review.Mark(0.84, 0.75, at920, "Bụi sông dưới");
+Verify(review.Current is { } first &&
+       Math.Abs(first.X - 0.84) < 0.0001 &&
+       first.MatchTime == at920, "manual normalized marker");
+Verify(review.AgeAt(TimeSpan.FromMinutes(10)) == TimeSpan.FromSeconds(40),
+       "elapsed time calculated from manually entered review timestamp");
+Verify(review.AgeAt(TimeSpan.FromMinutes(8)) is null,
+       "never imply a future observation has already occurred");
+review.Mark(0.1, 0.2, TimeSpan.FromMinutes(11));
+Verify(review.Current is { X: 0.1, Y: 0.2 } &&
+       review.Current.MatchTime == TimeSpan.FromMinutes(11),
+       "new sighting replaces the old marker");
+review.Clear();
+Verify(review.Current is null, "clear last-seen marker");
+var invalidPositionRejected = false;
+try { review.Mark(1.1, 0.5, TimeSpan.Zero); }
+catch (ArgumentOutOfRangeException) { invalidPositionRejected = true; }
+Verify(invalidPositionRejected, "reject off-image coordinates");
 Console.WriteLine($"ALL {count} CORE TESTS PASSED");
