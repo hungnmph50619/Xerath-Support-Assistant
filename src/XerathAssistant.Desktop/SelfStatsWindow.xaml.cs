@@ -360,7 +360,7 @@ public partial class SelfStatsWindow : Window
                 $"Các đợt giảm máu gây cảnh báo đã quan sát: {_dangerAnalyzer.ObservedDangerEpisodes} " +
                 $"(nguy hiểm cao: {_dangerAnalyzer.ObservedCriticalEpisodes}).\n" +
                 $"Mức máu mất lớn nhất trong một khoảng lấy mẫu liên tiếp có cảnh báo: " +
-                $"{_dangerAnalyzer.GreatestObservedLossPercent:0}% máu tối đa."
+                $"{_dangerAnalyzer.GreatestObservedLossPercent:0}% máu tối đa.";
         }
         catch (OperationCanceledException) when (_closed || _cancel.IsCancellationRequested) { }
         catch (Exception)
