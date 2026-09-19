@@ -1,7 +1,7 @@
 <Window x:Class="XerathAssistant.Desktop.CompanionWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Xerath Support Assistant · Companion V1.0" Width="980" Height="760"
+        Title="Xerath Support Assistant · Companion V1.1 · AI Bridge" Width="980" Height="760"
         MinWidth="720" MinHeight="600" Background="#0B1521" FontFamily="Segoe UI">
   <Window.Resources>
     <Style x:Key="CompanionSectionTitle" TargetType="TextBlock">
@@ -112,7 +112,7 @@
                       Content="Phân tích thế lính &amp; giao tranh"/>
             </WrapPanel>
             <TextBlock FontSize="12" Foreground="{StaticResource MutedBrush}"
-                       Text="HUD mặc định ưu tiên thông báo theo dữ liệu trận: máu của bạn giảm nhanh, máu/năng lượng chạm ngưỡng và hạ gục đã xảy ra. Lời nhắc theo giờ trên HUD mặc định tắt và có thể bật lại trong Chỉ số trực tiếp. Chưa có AI xác định giao tranh hoặc vị trí rừng địch."/>
+                       Text="HUD ưu tiên thông báo theo dữ liệu trận. Trong Chỉ số trực tiếp, bạn có thể thử kết nối API AI cá nhân chạy trên máy để xử lý hai tín hiệu đã xác nhận (máu giảm nhanh, điểm hạ gục). Chưa có AI đọc màn hình, theo dõi rừng hoặc đưa chỉ dẫn chiến thuật."/>
           </StackPanel>
         </Border>
       </StackPanel>
