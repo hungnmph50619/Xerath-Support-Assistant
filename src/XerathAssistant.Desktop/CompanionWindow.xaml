@@ -42,19 +42,19 @@
           <StackPanel>
             <TextBlock Style="{StaticResource CompanionSectionTitle}" Text="1 · Lịch nhắc việc Xerath SP"/>
             <TextBlock Margin="0,0,0,8" Foreground="{StaticResource MutedBrush}" FontSize="12"
-                       Text="Các lời nhắc bên dưới chạy theo thời gian, không phải cảnh báo tình huống thực tế."/>
+                       Text="Các lời nhắc theo giờ mặc định tắt để tránh đọc lặp. Chỉ tích loại bạn muốn rồi nhấn Bắt đầu nhắc; cảnh báo nguy hiểm theo máu trên HUD chạy riêng."/>
             <UniformGrid Columns="2">
-              <CheckBox Name="MapCheck" IsChecked="True" Margin="0,0,12,8"
+              <CheckBox Name="MapCheck" IsChecked="False" Margin="0,0,12,8"
                         Content="Minimap — kiểm tra bản đồ mỗi 45 giây"/>
-              <CheckBox Name="VisionCheck" IsChecked="True" Margin="0,0,12,8"
+              <CheckBox Name="VisionCheck" IsChecked="False" Margin="0,0,12,8"
                         Content="Tầm nhìn — kiểm tra mắt, sông và máy quét mỗi 3 phút"/>
-              <CheckBox Name="JungleCheck" IsChecked="True" Margin="0,0,12,8"
+              <CheckBox Name="JungleCheck" IsChecked="False" Margin="0,0,12,8"
                         Content="Rừng đồng minh — nhớ nhìn minimap mỗi 90 giây"/>
-              <CheckBox Name="AdcCheck" IsChecked="True" Margin="0,0,12,8"
+              <CheckBox Name="AdcCheck" IsChecked="False" Margin="0,0,12,8"
                         Content="ADC — kiểm tra vị trí xạ thủ mỗi 2 phút"/>
-              <CheckBox Name="ManaCheck" IsChecked="True" Margin="0,0,12,8"
+              <CheckBox Name="ManaCheck" IsChecked="False" Margin="0,0,12,8"
                         Content="Xerath — kiểm tra năng lượng và vị trí đứng mỗi 2 phút 30 giây"/>
-              <CheckBox Name="ObjectiveCheck" IsChecked="True" Margin="0,0,12,8"
+              <CheckBox Name="ObjectiveCheck" IsChecked="False" Margin="0,0,12,8"
                         Content="Mục tiêu lớn — kiểm tra đồng hồ và tầm nhìn mỗi 3 phút"/>
             </UniformGrid>
           </StackPanel>
