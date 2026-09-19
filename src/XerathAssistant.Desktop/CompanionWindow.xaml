@@ -27,9 +27,16 @@
           <CheckBox Name="ManaCheck" IsChecked="True" Margin="0,0,0,7" Content="Xerath — kiểm tra năng lượng và vị trí đứng mỗi 2 phút 30 giây"/>
           <CheckBox Name="ObjectiveCheck" IsChecked="True" Margin="0,0,0,7" Content="Mục tiêu lớn — kiểm tra đồng hồ và tầm nhìn mỗi 3 phút"/>
           <CheckBox Name="VoiceCheck" IsChecked="True" Margin="0,8,0,0"
-                    Content="Đọc lời nhắc bằng giọng nói Windows (âm lượng 70%)"/>
-          <TextBlock Name="VoiceStatus" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0"
-                     Text="Hệ thống tự kiểm tra giọng đọc tiếng Việt trên Windows."/>
+                    Content="Giọng AI nữ miền Bắc (Ban Mai, âm lượng 70%)"/>
+          <TextBlock Margin="0,8,0,6" Text="API key FPT.AI — chỉ nhập tại máy bạn; không lưu vào GitHub"/>
+          <PasswordBox Name="ApiKeyBox" Height="29" Margin="0,0,0,8"/>
+          <WrapPanel>
+            <Button Name="PrepareVoiceButton" Click="PrepareVoiceClick" Background="#23705B"
+                    Content="Tạo và lưu giọng tiếng Việt"/>
+            <Button Name="TestVoiceButton" Click="TestVoiceClick" Content="Nghe thử" IsEnabled="False"/>
+          </WrapPanel>
+          <TextBlock Name="VoiceStatus" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0"
+                     Text="Tạo âm thanh lần đầu qua Internet; khi đã lưu, phát offline, không dùng giọng tiếng Anh."/>
         </StackPanel>
       </Border>
       <Border Background="#122339" CornerRadius="10" Padding="15" Margin="0,0,0,12">
