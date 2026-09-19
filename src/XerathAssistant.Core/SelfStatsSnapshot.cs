@@ -18,7 +18,7 @@ public sealed record SelfStatsSnapshot(
 {
     public double HealthPercent => MaxHealth > 0 ? 100d * Health / MaxHealth : 0d;
     public double ResourcePercent => MaxResource > 0 ? 100d * Resource / MaxResource : 0d;
-    public static string Clock(double seconds) => TimeSpan.FromSeconds(Math.Max(0, seconds)).ToString(@"mm\:ss");
+    public static string Clock(double seconds) => $"{(int)(Math.Max(0, seconds) / 60):00}:{(int)(Math.Max(0, seconds) % 60):00}";
 }
 
 /// <summary>Validates local Live Client Data API responses. Throws on partial/corrupt values.</summary>
