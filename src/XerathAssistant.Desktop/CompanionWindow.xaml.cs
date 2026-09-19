@@ -86,7 +86,7 @@ public partial class CompanionWindow : Window
     private string[] SelectedPhrases() => SelectedReminders().Select(x => x.Message).ToArray();
 
     private string[] VoicePreparationPhrases() =>
-        SelectedPhrases().Concat(InGameVoicePrompts.All).Distinct(StringComparer.Ordinal).ToArray();
+        InGameVoicePrompts.All.Concat(SelectedPhrases()).Distinct(StringComparer.Ordinal).ToArray();
 
     private bool AllVoicesReady() => SelectedPhrases().All(_voice.IsReady);
 
