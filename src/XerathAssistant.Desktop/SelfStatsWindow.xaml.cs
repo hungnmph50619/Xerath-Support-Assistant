@@ -22,7 +22,7 @@ public partial class SelfStatsWindow : Window
 
     private async void WindowLoaded(object sender, RoutedEventArgs e)
     {
-        _timer.Start();
+        if (RefreshCheck.IsChecked == true) _timer.Start();
         await ReadNowAsync();
     }
 
@@ -76,9 +76,7 @@ public partial class SelfStatsWindow : Window
                 $"Lượng vàng hiện có cao nhất ghi nhận: {_session.HighestObservedGold:0}.";
         }
         catch (OperationCanceledException) when (_closed || _cancel.IsCancellationRequested) { }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException
-                                   or FormatException or InvalidOperationException
-                                   or System.Text.Json.JsonException or KeyNotFoundException)
+        catch (Exception)
         {
             if (!_closed)
                 ConnectionStatus.Text = "Chưa đọc được thông tin trong trận từ API Riot. " +
