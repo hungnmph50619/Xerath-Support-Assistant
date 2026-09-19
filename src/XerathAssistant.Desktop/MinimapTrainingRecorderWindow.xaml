@@ -126,6 +126,8 @@
             <Button Name="SaveSampleButton" IsEnabled="False" Click="SaveSampleClick"
                     Content="Lưu duy nhất ảnh đang xem + nhãn đã ghi" Padding="12,8" Margin="0,0,8,8"
                     Background="#23705B" Foreground="White"/>
+            <Button Click="OpenSampleLibraryClick" Content="Mở thư viện mẫu đã lưu"
+                    Padding="12,8" Margin="0,0,8,8" Background="#345F83" Foreground="White"/>
             <Button Click="DeleteTrainingSamplesClick" Content="Xóa toàn bộ mẫu V1.8 (cần xác nhận)"
                     Padding="12,8" Margin="0,0,8,8" Background="#564236" Foreground="White"/>
           </WrapPanel>
