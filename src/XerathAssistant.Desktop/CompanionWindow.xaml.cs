@@ -1,6 +1,7 @@
 using System.IO;
 using System.Diagnostics;
 using System.Windows;
+using MessageBox = System.Windows.MessageBox;
 using System.Windows.Media;
 using System.Windows.Threading;
 using XerathAssistant.Core;
