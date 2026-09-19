@@ -49,6 +49,6 @@ public sealed class ReminderEngine
             _nextDue[item.Key] = next + TimeSpan.FromTicks(item.Interval.Ticks * steps);
         }
         _lastAlert = now;
-        return string.Join(" ", due.Select(item => item.Message));
+        return string.Join(" | ", due.Select(item => item.Message));
     }
 }
