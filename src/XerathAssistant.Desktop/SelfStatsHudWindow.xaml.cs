@@ -23,6 +23,9 @@ public partial class SelfStatsHudWindow : Window
     private DateTime _noticeUntilUtc = DateTime.MinValue;
     private DateTime _lastNoticeUtc = DateTime.MinValue;
     private bool _closed;
+    private bool _isDead;
+
+    public bool IsDead => _isDead;
 
     [DllImport("user32.dll")]
     private static extern IntPtr GetForegroundWindow();
@@ -81,7 +84,9 @@ public partial class SelfStatsHudWindow : Window
             : "Mana —";
         GoldText.Text = $"Vàng: {stats.Gold:0}";
         LevelApText.Text = $"Lv {stats.Level} · AP {stats.AbilityPower:0}";
-        StatusText.Text = "Chỉ số cá nhân · cập nhật mỗi 1 giây";
+        StatusText.Text = _isDead
+            ? "Bạn đã bị hạ gục · chờ hồi sinh"
+            : "Chỉ số cá nhân · cập nhật mỗi 1 giây";
         RefreshVisibility();
     }
 
@@ -92,16 +97,41 @@ public partial class SelfStatsHudWindow : Window
         RefreshVisibility();
     }
 
-    /// <summary>Brief factual message drawn inside the existing HUD. Never blocks the game.</summary>
-    public void ShowNotice(string message, bool priority = false)
+    /// <summary>
+    /// A verified own-death state supersedes all existing notices until HP recovers.
+    /// Ordinary reminders, stale asynchronous bridge results and kills cannot overwrite it.
+    /// </summary>
+    public void SetLifeState(bool isDead)
     {
-        if (_closed || string.IsNullOrWhiteSpace(message)) return;
+        if (_closed || _isDead == isDead) return;
+        _isDead = isDead;
+        if (isDead)
+        {
+            AlertText.Text = InGameVoicePrompts.Died;
+            AlertBorder.Visibility = Visibility.Visible;
+            _noticeUntilUtc = DateTime.MaxValue;
+        }
+        else
+        {
+            AlertBorder.Visibility = Visibility.Collapsed;
+            _noticeUntilUtc = DateTime.MinValue;
+            _lastNoticeUtc = DateTime.MinValue;
+        }
+        StatusText.Text = isDead ? "Bạn đã bị hạ gục · chờ hồi sinh"
+                                 : "Chỉ số cá nhân · cập nhật mỗi 1 giây";
+    }
+
+    /// <returns>Whether the on-screen alert was actually displayed.</returns>
+    public bool ShowNotice(string message, bool priority = false)
+    {
+        if (_closed || _isDead || string.IsNullOrWhiteSpace(message)) return false;
         var now = DateTime.UtcNow;
-        if (!priority && now - _lastNoticeUtc < TimeSpan.FromSeconds(5)) return;
+        if (!priority && now - _lastNoticeUtc < TimeSpan.FromSeconds(5)) return false;
         AlertText.Text = message.Length > 150 ? message[..147] + "…" : message;
         AlertBorder.Visibility = Visibility.Visible;
         _lastNoticeUtc = now;
         _noticeUntilUtc = now.AddSeconds(priority ? 7 : 5);
+        return true;
     }
 
     private static bool GameIsForeground()
