@@ -40,5 +40,12 @@ public sealed class RiotLocalSelfStatsClient : IDisposable
         return SelfStatsParser.Parse(activeJson, gameJson);
     }
 
+    public async Task<string> ReadEventsJsonAsync(CancellationToken cancellationToken)
+    {
+        using var response = await _client.GetAsync("liveclientdata/eventdata", cancellationToken);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync(cancellationToken);
+    }
+
     public void Dispose() => _client.Dispose();
 }
