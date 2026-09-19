@@ -374,8 +374,9 @@ Verify(trend.Observe(trendBase) is null &&
        "rolling analysis never warns from one or two individually small HP decreases");
 Verify(trend.Observe(trendBase with { GameTimeSeconds = 1803, Health = 765 })
        is { Severity: OwnDangerSeverity.Elevated } compound &&
-       compound.Message.Contains("24%") && compound.Message.Contains("3") &&
-       compound.Message.Contains("76%"),
+       Math.Abs(compound.ObservedLossPercent - 23.5) < .01 &&
+       Math.Abs(compound.HealthPercent - 76.5) < .01 &&
+       compound.Message.Contains("3 giây"),
        "three small fresh hits accumulating over three seconds produce a factual trend warning");
 trend.Reset();
 Verify(trend.Observe(trendBase with { GameTimeSeconds = 1900, Health = 500 }) is null &&
