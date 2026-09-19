@@ -86,7 +86,7 @@
         <StackPanel>
           <TextBlock Text="BỘ MẪU V1.8 · CHỈ LƯU KHI BẠN XÁC NHẬN" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,7"/>
           <TextBlock TextWrapping="Wrap" Foreground="#F9CF90" FontSize="12" Margin="0,0,0,8"
-                     Text="Ảnh bên dưới chỉ giữ trong RAM đến lần phân tích kế tiếp hoặc khi bấm Dừng. Kiểm tra vùng cắt có đúng minimap không; ảnh có thể chứa chi tiết bên cạnh. Không mặc định lưu. Nhãn do bạn ghi là mô tả thủ công, CHƯA phải dữ liệu nhận diện tướng có tọa độ được kiểm chứng."/>
+                     Text="Ảnh bên dưới chỉ giữ trong RAM đến lần phân tích kế tiếp hoặc khi bấm Dừng. Kiểm tra vùng cắt có đúng minimap không; ảnh có thể chứa chi tiết bên cạnh. Không mặc định lưu. Bạn có thể nhấp lên biểu tượng để gắn nhãn tọa độ x/y, tên tướng, đội và vai trò. Mọi nhãn đều do bạn tự nhập, CHƯA được AI xác minh. Không ghi tọa độ cho tướng khuất tầm nhìn."/>
           <Image Name="SamplePreview" MaxWidth="300" MaxHeight="260" HorizontalAlignment="Left"
                  Stretch="Uniform" Cursor="Cross" MouseLeftButtonDown="SamplePreviewClick"
                  Margin="0,0,0,8"/>
