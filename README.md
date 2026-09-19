@@ -1,5 +1,13 @@
 # Xerath Support Assistant · V1.8 — Lưu có chọn lọc ảnh minimap để kiểm thử nhận diện
 
+## Bổ sung V1.8 — Căn chỉnh vùng cắt trước khi gửi ảnh
+
+Trong Mắt nhìn AI, hãy điều chỉnh vị trí mép trái, mép trên, chiều rộng và chiều cao bằng bốn thanh trượt. Bấm **Xem trước 1 ảnh**, chuyển về cửa sổ trận Liên Minh để phần mềm lấy **một ảnh trong RAM và không gửi Gemini**, rồi quay lại xem ảnh. Nếu cắt sai vùng minimap, chỉnh lại thanh trượt và xem trước lần nữa. Chỉ khi ảnh đúng, bấm **Xác nhận ảnh đúng minimap & lưu khung**. Bản này dùng thanh trượt, chưa kéo trực tiếp khung trên ảnh.
+
+Ứng dụng chỉ lưu các tỷ lệ vùng cắt và kích thước nội dung cửa sổ game đã xác nhận vào `%LOCALAPPDATA%\\XerathSupportAssistant\\minimap-crop-v1.8.json`, không lưu ảnh trong tệp cấu hình. **Bắt đầu phân tích sẽ bị chặn khi chưa có khung đã xác nhận hoặc thanh trượt đã thay đổi**; khi cửa sổ game đổi kích thước, chương trình dừng gửi ảnh cho tới khi bạn xem trước và xác nhận lại. Đây là chốt tránh vô tình gửi ảnh ngoài minimap tới Gemini; vẫn cần bạn tự kiểm tra ảnh xem trước trên máy mình. Windows CI chỉ kiểm thử mã và build, không chứng minh độ chính xác của vùng cắt trên mọi độ phân giải/DPI.
+
+---
+
 **V1.8 bổ sung chế độ giữ duy nhất ảnh minimap vừa phân tích trong RAM để bạn xem và quyết định lưu mẫu huấn luyện.** Chế độ phân tích mặc định vẫn chụp vào RAM và gửi từng ảnh tới Gemini khi bạn đồng ý cho cả phiên như V1.5; nó KHÔNG tự động ghi ảnh trận lên đĩa. Trong giao diện Mắt nhìn AI, ảnh vừa phân tích hiện ở phần **Bộ mẫu V1.8**. Chỉ khi bạn kiểm tra đúng minimap, nhập ghi chú 3–300 ký tự, chọn loại thông tin và bấm **Lưu duy nhất ảnh đang xem + nhãn đã ghi** rồi xác nhận, chương trình mới ghi một ảnh JPG và một tệp JSON metadata trên máy. Mẫu không được gửi lên bên thứ ba khi lưu; lưu cục bộ KHÔNG hoàn tác việc ảnh trước đó đã được gửi Gemini để phân tích.
 
 **Ba loại ghi chú được phân biệt:** (1) biểu tượng thực sự nhìn thấy trực tiếp trong ảnh, (2) giả thuyết như “Mid có thể đảo đường” hoặc “Rừng có thể gank”, (3) ảnh không đủ rõ. Chúng là *ghi chú do người dùng tự xác nhận*, chưa phải nhãn đối tượng đã được kiểm chứng hoặc mô hình học được; muốn huấn luyện nhận diện tướng chính xác còn cần ảnh gắn nhãn tên tướng, đội, tọa độ và đánh giá độc lập trên tập kiểm thử. Một ảnh minimap riêng lẻ không chứng minh được đối thủ đi vào bụi khuất tầm nhìn hoặc chắc chắn chuẩn bị gank. V1.8 **không** đưa suy đoán lên HUD hoặc tự đọc cảnh báo vị trí địch trong trận.
