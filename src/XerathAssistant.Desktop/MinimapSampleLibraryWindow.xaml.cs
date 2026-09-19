@@ -24,8 +24,12 @@ public partial class MinimapSampleLibraryWindow : Window
             var samples = _store.ListSamples();
             SampleList.ItemsSource = samples;
             var used = samples.Sum(x => x.SizeBytes);
-            LibraryStatus.Text = $"Đã lưu {samples.Count}/250 ảnh; tổng dung lượng khoảng " +
-                $"{used / 1024d / 1024d:0.0}/200 MB. Không tự gửi dữ liệu lên Gemini.";
+            LibraryStatus.Text = $"Đã lưu {samples.Count}/250 ảnh; dung lượng " +
+                $"{used / 1024d / 1024d:0.0}/200 MB. " +
+                $"Tập điều chỉnh: {samples.Count(x => x.DatasetSplit == "train")}; " +
+                $"tập kiểm thử giữ riêng: {samples.Count(x => x.DatasetSplit == "test")}; " +
+                $"mẫu cũ chưa phân tập: {samples.Count(x => x.DatasetSplit == "unassigned")}. " +
+                "Chưa đo độ chính xác: chưa có kết quả nhận diện có cấu trúc để so sánh.";
             if (selectName is not null)
                 SampleList.SelectedItem = samples.FirstOrDefault(x => x.Name == selectName);
             if (SampleList.SelectedItem is null)
@@ -64,8 +68,10 @@ public partial class MinimapSampleLibraryWindow : Window
                 _ => 2
             };
             EditEvidenceBox.SelectedIndex = index;
-            SampleDetail.Text = $"{item.Name} · {item.MarkCount} điểm tọa độ đã gắn nhãn thủ công. " +
-                "Không tự xác nhận tên tướng hay vị trí đối thủ từ mô tả.";
+            SampleDetail.Text = $"{item.Name} · {item.MarkCount} điểm tọa độ thủ công · " +
+                $"Nhóm dữ liệu: {item.DatasetSplit}. " +
+                "Giữ riêng ảnh kiểm thử, không dùng để điều chỉnh mô hình; " +
+                "không tự xác nhận tên tướng hay vị trí đối thủ từ mô tả.";
             UpdateSampleButton.IsEnabled = DeleteSampleButton.IsEnabled = true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or
