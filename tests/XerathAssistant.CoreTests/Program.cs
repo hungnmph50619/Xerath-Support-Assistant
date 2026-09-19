@@ -204,4 +204,28 @@ Verify(killTracker.Observe(oneKillEvents, 14) is string newMatchKill &&
        newMatchKill.Contains("hạ gục"),
        "new match can announce newly completed kills after event ID reset");
 
+
+var healthDetector = new OwnHealthChangeDetector();
+var healthBaseline = own with { GameTimeSeconds = 700, Health = 1000, MaxHealth = 1200 };
+Verify(healthDetector.Observe(healthBaseline) is null,
+       "real-time health-change monitor does not invent an alert from initial snapshot");
+Verify(healthDetector.Observe(healthBaseline with { GameTimeSeconds = 701, Health = 900 }) is null,
+       "ordinary health loss does not trigger a false emergency alert");
+Verify(healthDetector.Observe(healthBaseline with { GameTimeSeconds = 702, Health = 590 })
+           is string damageAlert && damageAlert.Contains("giảm") &&
+           damageAlert.Contains("26%"),
+       "large own-health drop produces an immediate factual damage alert");
+Verify(healthDetector.Observe(healthBaseline with { GameTimeSeconds = 703, Health = 550 }) is null,
+       "minor follow-up damage is suppressed during warning cooldown");
+Verify(healthDetector.Observe(healthBaseline with { GameTimeSeconds = 704, Health = 170 }) is not null,
+       "a second major burst can bypass cooldown when own health drops further");
+Verify(healthDetector.Observe(healthBaseline with { GameTimeSeconds = 705, Health = 0 }) is null,
+       "no spurious damage notification from zero health");
+Verify(healthDetector.Observe(healthBaseline with { GameTimeSeconds = 2, Health = 1000 }) is null,
+       "new game resets damage observations before any announcement");
+Verify(healthDetector.Observe(healthBaseline with { GameTimeSeconds = 3, Health = 690 }) is not null,
+       "new game detects genuine own-health loss independently");
+Verify(healthDetector.Observe(healthBaseline with { GameTimeSeconds = 10, Health = 100 }) is null,
+       "sampling gaps do not imply damage happened in the most recent two seconds");
+
 Console.WriteLine($"ALL {count} CORE TESTS PASSED");
