@@ -69,10 +69,7 @@ public partial class MinimapTrainingRecorderWindow : Window
         _previewTimer.Tick += PreviewCropTick;
         _sequenceTimer.Tick += CaptureSequenceTick;
         _cropProfile = _cropStore.Load();
-        CropLeftSlider.Value = _cropProfile.Left * 100;
-        CropTopSlider.Value = _cropProfile.Top * 100;
-        CropWidthSlider.Value = _cropProfile.Width * 100;
-        CropHeightSlider.Value = _cropProfile.Height * 100;
+        ApplyCropToSliders(_cropProfile);
         CropStatusText.Text = _cropProfile.ConfirmedClientWidth > 0
             ? $"Đã lưu khung cho cửa sổ game {_cropProfile.ConfirmedClientWidth}×{_cropProfile.ConfirmedClientHeight}. " +
               "Nếu đổi kích thước game hoặc vị trí minimap, hãy xem trước và xác nhận lại."
@@ -458,10 +455,23 @@ public partial class MinimapTrainingRecorderWindow : Window
     }
 
     private MinimapCropProfile CurrentCropDraft() => new(
-        Math.Round(CropLeftSlider.Value / 100d, 2),
-        Math.Round(CropTopSlider.Value / 100d, 2),
-        Math.Round(CropWidthSlider.Value / 100d, 2),
-        Math.Round(CropHeightSlider.Value / 100d, 2));
+        Math.Round(CropLeftSlider.Value / 100d, 3),
+        Math.Round(CropTopSlider.Value / 100d, 3),
+        Math.Round(CropWidthSlider.Value / 100d, 3),
+        Math.Round(CropHeightSlider.Value / 100d, 3));
+
+    private void ApplyCropToSliders(MinimapCropProfile profile)
+    {
+        _suppressCropSliderChanged = true;
+        try
+        {
+            CropLeftSlider.Value = profile.Left * 100;
+            CropTopSlider.Value = profile.Top * 100;
+            CropWidthSlider.Value = profile.Width * 100;
+            CropHeightSlider.Value = profile.Height * 100;
+        }
+        finally { _suppressCropSliderChanged = false; }
+    }
 
     private static bool SameCrop(MinimapCropProfile a, MinimapCropProfile b) =>
         a.Left == b.Left && a.Top == b.Top &&
@@ -472,6 +482,7 @@ public partial class MinimapTrainingRecorderWindow : Window
         CropLeftSlider.IsEnabled = CropTopSlider.IsEnabled =
             CropWidthSlider.IsEnabled = CropHeightSlider.IsEnabled = enabled;
         PreviewCropButton.IsEnabled = enabled;
+        AutoDetectButton.IsEnabled = enabled;
         SaveCropButton.IsEnabled = enabled && _previewProfile is not null &&
             _previewClient.Width >= 640 && _selectedFrame is not null;
     }
