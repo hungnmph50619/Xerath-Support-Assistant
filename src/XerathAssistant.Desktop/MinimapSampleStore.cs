@@ -20,8 +20,16 @@ public sealed class MinimapSampleStore
         SaveSelected(jpeg, label, evidenceKind, Array.Empty<MinimapChampionMark>());
 
     public (string filename, int count) SaveSelected(byte[] jpeg, string label,
-        string evidenceKind, IReadOnlyList<MinimapChampionMark> marks)
+        string evidenceKind, IReadOnlyList<MinimapChampionMark> marks,
+        string? sequenceGroup = null, int? sequenceIndex = null,
+        DateTimeOffset? frameCapturedUtc = null)
     {
+        if (sequenceGroup is not null &&
+            (!Regex.IsMatch(sequenceGroup, @"^seq-[0-9a-f]{12}$") ||
+             sequenceIndex is not (>= 0 and <= 4) || frameCapturedUtc is null))
+            throw new ArgumentException("Thông tin nhóm ảnh thời gian không hợp lệ.");
+        if (sequenceGroup is null && (sequenceIndex is not null || frameCapturedUtc is not null))
+            throw new ArgumentException("Ảnh lẻ không có nhóm thời gian.");
         ArgumentNullException.ThrowIfNull(marks);
         if (marks.Count > 10)
             throw new ArgumentException("Mỗi ảnh tối đa 10 điểm biểu tượng tướng.");
@@ -69,6 +77,9 @@ public sealed class MinimapSampleStore
             userLabel = label,
             evidenceKind,
             marks,
+            sequenceGroup,
+            sequenceIndex,
+            frameCapturedUtc,
             verification = "manual-note-not-verified-object-detection-ground-truth",
             capturedTimeUtc = DateTimeOffset.UtcNow,
             imageIsApproximateBottomRightCrop = true,
