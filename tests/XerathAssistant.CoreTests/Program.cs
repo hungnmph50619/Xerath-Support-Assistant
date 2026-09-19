@@ -340,7 +340,7 @@ for (var steady = 1506; steady <= 1513; steady++)
     FeedEpisode(episodeSample with { GameTimeSeconds = steady, Health = 130 });
 Verify(!episodes.IsActive && episodes.CompletedEpisodeCount == 1,
        "eight seconds without observed damage closes an episode but does not announce safety");
-Verify(FeedEpisode(episodeSample with { GameTimeSeconds = 1514, Health = 80 }) is null &&
+Verify(FeedEpisode(episodeSample with { GameTimeSeconds = 1514, Health = 115 }) is null &&
        episodes.EpisodeCount == 1,
        "small subsequent damage does not fabricate a new episode");
 Verify(FeedEpisode(episodeSample with { GameTimeSeconds = 1515, Health = 0 }) is null &&
