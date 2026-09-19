@@ -260,6 +260,9 @@ public partial class CompanionWindow : Window
 
     private void OpenLabClick(object sender, RoutedEventArgs e) => new MainWindow().Show();
 
+    private void OpenMinimapTrainingClick(object sender, RoutedEventArgs e) =>
+        new MinimapTrainingRecorderWindow { Owner = this }.Show();
+
     private void OpenLastSeenReviewClick(object sender, RoutedEventArgs e) =>
         new LastSeenReviewWindow { Owner = this }.Show();
 
