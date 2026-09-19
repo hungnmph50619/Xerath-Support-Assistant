@@ -326,7 +326,7 @@ public partial class SelfStatsWindow : Window
                         _ = ShowContextNoticeAsync("own-health-loss",
                             snapshot.GameTimeSeconds, snapshot.HealthPercent,
                             healthLoss, priority: true);
-                    else if (personalWarnings.Count > 0 &&
+                    else if (BasicWarningsCheck.IsChecked == true && personalWarnings.Count > 0 &&
                              _hud.ShowNotice(string.Join(" ", personalWarnings), priority: true))
                     {
                         if (personalWarnings.Any(w => w.StartsWith("Máu", StringComparison.Ordinal)))
