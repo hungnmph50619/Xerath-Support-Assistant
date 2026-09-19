@@ -25,6 +25,7 @@ public partial class SelfStatsWindow : Window
     private readonly PersonalStatAlerts _personalAlerts = new();
     private readonly OwnHealthChangeDetector _healthChangeDetector = new();
     private readonly OwnDangerAnalyzer _dangerAnalyzer = new();
+    private readonly OwnDangerEpisodeTracker _dangerEpisodes = new();
     private double _dangerStatusUntilGameTime = double.NegativeInfinity;
     private readonly PublicKillEventTracker _publicEvents = new();
     private readonly ReminderEngine _hudReminders = new(TimeSpan.FromSeconds(15));
@@ -245,6 +246,7 @@ public partial class SelfStatsWindow : Window
     {
         _session.Reset();
         _dangerAnalyzer.Reset();
+        _dangerEpisodes.Reset();
         _dangerStatusUntilGameTime = double.NegativeInfinity;
         DangerAnalysisStatus.Text = "Đã xóa thống kê nguy hiểm của phiên. Chờ các mẫu mới.";
         SummaryValue.Text = "Đã xóa số liệu phiên. Chờ lần đọc tiếp theo.";
@@ -267,6 +269,7 @@ public partial class SelfStatsWindow : Window
                 _personalAlerts.Reset();
                 _healthChangeDetector.Reset();
                 _dangerAnalyzer.ResetBaseline();
+                _dangerEpisodes.ResetBaseline();
             }
             // Death is the highest priority: pin its notice, suppress stale warnings,
             // then clear it on confirmed respawn.
@@ -283,7 +286,10 @@ public partial class SelfStatsWindow : Window
                 var healthLoss = _healthChangeDetector.Observe(snapshot);
                 // Always maintain an accurate local baseline while alive, even if
                 // the user temporarily switches this optional HUD alert off.
-                var danger = _dangerAnalyzer.Observe(snapshot);
+                var detectedDanger = _dangerAnalyzer.Observe(snapshot);
+                var episodeWasActive = _dangerEpisodes.IsActive;
+                var danger = _dangerEpisodes.Observe(snapshot, detectedDanger);
+                var episodeJustClosed = episodeWasActive && !_dangerEpisodes.IsActive;
                 if (DangerAnalysisCheck.IsChecked != true)
                     DangerAnalysisStatus.Text = "Đã tắt lời cảnh báo nguy hiểm; số liệu phiên vẫn được tổng hợp.";
                 else if (danger is not null)
@@ -295,6 +301,12 @@ public partial class SelfStatsWindow : Window
                 {
                     _dangerStatusUntilGameTime = double.NegativeInfinity;
                     DangerAnalysisStatus.Text = "Đã hồi sinh: đang xây dựng đường cơ sở máu mới.";
+                }
+                else if (episodeJustClosed)
+                {
+                    _dangerStatusUntilGameTime = snapshot.GameTimeSeconds + 5;
+                    DangerAnalysisStatus.Text =
+                        "Đợt giảm máu đã ngừng xuất hiện trong các mẫu vừa đọc; KHÔNG có nghĩa vị trí hiện tại an toàn.";
                 }
                 else if (snapshot.GameTimeSeconds > _dangerStatusUntilGameTime)
                     DangerAnalysisStatus.Text = "Không có cảnh báo nguy hiểm mới trong các mẫu vừa đọc; không suy ra an toàn.";
@@ -322,7 +334,8 @@ public partial class SelfStatsWindow : Window
                             PlayHudVoice(voice, urgent: true);
                         }
                     }
-                    else if (healthLoss is not null && HealthChangeCheck.IsChecked == true)
+                    else if (healthLoss is not null && HealthChangeCheck.IsChecked == true &&
+                             !_dangerEpisodes.IsActive && detectedDanger is null)
                         _ = ShowContextNoticeAsync("own-health-loss",
                             snapshot.GameTimeSeconds, snapshot.HealthPercent,
                             healthLoss, priority: true);
@@ -370,7 +383,13 @@ public partial class SelfStatsWindow : Window
                 $"Các đợt giảm máu gây cảnh báo đã quan sát: {_dangerAnalyzer.ObservedDangerEpisodes} " +
                 $"(nguy hiểm cao: {_dangerAnalyzer.ObservedCriticalEpisodes}).\n" +
                 $"Mức máu mất lớn nhất trong một khoảng lấy mẫu liên tiếp có cảnh báo: " +
-                $"{_dangerAnalyzer.GreatestObservedLossPercent:0}% máu tối đa.";
+                $"{_dangerAnalyzer.GreatestObservedLossPercent:0}% máu tối đa.\n" +
+                $"V1.7 · Các đợt nguy hiểm riêng biệt đã quan sát: {_dangerEpisodes.EpisodeCount} " +
+                $"(đợt từng đạt mức nguy hiểm cao: {_dangerEpisodes.CriticalEpisodeCount}, " +
+                $"đợt đã ngừng ghi nhận mất máu: {_dangerEpisodes.CompletedEpisodeCount}).\n" +
+                $"Tổng mức máu mất lớn nhất trong một đợt quan sát: " +
+                $"{_dangerEpisodes.GreatestEpisodeHealthLossPercent:0}% máu tối đa; " +
+                $"HP thấp nhất trong các đợt đó: {_dangerEpisodes.LowestObservedEpisodeHealthPercent:0}%.";
         }
         catch (OperationCanceledException) when (_closed || _cancel.IsCancellationRequested) { }
         catch (Exception)
