@@ -1,7 +1,7 @@
 <Window x:Class="XerathAssistant.Desktop.CompanionWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Xerath Support Assistant · Companion V1.3 · Thu ảnh minimap luyện tập" Width="980" Height="760"
+        Title="Xerath Support Assistant · Companion V1.4 · Nghe vị trí từ ảnh xem lại" Width="980" Height="760"
         MinWidth="720" MinHeight="600" Background="#0B1521" FontFamily="Segoe UI">
   <Window.Resources>
     <Style x:Key="CompanionSectionTitle" TargetType="TextBlock">
@@ -109,7 +109,7 @@
               <Button Style="{StaticResource CompanionButton}" Click="OpenMinimapTrainingClick"
                       Content="Thu ảnh minimap để luyện tập AI (chỉ lưu trên máy)"/>
               <Button Style="{StaticResource CompanionButton}" Click="OpenLastSeenReviewClick"
-                      Content="Xem lại vị trí rừng địch"/>
+                      Content="Xem lại vị trí Rừng / Mid · nghe tiếng Việt"/>
               <Button Style="{StaticResource CompanionButton}" Click="OpenWaveFightAdvisorClick"
                       Content="Phân tích thế lính &amp; giao tranh"/>
             </WrapPanel>
