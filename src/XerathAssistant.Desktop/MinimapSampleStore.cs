@@ -13,8 +13,19 @@ public sealed class MinimapSampleStore
         "XerathSupportAssistant", "minimap-labeled-samples-v1.8");
     public string Folder => _root;
 
-    public (string filename, int count) SaveSelected(byte[] jpeg, string label, string evidenceKind)
+    public (string filename, int count) SaveSelected(byte[] jpeg, string label, string evidenceKind) =>
+        SaveSelected(jpeg, label, evidenceKind, Array.Empty<MinimapChampionMark>());
+
+    public (string filename, int count) SaveSelected(byte[] jpeg, string label,
+        string evidenceKind, IReadOnlyList<MinimapChampionMark> marks)
     {
+        ArgumentNullException.ThrowIfNull(marks);
+        if (marks.Count > 10)
+            throw new ArgumentException("Mỗi ảnh tối đa 10 điểm biểu tượng tướng.");
+        foreach (var mark in marks)
+            _ = MinimapChampionMark.Checked(mark.X, mark.Y, mark.Champion, mark.Team, mark.Role);
+        if (marks.Count > 0 && evidenceKind != "visible-observation")
+            throw new ArgumentException("Điểm biểu tượng chỉ đi cùng nhãn quan sát trực tiếp.");
         if (jpeg.Length is < 24 or > 2 * 1024 * 1024 ||
             jpeg[0] != 0xff || jpeg[1] != 0xd8 ||
             jpeg[^2] != 0xff || jpeg[^1] != 0xd9)
@@ -43,6 +54,7 @@ public sealed class MinimapSampleStore
             capturedFrom = "visible-practice-minimap",
             userLabel = label,
             evidenceKind,
+            marks,
             verification = "manual-note-not-verified-object-detection-ground-truth",
             capturedTimeUtc = DateTimeOffset.UtcNow,
             imageIsApproximateBottomRightCrop = true,
