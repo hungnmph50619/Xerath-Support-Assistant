@@ -1,7 +1,7 @@
 <Window x:Class="XerathAssistant.Desktop.CompanionWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Xerath Support Assistant · Companion V0.5" Width="780" Height="650"
+        Title="Xerath Support Assistant · Companion V0.6" Width="780" Height="650"
         MinWidth="700" MinHeight="570" Background="#0B1521" FontFamily="Segoe UI">
   <ScrollViewer VerticalScrollBarVisibility="Auto">
     <StackPanel Margin="23">
@@ -48,6 +48,7 @@
             <Button Click="OpenLabClick" Content="Mở Aim Lab V0.1"/>
             <Button Click="OpenLastSeenReviewClick" Content="Xem lại vị trí rừng địch"/>
             <Button Click="OpenWaveFightAdvisorClick" Content="Phân tích thế lính &amp; giao tranh"/>
+            <Button Click="OpenSelfStatsClick" Content="Chỉ số trực tiếp &amp; tổng hợp"/>
           </WrapPanel>
           <TextBlock Name="SessionStatus" Margin="0,12,0,0" Text="Chưa bắt đầu phiên chơi."/>
           <TextBlock Name="LastReminder" Margin="0,8,0,0" Foreground="#8FE1C3"
@@ -55,7 +56,7 @@
         </StackPanel>
       </Border>
       <TextBlock Foreground="{StaticResource MutedBrush}" FontSize="12"
-                 Text="V0.5: Phân tích thế lính và giao tranh từ tình huống bạn tự nhập trong cửa sổ riêng, dành cho xem lại ảnh/video. Không đọc trận trực tiếp, không tự phát cảnh báo giao tranh hoặc chỉ điểm ngắm. Lời nhắc trong trận vẫn theo lịch."/>
+                 Text="V0.6: Chỉ số trực tiếp của chính bạn được đọc qua API công khai của Riot trên máy; có tổng hợp đơn giản mà không cần xem video. Không tự quan sát thế lính, chỉ điểm ngắm hoặc đưa ra chỉ dẫn chiến thuật trực tiếp trong trận."/>
     </StackPanel>
   </ScrollViewer>
 </Window>
