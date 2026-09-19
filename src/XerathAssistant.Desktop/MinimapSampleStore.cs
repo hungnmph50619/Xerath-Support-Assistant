@@ -109,7 +109,7 @@ public sealed class MinimapSampleStore
         int MarkCount, long SizeBytes);
 
     private static readonly Regex SampleName = new(
-        @"^sample-[0-9]{8}-[0-9]{9}-[0-9a-f]{8}$",
+        @"^sample-[0-9]{8}-[0-9]{6}-[0-9]{3}-[0-9a-f]{8}$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     private string SamplePath(string name, string extension)
