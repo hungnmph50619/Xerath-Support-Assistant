@@ -9,6 +9,7 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.20.1" />
     <ProjectReference Include="..\XerathAssistant.Core\XerathAssistant.Core.csproj" />
   </ItemGroup>
 </Project>

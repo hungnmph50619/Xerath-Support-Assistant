@@ -50,6 +50,9 @@ public partial class MinimapTrainingRecorderWindow : Window
     private readonly DispatcherTimer _previewTimer = new() { Interval = TimeSpan.FromMilliseconds(500) };
     private DateTime _previewUntilUtc;
     private bool _autoDetectPreview;
+    private bool _previewBusy;
+    private readonly DispatcherTimer _aiTrainingTimer = new() { Interval = TimeSpan.FromMilliseconds(500) };
+    private DateTime _aiTrainingUntilUtc;
     private bool _suppressCropSliderChanged;
     private byte[]? _selectedFrame;
     private double? _markX;
@@ -67,9 +70,14 @@ public partial class MinimapTrainingRecorderWindow : Window
         InitializeComponent();
         _timer.Tick += CaptureTick;
         _previewTimer.Tick += PreviewCropTick;
+        _aiTrainingTimer.Tick += CaptureAiTrainingImageTick;
         _sequenceTimer.Tick += CaptureSequenceTick;
         _cropProfile = _cropStore.Load();
         ApplyCropToSliders(_cropProfile);
+        AiModelStatusText.Text = MinimapLocalAiDetector.ModelAvailable
+            ? "Đã có tệp mô hình ONNX trên máy; nhấn Tự tìm bằng AI để kiểm tra mô hình."
+            : "Chưa có mô hình đã huấn luyện. AI chưa thể tự căn khung. " +
+              "Xem docs/minimap-local-ai.md để thu ảnh, gắn nhãn, huấn luyện và cài mô hình.";
         CropStatusText.Text = _cropProfile.ConfirmedClientWidth > 0
             ? $"Đã lưu khung cho cửa sổ game {_cropProfile.ConfirmedClientWidth}×{_cropProfile.ConfirmedClientHeight}. " +
               "Nếu đổi kích thước game hoặc vị trí minimap, hãy xem trước và xác nhận lại."
@@ -321,7 +329,7 @@ public partial class MinimapTrainingRecorderWindow : Window
     private void StartSequenceClick(object sender, RoutedEventArgs e)
     {
         if (_closed || _running || _busy || _previewTimer.IsEnabled ||
-            _sequenceTimer.IsEnabled) return;
+            _aiTrainingTimer.IsEnabled || _sequenceTimer.IsEnabled) return;
         if (!_cropProfile.IsValid || _cropProfile.ConfirmedClientWidth < 640 ||
             !SameCrop(CurrentCropDraft(), _cropProfile))
         {
@@ -469,6 +477,7 @@ public partial class MinimapTrainingRecorderWindow : Window
             CropWidthSlider.IsEnabled = CropHeightSlider.IsEnabled = enabled;
         PreviewCropButton.IsEnabled = enabled;
         AutoDetectButton.IsEnabled = enabled;
+        TrainingCaptureButton.IsEnabled = enabled && !_aiTrainingTimer.IsEnabled;
         SaveCropButton.IsEnabled = enabled && _previewProfile is not null &&
             _previewClient.Width >= 640 && _selectedFrame is not null;
     }
@@ -487,8 +496,14 @@ public partial class MinimapTrainingRecorderWindow : Window
 
     private void AutoDetectMinimapClick(object sender, RoutedEventArgs e)
     {
-        if (_running || _busy || _previewTimer.IsEnabled ||
+        if (_running || _busy || _previewTimer.IsEnabled || _aiTrainingTimer.IsEnabled ||
             _sequenceTimer.IsEnabled || _sequenceFrames.Count > 0) return;
+        if (!MinimapLocalAiDetector.ModelAvailable)
+        {
+            CropStatusText.Text = "Chưa có mô hình AI đã huấn luyện. " +
+                "Mở Chuẩn bị dữ liệu huấn luyện AI hoặc dùng Xem trước lại để chỉnh khung thủ công.";
+            return;
+        }
         if (!IsGameRunning())
         {
             CropStatusText.Text = "Chưa vào trận Liên Minh. Hãy vào Phòng Tập hoặc xem lại trước.";
@@ -501,13 +516,13 @@ public partial class MinimapTrainingRecorderWindow : Window
         SaveCropButton.IsEnabled = false;
         _previewUntilUtc = DateTime.UtcNow.AddMinutes(2);
         _previewTimer.Start();
-        CropStatusText.Text = "Chuyển về cửa sổ trận Liên Minh. Phần mềm sẽ thử tìm " +
-            "minimap từ một ảnh cục bộ trong RAM; không gửi Gemini hoặc lưu ảnh.";
+        CropStatusText.Text = "Chuyển về cửa sổ trận Liên Minh. Mô hình ONNX trên máy " +
+            "sẽ đề xuất khung minimap từ một ảnh RAM. Không gửi Gemini hoặc lưu ảnh.";
     }
 
     private void PreviewCropClick(object sender, RoutedEventArgs e)
     {
-        if (_running || _busy || _previewTimer.IsEnabled ||
+        if (_running || _busy || _aiTrainingTimer.IsEnabled || _previewTimer.IsEnabled ||
             _sequenceTimer.IsEnabled || _sequenceFrames.Count > 0) return;
         var draft = CurrentCropDraft();
         if (!draft.IsValid)
@@ -532,8 +547,80 @@ public partial class MinimapTrainingRecorderWindow : Window
             "Ứng dụng sẽ lấy MỘT ảnh trong RAM để xem trước; không gửi Gemini hay lưu JPG.";
     }
 
-    private void PreviewCropTick(object? sender, EventArgs e)
+    // Mỗi ảnh huấn luyện chỉ được ghi khi người dùng chủ động bấm và đồng ý.
+    private void CaptureAiTrainingImageClick(object sender, RoutedEventArgs e)
     {
+        if (_running || _busy || _previewTimer.IsEnabled || _aiTrainingTimer.IsEnabled ||
+            _sequenceTimer.IsEnabled || _sequenceFrames.Count > 0) return;
+        if (!IsGameRunning())
+        {
+            AiTrainingStatusText.Text = "Hãy vào Phòng Tập Liên Minh trước khi lấy ảnh.";
+            return;
+        }
+        if (MessageBox.Show(this,
+            "Lưu MỘT ảnh vùng góc dưới bên phải cửa sổ TRẬN game trên ổ đĩa cục bộ " +
+            "để bạn gắn nhãn huấn luyện AI? Ảnh có thể chứa HUD, chữ hoặc nội dung " +
+            "ngoài minimap. Ảnh KHÔNG tự xóa, KHÔNG gửi Gemini hay mạng. " +
+            "Chỉ thực hiện trong Phòng Tập, không dùng ảnh chứa thông tin riêng tư.",
+            "Xác nhận lưu ảnh huấn luyện AI", MessageBoxButton.YesNo,
+            MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        _aiTrainingUntilUtc = DateTime.UtcNow.AddMinutes(2);
+        _aiTrainingTimer.Start();
+        TrainingCaptureButton.IsEnabled = false;
+        AiTrainingStatusText.Text = "Chuyển về trận; đang chờ lấy đúng MỘT ảnh vùng dò.";
+    }
+
+    private void CaptureAiTrainingImageTick(object? sender, EventArgs e)
+    {
+        if (_closed || _running || DateTime.UtcNow >= _aiTrainingUntilUtc)
+        {
+            _aiTrainingTimer.Stop();
+            if (!_closed)
+            {
+                TrainingCaptureButton.IsEnabled = true;
+                AiTrainingStatusText.Text = "Đã hết thời gian chờ; chưa lưu ảnh huấn luyện.";
+            }
+            return;
+        }
+        if (!TryGetForegroundGameClient(out var client)) return;
+        _aiTrainingTimer.Stop();
+        try
+        {
+            if (client.Width > 5000 || client.Height > 3000 ||
+                (long)client.Width * client.Height > 12_000_000)
+                throw new InvalidOperationException("Cửa sổ game quá lớn để lưu ảnh huấn luyện.");
+            var box = MinimapLocalAiDetector.SearchRegion(client.Width, client.Height);
+            var region = new Rectangle(client.Left + box.Left, client.Top + box.Top,
+                box.Width, box.Height);
+            if (!System.Windows.Forms.SystemInformation.VirtualScreen.Contains(region))
+                throw new InvalidOperationException("Vùng dò nằm ngoài màn hình; không lưu ảnh.");
+            var folder = MinimapLocalAiDetector.TrainingFolder;
+            Directory.CreateDirectory(folder);
+            if (Directory.EnumerateFiles(folder, "roi-*.png").Take(500).Count() >= 500)
+                throw new IOException("Đã có 500 ảnh. Hãy gắn nhãn hoặc xóa ảnh không cần trước khi thu tiếp.");
+            using var frame = new Bitmap(region.Width, region.Height, PixelFormat.Format24bppRgb);
+            using (var graphics = Graphics.FromImage(frame))
+                graphics.CopyFromScreen(region.Location, System.Drawing.Point.Empty,
+                    region.Size, CopyPixelOperation.SourceCopy);
+            var filename = "roi-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" +
+                Guid.NewGuid().ToString("N")[..8] + ".png";
+            var path = Path.Combine(folder, filename);
+            frame.Save(path, ImageFormat.Png);
+            AiTrainingStatusText.Text = "Đã lưu một ảnh vùng dò ở: " + path +
+                ". Hãy tự kiểm tra rồi gắn nhãn khung minimap theo docs/minimap-local-ai.md.";
+        }
+        catch (Exception ex) when (ex is IOException or ExternalException or
+                                   UnauthorizedAccessException or ArgumentException or
+                                   InvalidOperationException)
+        {
+            AiTrainingStatusText.Text = "Chưa lưu ảnh huấn luyện: " + ex.Message;
+        }
+        finally { if (!_closed) TrainingCaptureButton.IsEnabled = true; }
+    }
+
+    private async void PreviewCropTick(object? sender, EventArgs e)
+    {
+        if (_previewBusy) return;
         if (_closed || _running || _previewProfile is null ||
             DateTime.UtcNow >= _previewUntilUtc)
         {
@@ -543,6 +630,7 @@ public partial class MinimapTrainingRecorderWindow : Window
         }
         if (!TryGetForegroundGameClient(out var client)) return;
 
+        _previewBusy = true;
         Bitmap? capturedClient = null;
         try
         {
@@ -553,29 +641,34 @@ public partial class MinimapTrainingRecorderWindow : Window
                     (long)client.Width * client.Height > 12_000_000)
                     throw new InvalidOperationException("Cửa sổ game quá lớn để tự tìm khung.");
 
-                // Keep the detected frame in RAM until the preview is built.
-                // A second screen capture may show a different moment of gameplay.
+                // Chụp đúng một khung trong RAM, cùng ảnh được dùng để dò và xem trước.
                 capturedClient = new Bitmap(client.Width, client.Height,
                     PixelFormat.Format24bppRgb);
                 using (var graphics = Graphics.FromImage(capturedClient))
                     graphics.CopyFromScreen(client.Location, System.Drawing.Point.Empty,
                         client.Size, CopyPixelOperation.SourceCopy);
 
-                var detected = MinimapAutoCropDetector.Detect(capturedClient);
-                var suggested = detected is { Confident: true }
-                    ? detected.Crop
-                    : MinimapAutoCropDetector.CornerSuggestion(client.Width, client.Height);
-                ApplyCropToSliders(suggested);
+                CropStatusText.Text = "AI trên máy đang xác định minimap; vui lòng đợi...";
+                var frameForAi = capturedClient;
+                var detection = await Task.Run(() =>
+                {
+                    var success = MinimapLocalAiDetector.TryDetect(frameForAi,
+                        out var proposal, out var explanation);
+                    return (success, proposal, explanation);
+                });
+                if (_closed) return;
+                if (!detection.success)
+                {
+                    ManualCropExpander.IsExpanded = true;
+                    throw new InvalidOperationException(detection.explanation);
+                }
+                ApplyCropToSliders(detection.proposal);
                 _previewProfile = CurrentCropDraft();
-                // Reveal the manual fallback only when the detector cannot identify a reliable candidate.
-                ManualCropExpander.IsExpanded = detected is not { Confident: true };
+                ManualCropExpander.IsExpanded = false;
                 if (!_previewProfile.IsValid)
                     throw new InvalidOperationException(
-                        "Khung gợi ý vượt mép game. Hãy mở Chỉnh tay nếu lệch.");
-                finding = detected is { Confident: true }
-                    ? "Đã tìm thấy khung có dấu hiệu là minimap (chưa được xác nhận). "
-                    : "Bộ dò chưa xác định được minimap; ảnh bên trái CHỈ là khung gợi ý. " +
-                      "Nếu bị lệch, mở Chỉnh tay nếu lệch rồi bấm Xem trước lại. ";
+                        "Khung AI đề xuất vượt mép game. Hãy chỉnh tay nếu cần.");
+                finding = detection.explanation + " ";
             }
 
             var region = _previewProfile.Crop(client);
@@ -584,8 +677,6 @@ public partial class MinimapTrainingRecorderWindow : Window
             if (region.Width < 90 || region.Height < 90)
                 throw new InvalidOperationException("Vùng cắt nhỏ hoặc nằm ngoài màn hình.");
 
-            // Auto-detect: preview the EXACT captured frame used for detection.
-            // Manual preview: capture only the selected rectangle to save memory.
             using var bitmap = capturedClient is null
                 ? new Bitmap(region.Width, region.Height, PixelFormat.Format24bppRgb)
                 : capturedClient.Clone(new Rectangle(
@@ -597,7 +688,6 @@ public partial class MinimapTrainingRecorderWindow : Window
                 graphics.CopyFromScreen(region.Location, System.Drawing.Point.Empty,
                     region.Size, CopyPixelOperation.SourceCopy);
             }
-
             using var buffer = new MemoryStream();
             bitmap.Save(buffer, ImageFormat.Jpeg);
             if (buffer.Length is < 24 or > MaximumImageBytes)
@@ -608,8 +698,8 @@ public partial class MinimapTrainingRecorderWindow : Window
             SaveCropButton.IsEnabled = _selectedFrame is not null;
             AnalysisText.Text = "Ảnh xem trước chỉ tồn tại trong RAM; chưa gửi AI để phân tích.";
             CropStatusText.Text = finding + $"Ảnh xem trước của cửa sổ {client.Width}×{client.Height} đã sẵn sàng. " +
-                "Chỉ bấm Dùng khung này khi ảnh chứa ĐÚNG toàn bộ minimap; " +
-                "nếu còn lệch, mở Chỉnh tay nếu lệch và xem trước lại.";
+                "Chỉ bấm Dùng khung này nếu ảnh chứa ĐÚNG toàn bộ minimap; " +
+                "nếu còn lệch, mở Chỉnh tay nếu cần rồi xem trước lại.";
         }
         catch (Exception ex) when (ex is IOException or ExternalException or
                                    ArgumentException or InvalidOperationException)
@@ -618,12 +708,13 @@ public partial class MinimapTrainingRecorderWindow : Window
             _previewClient = Rectangle.Empty;
             SaveCropButton.IsEnabled = false;
             ClearPendingFrame();
-            CropStatusText.Text = "Chưa xem được vùng minimap: " + ex.Message;
+            CropStatusText.Text = "Chưa tự căn được minimap: " + ex.Message;
         }
         finally
         {
             capturedClient?.Dispose();
             _autoDetectPreview = false;
+            _previewBusy = false;
             _previewTimer.Stop();
         }
     }
@@ -921,6 +1012,7 @@ public partial class MinimapTrainingRecorderWindow : Window
     {
         _closed = true;
         _previewTimer.Stop();
+        _aiTrainingTimer.Stop();
         ClearSequenceFrames();
         StopRecording("Cửa sổ đã đóng.");
         ClearPendingFrame();

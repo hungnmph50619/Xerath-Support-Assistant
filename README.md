@@ -1,6 +1,19 @@
 # Xerath Support Assistant · V1.8 — Trợ lý trận đấu & thu mẫu minimap
 
-## V1.8 — Tự tìm khung minimap trên máy (thử nghiệm)
+## V1.8 — Nhận diện minimap bằng AI ONNX cục bộ (đang chuẩn bị mô hình)
+
+Ứng dụng nay có nút **Tự tìm bằng AI trên máy**, dùng mô hình ONNX đã huấn luyện
+để tìm khung minimap ở góc phải dưới (không gửi ảnh lên Gemini). **Mã nguồn
+không kèm mô hình đã học**: khi thiếu ONNX, ứng dụng báo rõ và KHÔNG sử dụng
+thuật toán cắt cũ để giả làm AI. Bạn có thể lưu có chọn lọc ảnh vùng dò để
+huấn luyện, gắn nhãn thủ công và xuất mô hình ONNX. Khi có mô hình, ứng dụng
+vẫn buộc xem trước và xác nhận trước khi lưu khung cắt.
+
+**Hướng dẫn đầy đủ bằng tiếng Việt:** [Thu dữ liệu, gắn nhãn, huấn luyện và
+cài mô hình AI minimap](docs/minimap-local-ai.md). Bộ phát hiện dưới đây chỉ
+là chức năng **lịch sử đã được thay thế**, không còn là nút tự tìm chính.
+
+## V1.8 — Tự tìm khung minimap trên máy (thử nghiệm) — lịch sử, không còn là luồng mặc định
 
 Trong **Mắt nhìn AI → Thu ảnh**, nhấn **Tự tìm minimap**, chuyển về cửa sổ trận Liên Minh khoảng 2–3 giây rồi quay lại. Ứng dụng chỉ lấy **một ảnh cửa sổ game vào RAM**, thu nhỏ tạm thời và dò cục bộ các khung gần vuông có đường viền/chi tiết ở góc dưới bên phải. Ảnh cửa sổ đầy đủ **không gửi tới Gemini, không lưu vào ổ cứng**. Ảnh xem trước sau khi cắt hiển thị bên trái.
 

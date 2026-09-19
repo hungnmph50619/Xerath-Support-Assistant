@@ -16,3 +16,8 @@ jobs:
         run: dotnet build src/XerathAssistant.Desktop/XerathAssistant.Desktop.csproj -c Release
       - name: Run core checks
         run: dotnet run --project tests/XerathAssistant.CoreTests/XerathAssistant.CoreTests.csproj -c Release
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate local AI training scripts
+        run: python -m py_compile tools/minimap_ai/label_roi.py tools/minimap_ai/train.py

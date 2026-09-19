@@ -80,7 +80,7 @@
                   BorderBrush="#34516A" BorderThickness="1" MinHeight="250">
             <Grid>
               <TextBlock Name="PreviewEmptyText"
-                         Text="Chưa có ảnh. Bấm Tự tìm minimap, chuyển về trận rồi quay lại kiểm tra."
+                         Text="Chưa có ảnh. Cài mô hình AI hoặc chỉnh khung thủ công, sau đó xem trước."
                          HorizontalAlignment="Center" VerticalAlignment="Center"
                          TextAlignment="Center" MaxWidth="290" Foreground="#AFC3DA"/>
               <Image Name="SamplePreview" Stretch="Uniform" HorizontalAlignment="Stretch"
@@ -100,20 +100,22 @@
         <TabItem Header="Thu ảnh">
           <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="12" MaxWidth="650">
-              <TextBlock Text="1 · Tự tìm minimap" FontSize="17" FontWeight="Bold"
+              <TextBlock Text="1 · Nhận diện minimap bằng AI trên máy" FontSize="17" FontWeight="Bold"
                          Margin="0,0,0,5"/>
               <TextBlock Foreground="#CADDED" FontSize="12" Margin="0,0,0,10"
-                         Text="Bấm Tự tìm minimap → chuyển về trận → kiểm tra ảnh bên trái. Nếu khung đúng, bấm Dùng khung này. Chỉ mở Chỉnh tay khi ảnh bị lệch. Việc tìm khung chạy cục bộ, không gửi Gemini."/>
+                         Text="Cài mô hình minimap-detector.onnx đã huấn luyện → bấm Tự tìm bằng AI → về trận → kiểm tra ảnh bên trái. Chỉ xác nhận khi đúng toàn bộ minimap. Nếu chưa có mô hình, hãy thu dữ liệu huấn luyện hoặc chỉnh tay tạm thời. Không gửi Gemini."/>
               <WrapPanel>
                 <Button Name="AutoDetectButton" Click="AutoDetectMinimapClick"
-                        Content="Tự tìm minimap" Background="#315F84"/>
+                        Content="Tự tìm bằng AI trên máy" Background="#315F84"/>
                 <Button Name="PreviewCropButton" Click="PreviewCropClick"
                         Content="Xem trước lại" ToolTip="Dùng vùng đã lưu hoặc vùng chỉnh tay hiện tại"/>
                 <Button Name="SaveCropButton" Click="SaveCropClick" IsEnabled="False"
                         Content="Dùng khung này" Background="#23705B"/>
               </WrapPanel>
               <TextBlock Name="CropStatusText" Foreground="#8FE1C3" FontSize="12"
-                         Text="Chưa có ảnh minimap. Bấm Tự tìm minimap để bắt đầu." Margin="0,1,0,8"/>
+                         Text="Chưa có ảnh minimap. Chế độ AI cần mô hình đã huấn luyện." Margin="0,1,0,8"/>
+              <TextBlock Name="AiModelStatusText" Foreground="#F9CF90" FontSize="12"
+                         Text="Đang kiểm tra mô hình AI trên máy..." Margin="0,0,0,8"/>
               <Expander Name="ManualCropExpander" Header="Ảnh bị lệch? Chỉnh tay nếu cần" IsExpanded="False"
                         Foreground="#E8F0F9" Margin="0,0,0,10">
                 <StackPanel Margin="8,8,0,4">
@@ -141,6 +143,17 @@
                               IsSnapToTickEnabled="False" AutoToolTipPlacement="TopLeft" Margin="0,2,0,7"/>
                     </StackPanel>
                   </UniformGrid>
+                </StackPanel>
+              </Expander>
+              <Expander Header="Chuẩn bị dữ liệu huấn luyện AI (tùy chọn)"
+                        Foreground="#E8F0F9" Margin="0,0,0,12" IsExpanded="False">
+                <StackPanel Margin="8,8,0,5">
+                  <TextBlock Foreground="#CADDED" FontSize="12" Margin="0,0,0,8"
+                             Text="Chỉ khi bạn đồng ý, phần mềm mới lưu MỘT ảnh vùng góc dưới bên phải của game trên ổ đĩa để bạn tự gắn khung minimap. Ảnh có thể chứa cảnh game và HUD ngoài bản đồ, không gửi lên mạng. Hãy mở Phòng Tập và tránh nội dung riêng tư."/>
+                  <Button Name="TrainingCaptureButton" Click="CaptureAiTrainingImageClick"
+                          Content="Lưu 1 ảnh vùng dò để huấn luyện" HorizontalAlignment="Left"/>
+                  <TextBlock Name="AiTrainingStatusText" Foreground="#F9CF90" FontSize="12"
+                             Text="Chưa lưu ảnh huấn luyện. Xem hướng dẫn docs/minimap-local-ai.md."/>
                 </StackPanel>
               </Expander>
               <Border Background="#304657" Height="1" Margin="0,2,0,12"/>
