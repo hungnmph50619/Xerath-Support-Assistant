@@ -594,6 +594,7 @@ public partial class MinimapTrainingRecorderWindow : Window
         if (MarkCoordinateStatus is not null)
             MarkCoordinateStatus.Text = "Chưa chọn tọa độ.";
         if (SamplePreview is not null) SamplePreview.Source = null;
+        if (PreviewEmptyText is not null) PreviewEmptyText.Visibility = Visibility.Visible;
         if (SaveSampleButton is not null) SaveSampleButton.IsEnabled = false;
     }
 
@@ -611,6 +612,7 @@ public partial class MinimapTrainingRecorderWindow : Window
             preview.Freeze();
             _selectedFrame = jpeg;
             SamplePreview.Source = preview;
+            PreviewEmptyText.Visibility = Visibility.Collapsed;
             SaveSampleButton.IsEnabled = true;
             SampleLabelBox.Clear(); // User must confirm EACH frame; never carry forward an old label.
             EvidenceTypeBox.SelectedIndex = 2; // Never carry over a confirmed-looking tag.
