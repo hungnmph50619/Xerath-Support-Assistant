@@ -1,14 +1,14 @@
 <Window x:Class="XerathAssistant.Desktop.SelfStatsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Xerath · Thông tin cá nhân trong trận" Width="680" Height="590"
+        Title="Xerath · Phân tích nguy hiểm theo chỉ số cá nhân" Width="680" Height="590"
         MinWidth="590" MinHeight="490" Background="#0B1521" FontFamily="Segoe UI"
         Loaded="WindowLoaded" Closed="WindowClosed">
   <ScrollViewer VerticalScrollBarVisibility="Auto">
     <StackPanel Margin="20">
       <TextBlock Text="LIVE SELF STATS" FontSize="24" FontWeight="Bold"/>
       <TextBlock Margin="0,6,0,12" Foreground="{StaticResource MutedBrush}"
-                 Text="Tự đọc chỉ số CỦA BẠN qua API chính thức trên máy. Không cần nhập thủ công hoặc xem lại video. Không theo dõi đối thủ, không phân tích bản đồ và không đưa ra mệnh lệnh chiến thuật."/>
+                 Text="Tự đọc chỉ số CỦA BẠN mỗi giây: phát hiện những lần máu giảm nhanh kết hợp lượng máu còn lại, ưu tiên cảnh báo nguy hiểm. Không định vị đối thủ hoặc dự đoán cuộc giao tranh."/>
       <Border Background="#122339" CornerRadius="10" Padding="13" Margin="0,0,0,12">
         <StackPanel>
           <TextBlock Name="ConnectionStatus" FontWeight="SemiBold" Text="Đang kiểm tra trận đấu..." />
@@ -28,6 +28,11 @@
                     Content="Hiện thông báo hạ gục đã xảy ra (không xác định vị trí giao tranh)"/>
           <CheckBox Name="HealthChangeCheck" IsChecked="True" Margin="0,5,0,0"
                     Content="Cảnh báo khi máu của bạn giảm nhanh theo chỉ số trận thực (không đoán vị trí đối thủ)"/>
+          <CheckBox Name="DangerAnalysisCheck" IsChecked="True" Margin="0,8,0,0"
+                    Content="Phân tích mức nguy hiểm theo máu đang mất và máu còn lại; ưu tiên cảnh báo mới thay lời nhắc theo giờ"/>
+          <TextBlock Name="DangerAnalysisStatus" Foreground="{StaticResource MutedBrush}"
+                     Margin="20,3,0,4" TextWrapping="Wrap"
+                     Text="Chờ hai mẫu chỉ số liên tiếp để đánh giá diễn biến máu của bạn. Không nhận diện rừng, Mid hoặc giao tranh."/>
           <CheckBox Name="HudVoiceCheck" IsChecked="True" Margin="0,8,0,0"
                     Content="Đọc tiếng Việt khi HUD có cảnh báo theo tình huống (không cần Bắt đầu nhắc)"/>
           <WrapPanel Margin="0,5,0,0">
