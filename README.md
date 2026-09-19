@@ -1,4 +1,16 @@
-# Xerath Support Assistant · Companion V0.6 — Live Self Stats
+# Xerath Support Assistant · Companion V0.7 — HUD chỉ số trên game
+
+**Không cần Alt + Tab để xem chỉ số:** Phiên bản này bổ sung nút **Bật HUD chỉ số trên game** trong giao diện Companion. Sau khi vào trận, bật nút một lần rồi quay lại Liên Minh ở chế độ **Không viền (Borderless)**. HUD nhỏ sẽ hiển thị ở góc trên phải: máu, năng lượng, cấp độ, sức mạnh phép thuật, vàng hiện có và đồng hồ trận. Các chỉ số được cập nhật 5 giây/lần qua Riot Live Client Data API cục bộ của **chính người chơi**; không đọc thế lính, vị trí đối thủ hoặc thông tin ẩn. Không cần API key FPT.AI để sử dụng HUD.
+
+**Cách dùng:** Đóng ứng dụng cũ, mở PowerShell trong thư mục repository, chạy `git pull origin main` và `.\RUN_WINDOWS.cmd`. Trong Liên Minh, nhấn Esc → Video → chuyển chế độ cửa sổ sang **Không viền (Borderless)**. Trong Companion nhấn **Bật HUD chỉ số trên game**, quay lại trận. Khi game là cửa sổ được chọn, HUD sẽ xuất hiện; khi Alt + Tab ra ngoài, HUD tự ẩn để không che các ứng dụng khác. HUD không nhận click chuột nhằm tránh cản trở điều khiển game.
+
+**Tùy chỉnh/tắt HUD:** Trong Companion chọn **Chỉ số trực tiếp & tổng hợp · tùy chỉnh HUD**, thay đổi góc HUD (trên phải, trên trái, dưới trái, dưới phải) hoặc nhấn **Tắt HUD**. Bảng thống kê đầy đủ vẫn có sẵn khi cần xem lại, nhưng không cần mở bảng đó để xem HUD khi chơi. HUD dùng các số liệu lấy trong quá trình trận đang chạy; nếu mất kết nối API, hiện cảnh báo giá trị có thể đã cũ.
+
+**Giới hạn:** WPF topmost không bảo đảm hiển thị trên **Fullscreen độc quyền**; hãy thử chế độ Không viền trước. HUD có thể cần điều chỉnh vị trí nếu che thành phần giao diện của Liên Minh; hiệu quả hiển thị phụ thuộc cấu hình Windows và game. Chức năng này chưa được xác nhận biên dịch và chạy trên máy Windows của bạn. Không sử dụng phần mềm để can thiệp Vanguard, game memory hay điều khiển tướng. Việc một HUD chỉ hiển thị thông tin cá nhân không đồng nghĩa sản phẩm đã được Riot chính thức phê duyệt.
+
+---
+
+## V0.6 — Live Self Stats
 
 **Mới:** nút **Chỉ số trực tiếp & tổng hợp** mở cửa sổ đọc tự động chỉ số của **chính bạn** đang chơi, mỗi 5 giây, bằng Riot Live Client Data API trên máy (`https://127.0.0.1:2999`). Không cần tự nhập hoặc xem lại video. Cửa sổ hiển thị đồng hồ trận, cấp độ, máu, năng lượng, vàng hiện có, sức mạnh phép thuật, và tổng hợp từ các lần đọc (máu/năng lượng thấp nhất đã thấy; ước lượng khoảng thời gian quan sát khi mana dưới 25%; lượng vàng hiện có cao nhất đã thấy). Không cần API key; không lưu số liệu lên máy chủ; dữ liệu lịch sử chỉ nằm trong bộ nhớ cho tới khi đóng cửa sổ.
 
