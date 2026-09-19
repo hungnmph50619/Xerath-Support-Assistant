@@ -1,0 +1,101 @@
+<Window x:Class="XerathAssistant.Desktop.WaveFightAdvisorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Wave &amp; Fight Advisor · Phân tích tình huống đã ghi" Width="880" Height="850"
+        MinWidth="710" MinHeight="600" Background="#0B1521" FontFamily="Segoe UI">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="22">
+      <TextBlock Text="WAVE &amp; FIGHT ADVISOR" FontSize="24" FontWeight="Bold"/>
+      <TextBlock Margin="0,6,0,15" Foreground="{StaticResource MutedBrush}"
+                 Text="Phân tích tình huống Xerath SP theo dữ kiện BẠN tự nhập từ ảnh/video đã lưu. Công cụ không đọc trận đấu, không tự phát cảnh báo hoặc ra lệnh chơi theo thời gian thực."/>
+      <Border Background="#122339" CornerRadius="10" Padding="15" Margin="0,0,0,12">
+        <StackPanel>
+          <TextBlock FontWeight="SemiBold" FontSize="17" Margin="0,0,0,10"
+                     Text="Bước 1 · Nhập tình huống quan sát được"/>
+          <UniformGrid Columns="2">
+            <StackPanel Margin="0,0,12,12">
+              <TextBlock Text="Vị trí đợt lính" Margin="0,0,0,5"/>
+              <ComboBox Name="WaveLocationBox"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,0,12">
+              <TextBlock Text="Lính đang di chuyển về đâu" Margin="0,0,0,5"/>
+              <ComboBox Name="WaveDirectionBox"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,12,12">
+              <TextBlock Text="Ý định của ADC" Margin="0,0,0,5"/>
+              <ComboBox Name="AdcPlanBox"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,0,12">
+              <TextBlock Text="Máu Xerath và ADC" Margin="0,0,0,5"/>
+              <ComboBox Name="HealthBox"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,12,12">
+              <TextBlock Text="Năng lượng Xerath" Margin="0,0,0,5"/>
+              <ComboBox Name="ManaBox"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,0,12">
+              <TextBlock Text="Tầm nhìn khu vực sông" Margin="0,0,0,5"/>
+              <ComboBox Name="VisionBox"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,12,12">
+              <TextBlock Text="Thông tin rừng đối phương" Margin="0,0,0,5"/>
+              <ComboBox Name="JungleBox"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,0,12">
+              <TextBlock Text="Khoảng cách đến ADC" Margin="0,0,0,5"/>
+              <ComboBox Name="AllyBox"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,12,12">
+              <TextBlock Text="Tương quan người quanh Bot" Margin="0,0,0,5"/>
+              <ComboBox Name="NumbersBox"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,0,12">
+              <TextBlock Text="Kỹ năng mở giao tranh địch" Margin="0,0,0,5"/>
+              <ComboBox Name="EngageBox"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,12,12">
+              <TextBlock Text="Số lượng lính hai bên" Margin="0,0,0,5"/>
+              <ComboBox Name="MinionsBox"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,0,12">
+              <TextBlock Text="Mục tiêu lớn sắp xuất hiện?" Margin="0,0,0,5"/>
+              <ComboBox Name="ObjectiveBox"/>
+            </StackPanel>
+          </UniformGrid>
+          <WrapPanel Margin="0,5,0,0">
+            <Button Click="AnalyzeClick" Content="Phân tích tình huống" Background="#23705B"/>
+            <Button Click="ExampleClick" Content="Điền ví dụ"/>
+            <Button Click="ResetClick" Content="Xóa dữ liệu"/>
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+      <Border Background="#122339" CornerRadius="10" Padding="15" Margin="0,0,0,12">
+        <StackPanel>
+          <TextBlock FontWeight="SemiBold" FontSize="17" Text="Bước 2 · Nhận định có giải thích"/>
+          <TextBlock Name="ResultStatus" Margin="0,8,0,13" Foreground="{StaticResource MutedBrush}"
+                     Text="Chưa phân tích. Mặc định mọi thông tin là «Chưa rõ»."/>
+          <Border Padding="12" CornerRadius="8" Background="#1A3341" Margin="0,0,0,9">
+            <StackPanel>
+              <TextBlock Text="THẾ LÍNH · Có nên đẩy?" FontWeight="SemiBold" Foreground="#8FE1C3"/>
+              <TextBlock Name="WaveAdviceText" Text="Chưa có nhận định." Margin="0,6,0,0"/>
+            </StackPanel>
+          </Border>
+          <Border Padding="12" CornerRadius="8" Background="#1A3341" Margin="0,0,0,9">
+            <StackPanel>
+              <TextBlock Text="VỊ TRÍ · Có nên dâng cao?" FontWeight="SemiBold" Foreground="#8FE1C3"/>
+              <TextBlock Name="PositionAdviceText" Text="Chưa có nhận định." Margin="0,6,0,0"/>
+            </StackPanel>
+          </Border>
+          <Border Padding="12" CornerRadius="8" Background="#1A3341">
+            <StackPanel>
+              <TextBlock Text="GIAO TRANH · Có lợi thế không?" FontWeight="SemiBold" Foreground="#8FE1C3"/>
+              <TextBlock Name="FightAdviceText" Text="Chưa có nhận định." Margin="0,6,0,0"/>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Border>
+      <TextBlock FontSize="12" Foreground="{StaticResource MutedBrush}"
+                 Text="Các quy tắc là gợi ý có điều kiện, không cam kết thắng giao tranh. «Rừng địch từng ở Top» không có nghĩa Bot an toàn. Không có tự chụp màn hình, đọc minimap, overlay, tự điều khiển hoặc tự kích hoạt giọng nói khi chơi."/>
+    </StackPanel>
+  </ScrollViewer>
+</Window>
