@@ -1,4 +1,18 @@
-# Xerath Support Assistant · V1.6 — Phân tích nguy hiểm theo diễn biến trận
+# Xerath Support Assistant · V1.7 — Phân tích chuỗi tình huống và lọc thông báo
+
+**Đã nâng cấp phân tích nguy hiểm dựa trên chuỗi chỉ số của CHÍNH BẠN.** Thay vì xem mỗi lần tụt máu là một tình huống độc lập, chương trình quan sát các mẫu liên tiếp, gom nhiều lần mất máu gần nhau thành một **đợt nguy hiểm đã quan sát**, chỉ phát lời cảnh báo tiếng Việt khi đợt bắt đầu hoặc mức độ của chính đợt ấy tăng lên (chú ý → cảnh báo → nguy hiểm cao). Cùng một đợt kéo dài sẽ không bị đọc đi đọc lại chỉ vì đã hết thời gian chờ. Khi đã qua tám giây không ghi nhận mất máu mới trong các mẫu liên tục, chương trình khép đợt để phục vụ thống kê, **không đọc “đã an toàn”**. Bị hạ gục và hồi sinh vẫn được ưu tiên và tách dữ liệu quan sát thành các giai đoạn riêng.
+
+**Phát hiện mất máu cộng dồn:** ngoài bộ phát hiện cú mất máu lớn giữa hai mẫu V1.6, V1.7 còn cộng mức giảm trong cửa sổ bốn giây nếu có ít nhất hai lần giảm máu riêng biệt và tổng mức giảm đủ lớn (≥22% HP tối đa). Nhờ vậy nhiều cú trúng nhỏ liên tục có thể tạo một cảnh báo duy nhất, kèm lượng HP đã mất, thời gian quan sát và HP còn lại. Mẫu trễ, đồng hồ trùng, chết/hồi sinh hoặc thay đổi mạnh HP tối đa không được dùng để suy đoán rằng vừa có một chuỗi sát thương. Đây là phân tích *chỉ số HP đã ghi nhận*, không khẳng định nguồn sát thương, đối thủ gần đó, nguy cơ sắp gank hoặc kết quả giao tranh.
+
+**Tổng hợp sau trận:** bảng Chỉ số trực tiếp thống kê số đợt nguy hiểm riêng biệt quan sát được, số đợt từng đạt mức cao nhất, số đợt đã kết thúc theo chuỗi mẫu, mức HP mất lớn nhất tính từ đầu một đợt và HP thấp nhất trong các đợt đó. Các lượt cảnh báo theo mẫu đơn từ V1.6 vẫn được ghi riêng, không gọi nhầm là số đợt. Đây là dữ liệu trong thời gian ứng dụng được bật, không phải số liệu của toàn trận khi HUD chưa chạy. Không lưu thêm ảnh hoặc video.
+
+**Cách cập nhật trên Windows:** đóng ứng dụng Xerath Support Assistant đang chạy. Trong PowerShell tại thư mục clone Xerath chạy `git pull origin main` rồi `.\\RUN_WINDOWS.cmd`. Mở Companion V1.7, dùng **Tạo giọng tiếng Việt miễn phí** và **Nghe thử** để bảo đảm các câu cảnh báo từ V1.6 đã được lưu trước trận. Vào **Chỉ số trực tiếp & tổng hợp**, tích **V1.7 · Gom các lần mất máu liên tiếp thành một đợt** và **Đọc tiếng Việt khi HUD có cảnh báo**, sau đó **Bật HUD trên game**. Không cần bật bộ nhắc theo giờ. Nếu tệp giọng chưa tạo được, cảnh báo chữ vẫn hoạt động; nếu không nghe được trên máy bạn, kiểm tra nút Nghe thử và âm lượng Windows.
+
+**Giới hạn:** bản này chưa phân tích hình ảnh giao tranh hoặc phân biệt Rừng/Mid, không sử dụng các dự đoán vị trí địch làm thông báo trong trận. Công cụ Mắt nhìn AI và ảnh minimap trong RAM là thử nghiệm riêng, không đưa ảnh hoặc dữ liệu vị trí vào bộ phân tích nguy hiểm này. Build và kiểm thử tự động không thay thế việc xác nhận âm thanh và thời điểm lời nhắc trong trận trên máy người dùng.
+
+---
+
+## V1.6 — Cảnh báo nguy hiểm từ chỉ số mẫu đơn
 
 **Đã bổ sung bộ phân tích tình huống nguy hiểm dựa trên hai mẫu chỉ số máu liên tiếp của chính bạn (khoảng 1 giây/lần).** Thay vì chỉ nhắc nhìn minimap hay lặp câu "máu thấp", V1.6 kết hợp **lượng máu vừa mất, thời gian giữa hai lần đọc và lượng máu còn lại**, chọn một trong ba mức ưu tiên `chú ý / cảnh báo / nguy hiểm cao` và đọc **một câu tiếng Việt ngắn tương ứng** ngay khi HUD đang hiển thị trên game. Chữ HUD ghi kèm tỷ lệ máu đã mất, tỷ lệ còn lại và khoảng thời gian quan sát thực tế. Mức cảnh báo là quy tắc dựa trên chỉ số, **không phải AI dự đoán sắp chết hay biết nguyên nhân sát thương, người đi Rừng/Mid hoặc vị trí đối thủ**.
 
