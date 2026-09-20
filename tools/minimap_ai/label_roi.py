@@ -1,5 +1,6 @@
 """Công cụ gắn khung minimap cho từng ảnh ROI; chỉ đọc/ghi trên máy."""
 import argparse
+import json
 import os
 from pathlib import Path
 import tkinter as tk
@@ -44,6 +45,8 @@ class Labeler:
         root.bind("<Key-s>", lambda _: self.save())
         root.bind("<Key-n>", lambda _: self.next())
         root.bind("<Key-p>", lambda _: self.prev())
+        root.bind("<Key-a>", lambda _: self.use_ai_suggestion())
+        tk.Button(controls, text="Xem đề xuất AI (A)", command=self.use_ai_suggestion).pack(side="left")
         if not self.images:
             self.status.config(text=f"Không có ảnh roi-*.png trong {folder}")
         else:
@@ -72,8 +75,38 @@ class Labeler:
                               (cx + w/2)*self.shown_width, (cy + h/2)*self.shown_height)
             except (ValueError, OSError):
                 pass
+        review = self.current.with_suffix(".ai-review.json")
+        flagged = False
+        if review.exists():
+            try:
+                flagged = json.loads(review.read_text(encoding="utf-8")).get("requiresManualReview") is True
+            except (OSError, ValueError, TypeError):
+                flagged = True
         self.status.config(text=f"Ảnh {self.index+1}/{len(self.images)}: {self.current.name} "
-                                f"| {'ĐÃ GẮN NHÃN' if label.exists() else 'CHƯA CÓ NHÃN'}")
+                           f"| {'ĐÃ GẮN NHÃN' if label.exists() else 'CHƯA CÓ NHÃN'} "
+                           + ("| AI KHÁC NHÃN: nhấn A để xem đề xuất, kiểm tra rồi S" if flagged else ""))
+
+    def use_ai_suggestion(self):
+        if not self.current:
+            return
+        suggested = self.current.with_suffix(".ai-suggested.txt")
+        if not suggested.exists():
+            messagebox.showinfo("Không có đề xuất", "AI Cá Nhân chưa đề xuất được khung cho ảnh này.")
+            return
+        try:
+            fields = suggested.read_text(encoding="utf-8").strip().split()
+            if len(fields) != 5 or fields[0] != "0":
+                raise ValueError("Sai định dạng tọa độ")
+            cx, cy, w, h = map(float, fields[1:])
+            if (not 0 < w <= 1 or not 0 < h <= 1 or cx-w/2 < 0 or
+                    cy-h/2 < 0 or cx+w/2 > 1 or cy+h/2 > 1):
+                raise ValueError("Khung ngoài ảnh")
+            self.draw((cx-w/2)*self.shown_width, (cy-h/2)*self.shown_height,
+                      (cx+w/2)*self.shown_width, (cy+h/2)*self.shown_height)
+            self.status.config(text="Đang xem khung AI GỢI Ý (chưa xác minh). "
+                                   "Hãy kiểm tra bốn cạnh, chỉnh lại nếu sai, rồi nhấn S để lưu.")
+        except (OSError, ValueError):
+            messagebox.showwarning("Lỗi đề xuất", "Không thể đọc tọa độ AI cho ảnh này.")
 
     def clamp(self, x, y):
         return (min(max(x-10, 0), self.shown_width),
@@ -115,7 +148,17 @@ class Labeler:
             return
         path = self.current.with_suffix(".txt")
         path.write_text(f"0 {cx:.7f} {cy:.7f} {w:.7f} {h:.7f}\n", encoding="utf-8")
-        self.status.config(text=f"Đã lưu khung minimap vào {path.name}")
+        review = self.current.with_suffix(".ai-review.json")
+        if review.exists():
+            try:
+                report = json.loads(review.read_text(encoding="utf-8"))
+                report["requiresManualReview"] = False
+                report["verified"] = True
+                report["reviewedManually"] = True
+                review.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+            except (OSError, ValueError, TypeError):
+                messagebox.showwarning("Lỗi kiểm tra", "Đã lưu nhãn, nhưng chưa cập nhật được trạng thái duyệt AI.")
+        self.status.config(text=f"Đã lưu và xác nhận nhãn minimap vào {path.name}")
 
     def next(self):
         if self.images:
