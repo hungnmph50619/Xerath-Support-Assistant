@@ -13,6 +13,38 @@ giả làm kết quả AI. Bạn vẫn có thể mở **Ảnh bị lệch? Chỉ
 **Xem trước lại** để sử dụng tạm. Ứng dụng vẫn yêu cầu bạn xem ảnh và bấm
 **Dùng khung này** trước khi lưu khung và thu 5 ảnh.
 
+## Tự thu và gắn nhãn theo lô — không cần khoanh từng ảnh
+
+Bản mới có **Tự thu + tạo nhãn** để tiết kiệm thời gian. Đây là thao tác
+sao chép **tọa độ khung do chính bạn xác nhận**, không phải AI tự phát hiện
+khung mới: chỉ dùng được khi vị trí và kích thước minimap giữ nguyên.
+
+1. Nếu đã có ảnh `roi-*.png` và nhãn `roi-*.txt` mà bạn tự khoanh, mở
+   **Mắt nhìn AI → Thu ảnh → Chuẩn bị dữ liệu huấn luyện AI** rồi bấm
+   **Nạp khung từ nhãn đã lưu**. Công cụ tìm cặp PNG/TXT gần nhất **đúng
+   kích thước ROI của độ phân giải game đã được xác nhận**. Nếu thiếu kích
+   thước game hoặc ảnh không khớp, chương trình không đoán tọa độ.
+2. Bấm **Xem trước lại**, về trận để ứng dụng chụp một ảnh RAM, trở lại
+   nhìn ảnh minimap bên trái. Nếu đúng cả bốn cạnh, bấm **Dùng khung này**
+   để xác nhận. Nếu sai, mở **Chỉnh tay**, xem trước và xác nhận lại.
+3. Chọn 10/20/30 ảnh và khoảng cách 5/10/20 giây, bấm **Bắt đầu tự thu +
+   tạo nhãn**, đọc thông báo lưu ảnh rồi xác nhận. Chuyển về **Phòng Tập**.
+   Ứng dụng chỉ chụp khi cửa sổ game ở foreground; mỗi lượt tạo cặp
+   `roi-*.png` / `roi-*.txt` cùng tên và chỉ lưu trên máy.
+4. Thu tự dừng khi đủ số ảnh, sau 15 phút, nếu game đóng, mất foreground
+   hơn 2 phút, kích thước game hoặc tọa độ khung đã xác nhận thay đổi, hoặc
+   bạn bấm **Dừng thu**. Giới hạn 30 ảnh/lượt và 500 ảnh toàn thư viện;
+   không ghi đè ảnh/nhãn đã có.
+
+**Cảnh báo chất lượng:** ứng dụng KHÔNG phát hiện được mọi thay đổi về
+UI scale hay vị trí minimap khi độ phân giải giữ nguyên. Nếu chỉnh UI,
+di chuyển minimap, đổi chế độ hiển thị hoặc thấy nhãn bắt đầu lệch, **dừng
+thu và xác nhận lại**. Sau mỗi lô, mở thư mục ảnh/nhãn để kiểm tra mẫu ở
+đầu, giữa và cuối; loại ảnh sai, ảnh trùng lặp quá nhiều trước khi học.
+Không dùng một loạt ảnh gần như giống hệt làm cả tập học lẫn tập kiểm tra.
+Ảnh ROI có thể bao gồm cảnh game, HUD và chữ ngoài minimap; chỉ thu khi
+bạn đồng ý, không gửi lên Gemini và không tự xóa khi kết thúc.
+
 ## 1. Thu ảnh huấn luyện (chỉ khi bạn chủ động đồng ý)
 
 1. Vào **Phòng Tập** trong Liên Minh; bảo đảm minimap nằm phía dưới bên phải.
