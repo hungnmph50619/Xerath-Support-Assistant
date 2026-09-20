@@ -63,7 +63,7 @@ public partial class MinimapTrainingRecorderWindow
 
     private void StartAutoTrainingClick(object sender, RoutedEventArgs e)
     {
-        if (_closed || _running || _busy || _previewBusy || _autoTrainingRunning ||
+        if (_closed || _running || _busy || _previewBusy || _aiReviewRunning || _autoTrainingRunning ||
             _previewTimer.IsEnabled || _aiTrainingTimer.IsEnabled ||
             _sequenceTimer.IsEnabled || _sequenceFrames.Count > 0) return;
 
