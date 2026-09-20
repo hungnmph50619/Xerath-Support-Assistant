@@ -31,10 +31,22 @@ def valid_label(path: Path):
         return False
 
 
+def approved_for_training(image: Path):
+    """Không học từ nhãn bị AI đánh dấu lệch cho đến khi người dùng xem lại."""
+    review = image.with_suffix(".ai-review.json")
+    if not review.exists():
+        return True
+    try:
+        report = json.loads(review.read_text(encoding="utf-8"))
+        return report.get("requiresManualReview") is False
+    except (OSError, ValueError, TypeError):
+        return False
+
+
 def prepare_dataset(source: Path, destination: Path, seed: int):
     images = [
         p for p in sorted(source.glob("roi-*.png"))
-        if valid_label(p.with_suffix(".txt"))
+        if valid_label(p.with_suffix(".txt")) and approved_for_training(p)
     ]
     if len(images) < 30:
         raise SystemExit(
