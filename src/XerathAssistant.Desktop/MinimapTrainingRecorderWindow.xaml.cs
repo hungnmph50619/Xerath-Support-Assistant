@@ -103,7 +103,7 @@ public partial class MinimapTrainingRecorderWindow : Window
 
     private void StartClick(object sender, RoutedEventArgs e)
     {
-        if (_running || _autoTrainingRunning) return;
+        if (_running || _autoTrainingRunning || _aiReviewRunning) return;
         if (_sequenceTimer.IsEnabled || _sequenceFrames.Count > 0)
         {
             StatusText.Text = "Hãy kết thúc và xóa chuỗi ảnh RAM trước khi bắt đầu gửi ảnh tới Gemini.";
@@ -329,7 +329,7 @@ public partial class MinimapTrainingRecorderWindow : Window
 
     private void StartSequenceClick(object sender, RoutedEventArgs e)
     {
-        if (_closed || _running || _autoTrainingRunning || _busy || _previewTimer.IsEnabled ||
+        if (_closed || _running || _autoTrainingRunning || _aiReviewRunning || _busy || _previewTimer.IsEnabled ||
             _aiTrainingTimer.IsEnabled || _sequenceTimer.IsEnabled) return;
         if (!_cropProfile.IsValid || _cropProfile.ConfirmedClientWidth < 640 ||
             !SameCrop(CurrentCropDraft(), _cropProfile))
@@ -1022,6 +1022,8 @@ public partial class MinimapTrainingRecorderWindow : Window
         StopRecording("Cửa sổ đã đóng.");
         ClearPendingFrame();
         _sessionCancellation?.Dispose();
+        _aiReviewCts?.Cancel();
+        _aiReviewClient.Dispose();
         _visionClient.Dispose();
         base.OnClosed(e);
     }
