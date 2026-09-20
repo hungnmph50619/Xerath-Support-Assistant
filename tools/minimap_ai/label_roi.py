@@ -29,7 +29,7 @@ class Labeler:
         root.title("Gắn nhãn minimap · AI cục bộ")
         tk.Label(root, text="Kéo chuột khoanh CHÍNH XÁC toàn bộ minimap. S = lưu; N = ảnh tiếp; P = ảnh trước.\n"
                  "Nếu ảnh không rõ: bỏ qua hoặc xóa ảnh khỏi thư mục. Không dùng khung đoán mò.").pack()
-        self.canvas = tk.Canvas(root, width=1020, height=700, bg="#222222")
+        self.canvas = tk.Canvas(root, width=920, height=560, bg="#222222")
         self.canvas.pack()
         self.canvas.bind("<ButtonPress-1>", self.mouse_down)
         self.canvas.bind("<B1-Motion>", self.mouse_move)
@@ -37,7 +37,7 @@ class Labeler:
         self.status = tk.Label(root, text="")
         self.status.pack()
         controls = tk.Frame(root)
-        controls.pack()
+        controls.pack(before=self.canvas)
         tk.Button(controls, text="Ảnh trước", command=self.prev).pack(side="left")
         tk.Button(controls, text="Lưu khung đã chọn", command=self.save).pack(side="left")
         tk.Button(controls, text="Ảnh tiếp", command=self.next).pack(side="left")
@@ -54,7 +54,7 @@ class Labeler:
         with Image.open(self.current) as src:
             image = src.convert("RGB")
         self.original_width, self.original_height = image.size
-        image.thumbnail((1000, 660), Image.Resampling.LANCZOS)
+        image.thumbnail((900, 530), Image.Resampling.LANCZOS)
         self.shown_width, self.shown_height = image.size
         self.photo = ImageTk.PhotoImage(image)
         self.canvas.delete("all")

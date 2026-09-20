@@ -152,6 +152,36 @@
                              Text="Chỉ khi bạn đồng ý, phần mềm mới lưu MỘT ảnh vùng góc dưới bên phải của game trên ổ đĩa để bạn tự gắn khung minimap. Ảnh có thể chứa cảnh game và HUD ngoài bản đồ, không gửi lên mạng. Hãy mở Phòng Tập và tránh nội dung riêng tư."/>
                   <Button Name="TrainingCaptureButton" Click="CaptureAiTrainingImageClick"
                           Content="Lưu 1 ảnh vùng dò để huấn luyện" HorizontalAlignment="Left"/>
+                  <Border Background="#203D51" CornerRadius="6" Padding="10" Margin="0,10,0,7">
+                    <StackPanel>
+                      <TextBlock Text="TỰ THU VÀ GẮN NHÃN TỪ KHUNG ĐÃ XÁC NHẬN"
+                                 FontWeight="SemiBold" Margin="0,0,0,5"/>
+                      <TextBlock Text="Có thể nạp nhãn PNG/TXT bạn đã khoanh. Xem trước và xác nhận khung một lần, sau đó thu theo lô khi kích thước minimap không đổi. Không phải AI tự sửa khung; hãy kiểm tra ảnh và nhãn sau mỗi lô."
+                                 Foreground="#CADDED" FontSize="12" Margin="0,0,0,9"/>
+                      <Button Name="LoadTrainingLabelButton" Click="LoadTrainingLabelClick"
+                              Content="Nạp khung từ nhãn đã lưu" HorizontalAlignment="Left"/>
+                      <TextBlock Text="Số ảnh tối đa mỗi lần" Foreground="#CADDED" FontSize="12"/>
+                      <ComboBox Name="AutoTrainingCountBox" SelectedIndex="0" Margin="0,4,0,9">
+                        <ComboBoxItem Content="10 ảnh"/>
+                        <ComboBoxItem Content="20 ảnh"/>
+                        <ComboBoxItem Content="30 ảnh"/>
+                      </ComboBox>
+                      <TextBlock Text="Khoảng cách giữa các ảnh" Foreground="#CADDED" FontSize="12"/>
+                      <ComboBox Name="AutoTrainingIntervalBox" SelectedIndex="1" Margin="0,4,0,9">
+                        <ComboBoxItem Content="5 giây"/>
+                        <ComboBoxItem Content="10 giây"/>
+                        <ComboBoxItem Content="20 giây"/>
+                      </ComboBox>
+                      <WrapPanel>
+                        <Button Name="AutoTrainingStartButton" Click="StartAutoTrainingClick"
+                                Content="Bắt đầu tự thu + tạo nhãn" Background="#23705B"/>
+                        <Button Name="AutoTrainingStopButton" Click="StopAutoTrainingClick"
+                                Content="Dừng thu" IsEnabled="False"/>
+                      </WrapPanel>
+                      <TextBlock Name="AutoTrainingStatusText" Foreground="#8FE1C3" FontSize="12"
+                                 Text="Chưa thu tự động. Dùng khung đã xác nhận, chỉ thu trong Phòng Tập, không đổi minimap khi đang thu."/>
+                    </StackPanel>
+                  </Border>
                   <TextBlock Name="AiTrainingStatusText" Foreground="#F9CF90" FontSize="12"
                              Text="Chưa lưu ảnh huấn luyện. Xem hướng dẫn docs/minimap-local-ai.md."/>
                 </StackPanel>

@@ -71,6 +71,7 @@ public partial class MinimapTrainingRecorderWindow : Window
         _timer.Tick += CaptureTick;
         _previewTimer.Tick += PreviewCropTick;
         _aiTrainingTimer.Tick += CaptureAiTrainingImageTick;
+        InitializeAutoTraining();
         _sequenceTimer.Tick += CaptureSequenceTick;
         _cropProfile = _cropStore.Load();
         ApplyCropToSliders(_cropProfile);
@@ -102,7 +103,7 @@ public partial class MinimapTrainingRecorderWindow : Window
 
     private void StartClick(object sender, RoutedEventArgs e)
     {
-        if (_running) return;
+        if (_running || _autoTrainingRunning) return;
         if (_sequenceTimer.IsEnabled || _sequenceFrames.Count > 0)
         {
             StatusText.Text = "Hãy kết thúc và xóa chuỗi ảnh RAM trước khi bắt đầu gửi ảnh tới Gemini.";
@@ -328,7 +329,7 @@ public partial class MinimapTrainingRecorderWindow : Window
 
     private void StartSequenceClick(object sender, RoutedEventArgs e)
     {
-        if (_closed || _running || _busy || _previewTimer.IsEnabled ||
+        if (_closed || _running || _autoTrainingRunning || _busy || _previewTimer.IsEnabled ||
             _aiTrainingTimer.IsEnabled || _sequenceTimer.IsEnabled) return;
         if (!_cropProfile.IsValid || _cropProfile.ConfirmedClientWidth < 640 ||
             !SameCrop(CurrentCropDraft(), _cropProfile))
@@ -473,11 +474,14 @@ public partial class MinimapTrainingRecorderWindow : Window
 
     private void SetCropControls(bool enabled)
     {
+        enabled = enabled && !_autoTrainingRunning;
         CropLeftSlider.IsEnabled = CropTopSlider.IsEnabled =
             CropWidthSlider.IsEnabled = CropHeightSlider.IsEnabled = enabled;
         PreviewCropButton.IsEnabled = enabled;
         AutoDetectButton.IsEnabled = enabled;
         TrainingCaptureButton.IsEnabled = enabled && !_aiTrainingTimer.IsEnabled;
+        LoadTrainingLabelButton.IsEnabled = enabled;
+        AutoTrainingStartButton.IsEnabled = enabled;
         SaveCropButton.IsEnabled = enabled && _previewProfile is not null &&
             _previewClient.Width >= 640 && _selectedFrame is not null;
     }
@@ -496,7 +500,7 @@ public partial class MinimapTrainingRecorderWindow : Window
 
     private void AutoDetectMinimapClick(object sender, RoutedEventArgs e)
     {
-        if (_running || _busy || _previewTimer.IsEnabled || _aiTrainingTimer.IsEnabled ||
+        if (_running || _autoTrainingRunning || _busy || _previewTimer.IsEnabled || _aiTrainingTimer.IsEnabled ||
             _sequenceTimer.IsEnabled || _sequenceFrames.Count > 0) return;
         if (!MinimapLocalAiDetector.ModelAvailable)
         {
@@ -522,7 +526,7 @@ public partial class MinimapTrainingRecorderWindow : Window
 
     private void PreviewCropClick(object sender, RoutedEventArgs e)
     {
-        if (_running || _busy || _aiTrainingTimer.IsEnabled || _previewTimer.IsEnabled ||
+        if (_running || _autoTrainingRunning || _busy || _aiTrainingTimer.IsEnabled || _previewTimer.IsEnabled ||
             _sequenceTimer.IsEnabled || _sequenceFrames.Count > 0) return;
         var draft = CurrentCropDraft();
         if (!draft.IsValid)
@@ -550,7 +554,7 @@ public partial class MinimapTrainingRecorderWindow : Window
     // Mỗi ảnh huấn luyện chỉ được ghi khi người dùng chủ động bấm và đồng ý.
     private void CaptureAiTrainingImageClick(object sender, RoutedEventArgs e)
     {
-        if (_running || _busy || _previewTimer.IsEnabled || _aiTrainingTimer.IsEnabled ||
+        if (_running || _autoTrainingRunning || _busy || _previewTimer.IsEnabled || _aiTrainingTimer.IsEnabled ||
             _sequenceTimer.IsEnabled || _sequenceFrames.Count > 0) return;
         if (!IsGameRunning())
         {
@@ -721,7 +725,7 @@ public partial class MinimapTrainingRecorderWindow : Window
 
     private void SaveCropClick(object sender, RoutedEventArgs e)
     {
-        if (_running || _previewTimer.IsEnabled || _previewProfile is null ||
+        if (_running || _autoTrainingRunning || _previewTimer.IsEnabled || _previewProfile is null ||
             _previewClient.Width < 640 || _selectedFrame is null ||
             !SameCrop(CurrentCropDraft(), _previewProfile))
         {
@@ -1011,6 +1015,7 @@ public partial class MinimapTrainingRecorderWindow : Window
     protected override void OnClosed(EventArgs e)
     {
         _closed = true;
+        StopAutoTraining("Đã đóng cửa sổ.");
         _previewTimer.Stop();
         _aiTrainingTimer.Stop();
         ClearSequenceFrames();
