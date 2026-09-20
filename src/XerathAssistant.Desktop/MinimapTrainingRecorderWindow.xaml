@@ -182,6 +182,22 @@
                                  Text="Chưa thu tự động. Dùng khung đã xác nhận, chỉ thu trong Phòng Tập, không đổi minimap khi đang thu."/>
                     </StackPanel>
                   </Border>
+                  <Border Background="#203D51" CornerRadius="6" Padding="10" Margin="0,10,0,7">
+                    <StackPanel>
+                      <TextBlock Text="NHỜ AI CÁ NHÂN KIỂM TRA NHÃN ẢNH ĐÃ LƯU"
+                                 FontWeight="SemiBold" Margin="0,0,0,6"/>
+                      <TextBlock Text="Gửi tối đa 5 ảnh ROI đã lưu qua AI Cá Nhân → Gemini sau khi bạn xác nhận. AI tự đề xuất khung để so sánh với nhãn cũ và chỉ ra ảnh lệch. Không chụp màn hình, không gửi khi chưa đồng ý, không tự sửa nhãn đã xác nhận."
+                                 Foreground="#CADDED" FontSize="12" Margin="0,0,0,9"/>
+                      <WrapPanel>
+                        <Button Name="AiReviewStartButton" Click="StartAiReviewClick"
+                                Content="AI Cá Nhân kiểm tra 5 ảnh" Background="#315F84"/>
+                        <Button Name="AiReviewStopButton" Click="StopAiReviewClick"
+                                Content="Dừng kiểm tra" IsEnabled="False"/>
+                      </WrapPanel>
+                      <TextBlock Name="AiReviewStatusText" Foreground="#8FE1C3" FontSize="12"
+                                 Text="Chưa yêu cầu AI Cá Nhân kiểm tra. Mỗi lần bấm cần xác nhận gửi ảnh tới Gemini."/>
+                    </StackPanel>
+                  </Border>
                   <TextBlock Name="AiTrainingStatusText" Foreground="#F9CF90" FontSize="12"
                              Text="Chưa lưu ảnh huấn luyện. Xem hướng dẫn docs/minimap-local-ai.md."/>
                 </StackPanel>
