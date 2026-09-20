@@ -13,6 +13,36 @@ giả làm kết quả AI. Bạn vẫn có thể mở **Ảnh bị lệch? Chỉ
 **Xem trước lại** để sử dụng tạm. Ứng dụng vẫn yêu cầu bạn xem ảnh và bấm
 **Dùng khung này** trước khi lưu khung và thu 5 ảnh.
 
+## AI Cá Nhân tự đề xuất khung và kiểm tra nhãn (cần xác nhận gửi ảnh)
+
+Ở màn hình **Thu ảnh → Chuẩn bị dữ liệu huấn luyện AI**, bấm
+**AI Cá Nhân kiểm tra 5 ảnh** sau khi đã có ảnh ROI trên máy. Chạy bản AI Cá
+Nhân có endpoint `/api/vision/minimap/locate` ở
+`http://127.0.0.1:5188`, trong **Cài đặt AI** chọn Gemini với mô hình có
+hỗ trợ ảnh và API key hợp lệ. Bạn phải xác nhận riêng cho mỗi lô tối đa
+**5 ảnh**: ảnh ROI *đã lưu* được gửi qua AI Cá Nhân đến **Google Gemini**
+bên ngoài máy; có thể phát sinh phí và ảnh chịu chính sách của nhà cung cấp.
+Nếu không đồng ý, không có ảnh nào được gửi và bạn vẫn có thể dùng chế độ
+thu/gắn nhãn cục bộ. Tính năng này không tự chụp game hoặc gửi ảnh trực tiếp
+từ trận đấu.
+
+Gemini trả về **khung gợi ý**, không phải tọa độ pixel đã kiểm chứng. Xerath
+so sánh khung gợi ý với nhãn cũ (IoU, ngưỡng 0,85) và ghi hai tệp phụ cho
+mỗi ảnh được kiểm tra: `roi-....ai-review.json` (kết quả, ảnh có lệch không)
+và `roi-....ai-suggested.txt` (nhãn AI gợi ý nếu có). **Không ghi đè**
+`roi-....txt` đã được người dùng xác nhận. Khi không có nhãn gốc hoặc
+AI không trả khung hợp lệ, ảnh được đánh dấu cần kiểm tra. Nếu AI và nhãn
+trùng nhau, kết quả chỉ có nghĩa hai phương pháp *đồng thuận*, KHÔNG chứng
+minh nhãn đúng.
+
+Nếu có ảnh cần kiểm tra, mở `py tools/minimap_ai/label_roi.py`, dùng N/P
+đến ảnh có cảnh báo, nhấn **Xem đề xuất AI (A)**, quan sát bốn cạnh, kéo
+sửa nếu cần rồi bấm **Lưu khung đã chọn (S)**. Chỉ thao tác này mới đánh
+dấu nhãn đã được người dùng duyệt; không tự tin tưởng tọa độ Gemini.
+Script huấn luyện loại khỏi tập học các ảnh bị gắn cờ cần xem lại mà chưa
+được người dùng duyệt. Sau khi kiểm tra dữ liệu, bạn vẫn cần huấn luyện
+mô hình ONNX riêng; mô hình ONNX **không tự sinh ra** từ việc gọi Gemini.
+
 ## Tự thu và gắn nhãn theo lô — không cần khoanh từng ảnh
 
 Bản mới có **Tự thu + tạo nhãn** để tiết kiệm thời gian. Đây là thao tác
