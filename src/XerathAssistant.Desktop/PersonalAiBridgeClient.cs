@@ -1,6 +1,7 @@
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
+using XerathAssistant.Core;
 
 namespace XerathAssistant.Desktop;
 
@@ -11,6 +12,9 @@ namespace XerathAssistant.Desktop;
 /// </summary>
 public sealed class PersonalAiBridgeClient : IDisposable
 {
+    private readonly string _clientInstanceId = Guid.NewGuid().ToString("N");
+    private long _snapshotSequence;
+
     private readonly HttpClient _client = new()
     {
         BaseAddress = new Uri("http://127.0.0.1:5188/"),
@@ -30,6 +34,67 @@ public sealed class PersonalAiBridgeClient : IDisposable
                    online.ValueKind == JsonValueKind.True &&
                    doc.RootElement.TryGetProperty("bridgeVersion", out var version) &&
                    version.TryGetInt32(out var n) && n == 1;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException
+               or JsonException or InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Sends one factual Live Client snapshot to PersonalAI Bridge v2.
+    /// This never sends screenshots, credentials, chat text or hidden enemy state.
+    /// Failure is non-fatal: the local Xerath HUD continues independently.
+    /// </summary>
+    public async Task<bool> SendSnapshotAsync(
+        SelfStatsSnapshot snapshot,
+        bool isDead,
+        CancellationToken cancellationToken)
+    {
+        if (!double.IsFinite(snapshot.GameTimeSeconds) ||
+            snapshot.GameTimeSeconds < 0 ||
+            snapshot.GameTimeSeconds > 86400)
+            return false;
+
+        try
+        {
+            using var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                "api/integrations/league/snapshot");
+            request.Headers.TryAddWithoutValidation("X-Xerath-Bridge", "2");
+            request.Content = JsonContent.Create(new
+            {
+                bridgeVersion = 2,
+                clientInstanceId = _clientInstanceId,
+                sequence = Interlocked.Increment(ref _snapshotSequence),
+                observedAtUtc = DateTimeOffset.UtcNow,
+                source = "riot-live-client-data",
+                gameTimeSeconds = snapshot.GameTimeSeconds,
+                level = snapshot.Level,
+                health = snapshot.Health,
+                maxHealth = snapshot.MaxHealth,
+                resource = snapshot.Resource,
+                maxResource = snapshot.MaxResource,
+                resourceType = snapshot.ResourceType,
+                gold = snapshot.Gold,
+                abilityPower = snapshot.AbilityPower,
+                isDead
+            });
+
+            using var response = await _client.SendAsync(
+                request,
+                cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                return false;
+
+            using var doc = JsonDocument.Parse(
+                await response.Content.ReadAsStringAsync(cancellationToken));
+            return doc.RootElement.TryGetProperty("accepted", out var accepted) &&
+                   accepted.ValueKind == JsonValueKind.True &&
+                   doc.RootElement.TryGetProperty("bridgeVersion", out var version) &&
+                   version.TryGetInt32(out var bridgeVersion) &&
+                   bridgeVersion == 2;
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException
                or JsonException or InvalidOperationException)
