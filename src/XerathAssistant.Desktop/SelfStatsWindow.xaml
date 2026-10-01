@@ -47,6 +47,11 @@
                     Content="Thử cầu nối AI cá nhân trên máy (tùy chọn, chỉ truyền sự kiện đã xác nhận)"/>
           <CheckBox Name="AiCoachCheck" IsChecked="False" Margin="20,5,0,0"
                     Content="Cho phép AI chiến thuật gọi mô hình đã cấu hình trong AI Cá Nhân khi có tình huống đủ ưu tiên (có thể gửi dữ liệu trận đã chuẩn hóa ra nhà cung cấp AI)"/>
+          <CheckBox Name="MinimapRuntimeCheck" IsChecked="False" Margin="20,5,0,0"
+                    Content="Bật luồng minimap cục bộ cho Game Coach (chỉ RAM, chỉ khi game ở foreground, không gửi ảnh lên mạng)"/>
+          <TextBlock Name="MinimapRuntimeStatus" Margin="40,3,0,0"
+                     Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                     Text="Minimap runtime đang tắt."/>
           <WrapPanel Margin="0,5,0,0">
             <Button Content="Kiểm tra kết nối AI cá nhân" Click="CheckAiBridgeClick"/>
             <TextBlock Name="AiBridgeStatus" VerticalAlignment="Center" Margin="8,0,0,0"
