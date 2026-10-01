@@ -12,6 +12,9 @@ public partial class SelfStatsWindow : Window
 {
     private readonly RiotLocalSelfStatsClient _local = new();
     private readonly PersonalAiBridgeClient _bridge = new();
+    private readonly MinimapRuntimeCaptureService _minimapRuntime = new();
+    private MinimapRuntimeFrame? _latestMinimapFrame;
+    private int _minimapRuntimeTick;
     private readonly OwnLifeStateDetector _life = new();
     private readonly FreeVietnameseVoiceService _voice = new();
     private readonly MediaPlayer _hudPlayer = new() { Volume = 0.7 };
@@ -269,6 +272,17 @@ public partial class SelfStatsWindow : Window
             if (_closed) return;
             _session.Add(snapshot);
             _hud?.SetSnapshot(snapshot);
+
+            if (MinimapRuntimeCheck.IsChecked == true &&
+                ++_minimapRuntimeTick % 2 == 0)
+                CaptureMinimapRuntimeFrame();
+            else if (MinimapRuntimeCheck.IsChecked != true &&
+                     _latestMinimapFrame is not null)
+            {
+                _latestMinimapFrame.Clear();
+                _latestMinimapFrame = null;
+                MinimapRuntimeStatus.Text = "Minimap runtime đang tắt.";
+            }
             var lifeTransition = _life.Observe(snapshot);
             if (lifeTransition != OwnLifeTransition.None)
             {
@@ -488,6 +502,26 @@ public partial class SelfStatsWindow : Window
         }
     }
 
+    private void CaptureMinimapRuntimeFrame()
+    {
+        if (_closed)
+            return;
+
+        var result = _minimapRuntime.Capture();
+        if (!result.Captured || result.Frame is null)
+        {
+            MinimapRuntimeStatus.Text = result.Status;
+            return;
+        }
+
+        _latestMinimapFrame?.Clear();
+        _latestMinimapFrame = result.Frame;
+        MinimapRuntimeStatus.Text =
+            $"Minimap runtime: {result.Frame.Width}×{result.Frame.Height}, " +
+            $"RAM cục bộ lúc {result.Frame.CapturedAtUtc.ToLocalTime():HH:mm:ss}. " +
+            "Chưa gửi ảnh tới AI hoặc mạng.";
+    }
+
     private async Task PollPublicEventsAsync(double gameTime)
     {
         if (_eventFetching || _closed) return;
@@ -516,6 +550,8 @@ public partial class SelfStatsWindow : Window
         _cancel.Cancel();
         _hudPlayer.Stop();
         _hudPlayer.Close();
+        _latestMinimapFrame?.Clear();
+        _latestMinimapFrame = null;
         _local.Dispose();
         _bridge.Dispose();
         _voice.Dispose();
