@@ -14,6 +14,7 @@ public partial class SelfStatsWindow : Window
     private readonly PersonalAiBridgeClient _bridge = new();
     private readonly MinimapRuntimeCaptureService _minimapRuntime = new();
     private readonly ChampionIconLocalAiDetector _championIconDetector = new();
+    private readonly MinimapChampionTracker _championTracker = new();
     private MinimapRuntimeFrame? _latestMinimapFrame;
     private int _minimapRuntimeTick;
     private bool _championDetectionRunning;
@@ -257,6 +258,7 @@ public partial class SelfStatsWindow : Window
         _dangerAnalyzer.Reset();
         _dangerTrend.Reset();
         _dangerEpisodes.Reset();
+        _championTracker.Reset();
         _lastCoachAdviceKey = null;
         _lastAiCoachTriggerKey = null;
         _dangerStatusUntilGameTime = double.NegativeInfinity;
@@ -556,10 +558,18 @@ public partial class SelfStatsWindow : Window
 
             if (detection.Detections.Count == 0)
             {
-                MinimapRuntimeStatus.Text +=
-                    " Detector icon: chưa có kết quả đủ tin cậy.";
+                var recentTracks = _championTracker.Snapshot(
+                    DateTimeOffset.UtcNow,
+                    TimeSpan.FromSeconds(90));
+                MinimapRuntimeStatus.Text += recentTracks.Count == 0
+                    ? " Detector icon: chưa có kết quả đủ tin cậy."
+                    : $" Detector icon: chưa thấy mới; đang giữ {recentTracks.Count} mốc last-seen đã quan sát.";
                 return;
             }
+
+            _championTracker.Observe(
+                analysisFrame.CapturedAtUtc,
+                detection.Detections);
 
             var labels = string.Join(
                 ", ",
@@ -567,8 +577,12 @@ public partial class SelfStatsWindow : Window
                     .Take(5)
                     .Select(item =>
                         $"{item.Team}:{item.Champion} {item.Confidence:0.00}"));
+            var tracks = _championTracker.Snapshot(
+                DateTimeOffset.UtcNow,
+                TimeSpan.FromSeconds(90));
             MinimapRuntimeStatus.Text +=
-                $" Detector icon: {detection.Detections.Count} kết quả · {labels}.";
+                $" Detector icon: {detection.Detections.Count} kết quả · {labels}. " +
+                $"Tracker đang giữ {tracks.Count} mốc last-seen; không suy đoán vị trí khi mất dấu.";
         }
         catch (OperationCanceledException) when (
             _closed || _cancel.IsCancellationRequested)
@@ -611,6 +625,7 @@ public partial class SelfStatsWindow : Window
         _hudPlayer.Close();
         _latestMinimapFrame?.Clear();
         _latestMinimapFrame = null;
+        _championTracker.Reset();
         _championIconDetector.Dispose();
         _local.Dispose();
         _bridge.Dispose();
