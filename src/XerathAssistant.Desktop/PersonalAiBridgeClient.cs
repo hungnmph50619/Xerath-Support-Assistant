@@ -164,6 +164,84 @@ public sealed class PersonalAiBridgeClient : IDisposable
         }
     }
 
+    public async Task<PersonalAiCoachAdvice?> GetAiCoachAdviceAsync(
+        PersonalAiCoachAdvice baseAdvice,
+        CancellationToken cancellationToken)
+    {
+        if (baseAdvice.Priority < 60)
+            return null;
+
+        try
+        {
+            using var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                "api/integrations/league/coach/ai");
+            request.Headers.TryAddWithoutValidation("X-Xerath-Bridge", "2");
+            request.Content = JsonContent.Create(new
+            {
+                confirmExternalAi = true,
+                expectedAdviceId = baseAdvice.Id,
+                expectedAdviceGameTimeSeconds = baseAdvice.GameTimeSeconds
+            });
+
+            using var response = await _client.SendAsync(
+                request,
+                cancellationToken);
+            if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+                return null;
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            using var doc = JsonDocument.Parse(
+                await response.Content.ReadAsStringAsync(cancellationToken));
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("adviceId", out var id) ||
+                id.ValueKind != JsonValueKind.String ||
+                !root.TryGetProperty("text", out var text) ||
+                text.ValueKind != JsonValueKind.String ||
+                !root.TryGetProperty("priority", out var priority) ||
+                !priority.TryGetInt32(out var priorityValue) ||
+                !root.TryGetProperty("confidence", out var confidence) ||
+                !confidence.TryGetDouble(out var confidenceValue) ||
+                !root.TryGetProperty("gameTimeSeconds", out var gameTime) ||
+                !gameTime.TryGetDouble(out var gameTimeValue) ||
+                !root.TryGetProperty("validUntilGameTimeSeconds", out var validUntil) ||
+                !validUntil.TryGetDouble(out var validUntilValue) ||
+                !root.TryGetProperty("usedLanguageModel", out var usedLanguageModel) ||
+                usedLanguageModel.ValueKind != JsonValueKind.True)
+                return null;
+
+            var adviceId = id.GetString();
+            var adviceText = text.GetString();
+            if (!string.Equals(adviceId, baseAdvice.Id, StringComparison.Ordinal) ||
+                string.IsNullOrWhiteSpace(adviceText) ||
+                adviceText.Length > 180 ||
+                priorityValue > baseAdvice.Priority ||
+                priorityValue is < 0 or > 100 ||
+                !double.IsFinite(confidenceValue) ||
+                confidenceValue is < 0 or > 1 ||
+                !double.IsFinite(gameTimeValue) ||
+                Math.Abs(gameTimeValue - baseAdvice.GameTimeSeconds) > 0.001 ||
+                !double.IsFinite(validUntilValue) ||
+                validUntilValue > baseAdvice.ValidUntilGameTimeSeconds + 0.001)
+                return null;
+
+            return new(
+                adviceId!,
+                adviceText,
+                priorityValue,
+                confidenceValue,
+                gameTimeValue,
+                validUntilValue,
+                true);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException
+               or JsonException or InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
     public async Task<PersonalAiCoachAdvice?> GetCoachAdviceAsync(
         CancellationToken cancellationToken)
     {
