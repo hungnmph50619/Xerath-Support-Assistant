@@ -279,7 +279,7 @@ public partial class SelfStatsWindow : Window
 
             if (MinimapRuntimeCheck.IsChecked == true &&
                 ++_minimapRuntimeTick % 2 == 0)
-                CaptureMinimapRuntimeFrame();
+                CaptureMinimapRuntimeFrame(snapshot.GameTimeSeconds);
             else if (MinimapRuntimeCheck.IsChecked != true &&
                      _latestMinimapFrame is not null)
             {
@@ -506,7 +506,7 @@ public partial class SelfStatsWindow : Window
         }
     }
 
-    private void CaptureMinimapRuntimeFrame()
+    private void CaptureMinimapRuntimeFrame(double gameTimeSeconds)
     {
         if (_closed)
             return;
@@ -526,11 +526,12 @@ public partial class SelfStatsWindow : Window
             "Chưa gửi ảnh tới AI hoặc mạng.";
 
         if (!_championDetectionRunning)
-            _ = DetectChampionIconsAsync(result.Frame);
+            _ = DetectChampionIconsAsync(result.Frame, gameTimeSeconds);
     }
 
     private async Task DetectChampionIconsAsync(
-        MinimapRuntimeFrame source)
+        MinimapRuntimeFrame source,
+        double gameTimeSeconds)
     {
         if (_closed || _championDetectionRunning)
             return;
@@ -570,6 +571,15 @@ public partial class SelfStatsWindow : Window
             _championTracker.Observe(
                 analysisFrame.CapturedAtUtc,
                 detection.Detections);
+
+            if (AiBridgeCheck.IsChecked == true)
+            {
+                _ = await _bridge.SendVisionObservationsAsync(
+                    gameTimeSeconds,
+                    analysisFrame.CapturedAtUtc,
+                    detection.Detections,
+                    _cancel.Token);
+            }
 
             var labels = string.Join(
                 ", ",
