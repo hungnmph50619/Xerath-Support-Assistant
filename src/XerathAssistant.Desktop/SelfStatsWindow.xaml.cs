@@ -38,6 +38,7 @@ public partial class SelfStatsWindow : Window
     };
     private int _eventPollCount;
     private bool _eventFetching;
+    private bool _snapshotSending;
     private bool _fetching;
     private bool _closed;
 
@@ -277,6 +278,11 @@ public partial class SelfStatsWindow : Window
             // Death is the highest priority: pin its notice, suppress stale warnings,
             // then clear it on confirmed respawn.
             _hud?.SetLifeState(_life.IsDead);
+
+            // Bridge v2 streams only factual local Riot data. It is best-effort
+            // and never blocks the HUD, voice warnings or local analysis.
+            _ = SendSnapshotToPersonalAiAsync(snapshot, _life.IsDead);
+
             if (lifeTransition == OwnLifeTransition.Died)
                 PlayHudVoice(InGameVoicePrompts.Died, urgent: true);
             else if (lifeTransition == OwnLifeTransition.Respawned &&
@@ -412,6 +418,31 @@ public partial class SelfStatsWindow : Window
             }
         }
         finally { _fetching = false; }
+    }
+
+    private async Task SendSnapshotToPersonalAiAsync(
+        SelfStatsSnapshot snapshot,
+        bool isDead)
+    {
+        if (_snapshotSending || _closed || AiBridgeCheck.IsChecked != true)
+            return;
+
+        _snapshotSending = true;
+        try
+        {
+            await _bridge.SendSnapshotAsync(
+                snapshot,
+                isDead,
+                _cancel.Token);
+        }
+        catch (OperationCanceledException) when (
+            _closed || _cancel.IsCancellationRequested)
+        {
+        }
+        finally
+        {
+            _snapshotSending = false;
+        }
     }
 
     private async Task PollPublicEventsAsync(double gameTime)
