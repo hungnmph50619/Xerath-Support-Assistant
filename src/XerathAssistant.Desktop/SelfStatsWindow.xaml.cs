@@ -13,8 +13,10 @@ public partial class SelfStatsWindow : Window
     private readonly RiotLocalSelfStatsClient _local = new();
     private readonly PersonalAiBridgeClient _bridge = new();
     private readonly MinimapRuntimeCaptureService _minimapRuntime = new();
+    private readonly ChampionIconLocalAiDetector _championIconDetector = new();
     private MinimapRuntimeFrame? _latestMinimapFrame;
     private int _minimapRuntimeTick;
+    private bool _championDetectionRunning;
     private readonly OwnLifeStateDetector _life = new();
     private readonly FreeVietnameseVoiceService _voice = new();
     private readonly MediaPlayer _hudPlayer = new() { Volume = 0.7 };
@@ -520,6 +522,63 @@ public partial class SelfStatsWindow : Window
             $"Minimap runtime: {result.Frame.Width}×{result.Frame.Height}, " +
             $"RAM cục bộ lúc {result.Frame.CapturedAtUtc.ToLocalTime():HH:mm:ss}. " +
             "Chưa gửi ảnh tới AI hoặc mạng.";
+
+        if (!_championDetectionRunning)
+            _ = DetectChampionIconsAsync(result.Frame);
+    }
+
+    private async Task DetectChampionIconsAsync(
+        MinimapRuntimeFrame source)
+    {
+        if (_closed || _championDetectionRunning)
+            return;
+
+        _championDetectionRunning = true;
+        var analysisFrame = new MinimapRuntimeFrame(
+            source.Jpeg.ToArray(),
+            source.CapturedAtUtc,
+            source.Width,
+            source.Height);
+        try
+        {
+            var detection = await Task.Run(
+                () => _championIconDetector.Detect(analysisFrame),
+                _cancel.Token);
+            if (_closed || _cancel.IsCancellationRequested)
+                return;
+
+            if (!detection.ModelAvailable)
+            {
+                MinimapRuntimeStatus.Text +=
+                    " Detector icon: chưa có model cục bộ.";
+                return;
+            }
+
+            if (detection.Detections.Count == 0)
+            {
+                MinimapRuntimeStatus.Text +=
+                    " Detector icon: chưa có kết quả đủ tin cậy.";
+                return;
+            }
+
+            var labels = string.Join(
+                ", ",
+                detection.Detections
+                    .Take(5)
+                    .Select(item =>
+                        $"{item.Team}:{item.Champion} {item.Confidence:0.00}"));
+            MinimapRuntimeStatus.Text +=
+                $" Detector icon: {detection.Detections.Count} kết quả · {labels}.";
+        }
+        catch (OperationCanceledException) when (
+            _closed || _cancel.IsCancellationRequested)
+        {
+        }
+        finally
+        {
+            analysisFrame.Clear();
+            _championDetectionRunning = false;
+        }
     }
 
     private async Task PollPublicEventsAsync(double gameTime)
@@ -552,6 +611,7 @@ public partial class SelfStatsWindow : Window
         _hudPlayer.Close();
         _latestMinimapFrame?.Clear();
         _latestMinimapFrame = null;
+        _championIconDetector.Dispose();
         _local.Dispose();
         _bridge.Dispose();
         _voice.Dispose();
