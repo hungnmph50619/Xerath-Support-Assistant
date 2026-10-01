@@ -40,6 +40,7 @@ public partial class SelfStatsWindow : Window
     private bool _eventFetching;
     private bool _snapshotSending;
     private string? _lastCoachAdviceKey;
+    private string? _lastAiCoachTriggerKey;
     private bool _fetching;
     private bool _closed;
 
@@ -252,6 +253,7 @@ public partial class SelfStatsWindow : Window
         _dangerTrend.Reset();
         _dangerEpisodes.Reset();
         _lastCoachAdviceKey = null;
+        _lastAiCoachTriggerKey = null;
         _dangerStatusUntilGameTime = double.NegativeInfinity;
         DangerAnalysisStatus.Text = "Đã xóa thống kê nguy hiểm của phiên. Chờ các mẫu mới.";
         SummaryValue.Text = "Đã xóa số liệu phiên. Chờ lần đọc tiếp theo.";
@@ -448,6 +450,23 @@ public partial class SelfStatsWindow : Window
 
             var adviceKey =
                 $"{advice.Id}:{advice.GameTimeSeconds:0.###}";
+
+            if (AiCoachCheck.IsChecked == true &&
+                advice.Priority >= 60 &&
+                !string.Equals(
+                    adviceKey,
+                    _lastAiCoachTriggerKey,
+                    StringComparison.Ordinal))
+            {
+                _lastAiCoachTriggerKey = adviceKey;
+                var aiAdvice = await _bridge.GetAiCoachAdviceAsync(
+                    advice,
+                    _cancel.Token);
+                if (aiAdvice is not null &&
+                    aiAdvice.ValidUntilGameTimeSeconds >= snapshot.GameTimeSeconds)
+                    advice = aiAdvice;
+            }
+
             if (string.Equals(
                     adviceKey,
                     _lastCoachAdviceKey,
