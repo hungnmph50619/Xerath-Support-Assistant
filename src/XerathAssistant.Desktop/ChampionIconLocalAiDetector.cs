@@ -37,6 +37,7 @@ public sealed class ChampionIconLocalAiDetector : IDisposable
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "XerathSupportAssistant", "models", "champion-icon-labels.json");
 
+    private readonly object _sync = new();
     private InferenceSession? _session;
     private ChampionClass[]? _classes;
     private string? _loadError;
@@ -45,6 +46,14 @@ public sealed class ChampionIconLocalAiDetector : IDisposable
         File.Exists(ModelPath) && File.Exists(LabelsPath);
 
     public ChampionIconDetectionResult Detect(MinimapRuntimeFrame frame)
+    {
+        lock (_sync)
+        {
+            return DetectCore(frame);
+        }
+    }
+
+    private ChampionIconDetectionResult DetectCore(MinimapRuntimeFrame frame)
     {
         if (!ModelAvailable)
         {
@@ -283,6 +292,27 @@ public sealed class ChampionIconLocalAiDetector : IDisposable
         int row)
     {
         var classes = scores.Dimensions[1];
+        var probabilityLike = true;
+        double rawSum = 0;
+        var rawBestIndex = 0;
+        var rawBest = float.NegativeInfinity;
+
+        for (var i = 0; i < classes; i++)
+        {
+            var value = scores[row, i];
+            if (!float.IsFinite(value) || value < 0 || value > 1)
+                probabilityLike = false;
+            rawSum += value;
+            if (value > rawBest)
+            {
+                rawBest = value;
+                rawBestIndex = i;
+            }
+        }
+
+        if (probabilityLike && Math.Abs(rawSum - 1d) <= 0.03)
+            return (rawBestIndex, rawBest);
+
         var max = float.NegativeInfinity;
         for (var i = 0; i < classes; i++)
             max = Math.Max(max, scores[row, i]);
@@ -337,8 +367,11 @@ public sealed class ChampionIconLocalAiDetector : IDisposable
 
     public void Dispose()
     {
-        _session?.Dispose();
-        _session = null;
+        lock (_sync)
+        {
+            _session?.Dispose();
+            _session = null;
+        }
     }
 
     private sealed record PatchCandidate(
