@@ -12,6 +12,12 @@ public partial class SelfStatsWindow : Window
 {
     private readonly RiotLocalSelfStatsClient _local = new();
     private readonly PersonalAiBridgeClient _bridge = new();
+    private readonly MinimapRuntimeCaptureService _minimapRuntime = new();
+    private readonly ChampionIconLocalAiDetector _championIconDetector = new();
+    private readonly MinimapChampionTracker _championTracker = new();
+    private MinimapRuntimeFrame? _latestMinimapFrame;
+    private int _minimapRuntimeTick;
+    private bool _championDetectionRunning;
     private readonly OwnLifeStateDetector _life = new();
     private readonly FreeVietnameseVoiceService _voice = new();
     private readonly MediaPlayer _hudPlayer = new() { Volume = 0.7 };
@@ -38,6 +44,9 @@ public partial class SelfStatsWindow : Window
     };
     private int _eventPollCount;
     private bool _eventFetching;
+    private bool _snapshotSending;
+    private string? _lastCoachAdviceKey;
+    private string? _lastAiCoachTriggerKey;
     private bool _fetching;
     private bool _closed;
 
@@ -249,6 +258,9 @@ public partial class SelfStatsWindow : Window
         _dangerAnalyzer.Reset();
         _dangerTrend.Reset();
         _dangerEpisodes.Reset();
+        _championTracker.Reset();
+        _lastCoachAdviceKey = null;
+        _lastAiCoachTriggerKey = null;
         _dangerStatusUntilGameTime = double.NegativeInfinity;
         DangerAnalysisStatus.Text = "Đã xóa thống kê nguy hiểm của phiên. Chờ các mẫu mới.";
         SummaryValue.Text = "Đã xóa số liệu phiên. Chờ lần đọc tiếp theo.";
@@ -264,6 +276,17 @@ public partial class SelfStatsWindow : Window
             if (_closed) return;
             _session.Add(snapshot);
             _hud?.SetSnapshot(snapshot);
+
+            if (MinimapRuntimeCheck.IsChecked == true &&
+                ++_minimapRuntimeTick % 2 == 0)
+                CaptureMinimapRuntimeFrame(snapshot.GameTimeSeconds);
+            else if (MinimapRuntimeCheck.IsChecked != true &&
+                     _latestMinimapFrame is not null)
+            {
+                _latestMinimapFrame.Clear();
+                _latestMinimapFrame = null;
+                MinimapRuntimeStatus.Text = "Minimap runtime đang tắt.";
+            }
             var lifeTransition = _life.Observe(snapshot);
             if (lifeTransition != OwnLifeTransition.None)
             {
@@ -277,6 +300,11 @@ public partial class SelfStatsWindow : Window
             // Death is the highest priority: pin its notice, suppress stale warnings,
             // then clear it on confirmed respawn.
             _hud?.SetLifeState(_life.IsDead);
+
+            // Bridge v2 streams only factual local Riot data. It is best-effort
+            // and never blocks the HUD, voice warnings or local analysis.
+            _ = SendSnapshotToPersonalAiAsync(snapshot, _life.IsDead);
+
             if (lifeTransition == OwnLifeTransition.Died)
                 PlayHudVoice(InGameVoicePrompts.Died, urgent: true);
             else if (lifeTransition == OwnLifeTransition.Respawned &&
@@ -414,6 +442,169 @@ public partial class SelfStatsWindow : Window
         finally { _fetching = false; }
     }
 
+    private async Task SendSnapshotToPersonalAiAsync(
+        SelfStatsSnapshot snapshot,
+        bool isDead)
+    {
+        if (_snapshotSending || _closed || AiBridgeCheck.IsChecked != true)
+            return;
+
+        _snapshotSending = true;
+        try
+        {
+            var sent = await _bridge.SendSnapshotAsync(
+                snapshot,
+                isDead,
+                _cancel.Token);
+
+            if (!sent || _closed || isDead || _hud is null)
+                return;
+
+            var advice = await _bridge.GetCoachAdviceAsync(_cancel.Token);
+            if (advice is null ||
+                advice.ValidUntilGameTimeSeconds < snapshot.GameTimeSeconds ||
+                advice.GameTimeSeconds > snapshot.GameTimeSeconds + 1)
+                return;
+
+            var adviceKey =
+                $"{advice.Id}:{advice.GameTimeSeconds:0.###}";
+
+            if (AiCoachCheck.IsChecked == true &&
+                advice.Priority >= 60 &&
+                !string.Equals(
+                    adviceKey,
+                    _lastAiCoachTriggerKey,
+                    StringComparison.Ordinal))
+            {
+                _lastAiCoachTriggerKey = adviceKey;
+                var aiAdvice = await _bridge.GetAiCoachAdviceAsync(
+                    advice,
+                    _cancel.Token);
+                if (aiAdvice is not null &&
+                    aiAdvice.ValidUntilGameTimeSeconds >= snapshot.GameTimeSeconds)
+                    advice = aiAdvice;
+            }
+
+            if (string.Equals(
+                    adviceKey,
+                    _lastCoachAdviceKey,
+                    StringComparison.Ordinal))
+                return;
+
+            _lastCoachAdviceKey = adviceKey;
+            _hud.ShowNotice(
+                advice.Text,
+                priority: advice.Priority >= 80);
+        }
+        catch (OperationCanceledException) when (
+            _closed || _cancel.IsCancellationRequested)
+        {
+        }
+        finally
+        {
+            _snapshotSending = false;
+        }
+    }
+
+    private void CaptureMinimapRuntimeFrame(double gameTimeSeconds)
+    {
+        if (_closed)
+            return;
+
+        var result = _minimapRuntime.Capture();
+        if (!result.Captured || result.Frame is null)
+        {
+            MinimapRuntimeStatus.Text = result.Status;
+            return;
+        }
+
+        _latestMinimapFrame?.Clear();
+        _latestMinimapFrame = result.Frame;
+        MinimapRuntimeStatus.Text =
+            $"Minimap runtime: {result.Frame.Width}×{result.Frame.Height}, " +
+            $"RAM cục bộ lúc {result.Frame.CapturedAtUtc.ToLocalTime():HH:mm:ss}. " +
+            "Chưa gửi ảnh tới AI hoặc mạng.";
+
+        if (!_championDetectionRunning)
+            _ = DetectChampionIconsAsync(result.Frame, gameTimeSeconds);
+    }
+
+    private async Task DetectChampionIconsAsync(
+        MinimapRuntimeFrame source,
+        double gameTimeSeconds)
+    {
+        if (_closed || _championDetectionRunning)
+            return;
+
+        _championDetectionRunning = true;
+        var analysisFrame = new MinimapRuntimeFrame(
+            source.Jpeg.ToArray(),
+            source.CapturedAtUtc,
+            source.Width,
+            source.Height);
+        try
+        {
+            var detection = await Task.Run(
+                () => _championIconDetector.Detect(analysisFrame),
+                _cancel.Token);
+            if (_closed || _cancel.IsCancellationRequested)
+                return;
+
+            if (!detection.ModelAvailable)
+            {
+                MinimapRuntimeStatus.Text +=
+                    " Detector icon: chưa có model cục bộ.";
+                return;
+            }
+
+            if (detection.Detections.Count == 0)
+            {
+                var recentTracks = _championTracker.Snapshot(
+                    DateTimeOffset.UtcNow,
+                    TimeSpan.FromSeconds(90));
+                MinimapRuntimeStatus.Text += recentTracks.Count == 0
+                    ? " Detector icon: chưa có kết quả đủ tin cậy."
+                    : $" Detector icon: chưa thấy mới; đang giữ {recentTracks.Count} mốc last-seen đã quan sát.";
+                return;
+            }
+
+            _championTracker.Observe(
+                analysisFrame.CapturedAtUtc,
+                detection.Detections);
+
+            if (AiBridgeCheck.IsChecked == true)
+            {
+                _ = await _bridge.SendVisionObservationsAsync(
+                    gameTimeSeconds,
+                    analysisFrame.CapturedAtUtc,
+                    detection.Detections,
+                    _cancel.Token);
+            }
+
+            var labels = string.Join(
+                ", ",
+                detection.Detections
+                    .Take(5)
+                    .Select(item =>
+                        $"{item.Team}:{item.Champion} {item.Confidence:0.00}"));
+            var tracks = _championTracker.Snapshot(
+                DateTimeOffset.UtcNow,
+                TimeSpan.FromSeconds(90));
+            MinimapRuntimeStatus.Text +=
+                $" Detector icon: {detection.Detections.Count} kết quả · {labels}. " +
+                $"Tracker đang giữ {tracks.Count} mốc last-seen; không suy đoán vị trí khi mất dấu.";
+        }
+        catch (OperationCanceledException) when (
+            _closed || _cancel.IsCancellationRequested)
+        {
+        }
+        finally
+        {
+            analysisFrame.Clear();
+            _championDetectionRunning = false;
+        }
+    }
+
     private async Task PollPublicEventsAsync(double gameTime)
     {
         if (_eventFetching || _closed) return;
@@ -442,6 +633,10 @@ public partial class SelfStatsWindow : Window
         _cancel.Cancel();
         _hudPlayer.Stop();
         _hudPlayer.Close();
+        _latestMinimapFrame?.Clear();
+        _latestMinimapFrame = null;
+        _championTracker.Reset();
+        _championIconDetector.Dispose();
         _local.Dispose();
         _bridge.Dispose();
         _voice.Dispose();

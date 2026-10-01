@@ -20,4 +20,4 @@ jobs:
         with:
           python-version: '3.11'
       - name: Validate local AI training scripts
-        run: python -m py_compile tools/minimap_ai/label_roi.py tools/minimap_ai/train.py
+        run: python -m py_compile tools/minimap_ai/label_roi.py tools/minimap_ai/train.py tools/champion_icons/train.py
