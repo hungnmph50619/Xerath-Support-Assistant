@@ -96,7 +96,7 @@ public sealed class ChampionIconLocalAiDetector : IDisposable
             });
 
             var scores = output.First().AsTensor<float>();
-            if (scores.Dimensions.Count != 2 ||
+            if (scores.Dimensions.Length != 2 ||
                 scores.Dimensions[0] != candidates.Count ||
                 scores.Dimensions[1] != _classes!.Length)
                 throw new InvalidDataException(
