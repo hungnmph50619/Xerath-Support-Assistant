@@ -23,6 +23,7 @@ public sealed class PersonalAiBridgeClient : IDisposable
 {
     private readonly string _clientInstanceId = Guid.NewGuid().ToString("N");
     private long _snapshotSequence;
+    private long _visionSequence;
 
     private readonly HttpClient _client = new()
     {
@@ -89,6 +90,63 @@ public sealed class PersonalAiBridgeClient : IDisposable
                 gold = snapshot.Gold,
                 abilityPower = snapshot.AbilityPower,
                 isDead
+            });
+
+            using var response = await _client.SendAsync(
+                request,
+                cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                return false;
+
+            using var doc = JsonDocument.Parse(
+                await response.Content.ReadAsStringAsync(cancellationToken));
+            return doc.RootElement.TryGetProperty("accepted", out var accepted) &&
+                   accepted.ValueKind == JsonValueKind.True &&
+                   doc.RootElement.TryGetProperty("bridgeVersion", out var version) &&
+                   version.TryGetInt32(out var bridgeVersion) &&
+                   bridgeVersion == 2;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException
+               or JsonException or InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
+    public async Task<bool> SendVisionObservationsAsync(
+        double gameTimeSeconds,
+        DateTimeOffset observedAtUtc,
+        IReadOnlyList<ChampionIconDetection> observations,
+        CancellationToken cancellationToken)
+    {
+        if (!double.IsFinite(gameTimeSeconds) ||
+            gameTimeSeconds < 0 ||
+            gameTimeSeconds > 86400 ||
+            observations.Count is < 1 or > 10)
+            return false;
+
+        try
+        {
+            using var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                "api/integrations/league/vision/observations");
+            request.Headers.TryAddWithoutValidation("X-Xerath-Bridge", "2");
+            request.Content = JsonContent.Create(new
+            {
+                bridgeVersion = 2,
+                clientInstanceId = _clientInstanceId,
+                sequence = Interlocked.Increment(ref _visionSequence),
+                observedAtUtc,
+                source = "minimap-local-onnx",
+                gameTimeSeconds,
+                observations = observations.Select(item => new
+                {
+                    champion = item.Champion,
+                    team = item.Team,
+                    x = item.X,
+                    y = item.Y,
+                    confidence = item.Confidence
+                }).ToArray()
             });
 
             using var response = await _client.SendAsync(
