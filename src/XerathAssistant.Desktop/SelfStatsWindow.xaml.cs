@@ -39,6 +39,7 @@ public partial class SelfStatsWindow : Window
     private int _eventPollCount;
     private bool _eventFetching;
     private bool _snapshotSending;
+    private string? _lastCoachAdviceKey;
     private bool _fetching;
     private bool _closed;
 
@@ -250,6 +251,7 @@ public partial class SelfStatsWindow : Window
         _dangerAnalyzer.Reset();
         _dangerTrend.Reset();
         _dangerEpisodes.Reset();
+        _lastCoachAdviceKey = null;
         _dangerStatusUntilGameTime = double.NegativeInfinity;
         DangerAnalysisStatus.Text = "Đã xóa thống kê nguy hiểm của phiên. Chờ các mẫu mới.";
         SummaryValue.Text = "Đã xóa số liệu phiên. Chờ lần đọc tiếp theo.";
@@ -430,10 +432,32 @@ public partial class SelfStatsWindow : Window
         _snapshotSending = true;
         try
         {
-            await _bridge.SendSnapshotAsync(
+            var sent = await _bridge.SendSnapshotAsync(
                 snapshot,
                 isDead,
                 _cancel.Token);
+
+            if (!sent || _closed || isDead || _hud is null)
+                return;
+
+            var advice = await _bridge.GetCoachAdviceAsync(_cancel.Token);
+            if (advice is null ||
+                advice.ValidUntilGameTimeSeconds < snapshot.GameTimeSeconds ||
+                advice.GameTimeSeconds > snapshot.GameTimeSeconds + 1)
+                return;
+
+            var adviceKey =
+                $"{advice.Id}:{advice.GameTimeSeconds:0.###}";
+            if (string.Equals(
+                    adviceKey,
+                    _lastCoachAdviceKey,
+                    StringComparison.Ordinal))
+                return;
+
+            _lastCoachAdviceKey = adviceKey;
+            _hud.ShowNotice(
+                advice.Text,
+                priority: advice.Priority >= 80);
         }
         catch (OperationCanceledException) when (
             _closed || _cancel.IsCancellationRequested)
