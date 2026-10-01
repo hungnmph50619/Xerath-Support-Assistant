@@ -10,6 +10,15 @@ namespace XerathAssistant.Desktop;
 /// Fixed loopback URL, no screenshots, credentials, chat history, hidden data or
 /// language-model calls. Each outgoing request is one factual, typed event.
 /// </summary>
+public sealed record PersonalAiCoachAdvice(
+    string Id,
+    string Text,
+    int Priority,
+    double Confidence,
+    double GameTimeSeconds,
+    double ValidUntilGameTimeSeconds,
+    bool UsedLanguageModel);
+
 public sealed class PersonalAiBridgeClient : IDisposable
 {
     private readonly string _clientInstanceId = Guid.NewGuid().ToString("N");
@@ -147,6 +156,68 @@ public sealed class PersonalAiBridgeClient : IDisposable
             var message = text.GetString();
             return string.IsNullOrWhiteSpace(message) || message.Length > 200
                 ? null : message;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException
+               or JsonException or InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    public async Task<PersonalAiCoachAdvice?> GetCoachAdviceAsync(
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var response = await _client.GetAsync(
+                "api/integrations/league/coach/current",
+                cancellationToken);
+            if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+                return null;
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            using var doc = JsonDocument.Parse(
+                await response.Content.ReadAsStringAsync(cancellationToken));
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("id", out var id) ||
+                id.ValueKind != JsonValueKind.String ||
+                !root.TryGetProperty("text", out var text) ||
+                text.ValueKind != JsonValueKind.String ||
+                !root.TryGetProperty("priority", out var priority) ||
+                !priority.TryGetInt32(out var priorityValue) ||
+                !root.TryGetProperty("confidence", out var confidence) ||
+                !confidence.TryGetDouble(out var confidenceValue) ||
+                !root.TryGetProperty("gameTimeSeconds", out var gameTime) ||
+                !gameTime.TryGetDouble(out var gameTimeValue) ||
+                !root.TryGetProperty("validUntilGameTimeSeconds", out var validUntil) ||
+                !validUntil.TryGetDouble(out var validUntilValue) ||
+                !root.TryGetProperty("usedLanguageModel", out var usedLanguageModel) ||
+                usedLanguageModel.ValueKind is not (
+                    JsonValueKind.True or JsonValueKind.False))
+                return null;
+
+            var adviceId = id.GetString();
+            var adviceText = text.GetString();
+            if (string.IsNullOrWhiteSpace(adviceId) ||
+                string.IsNullOrWhiteSpace(adviceText) ||
+                adviceText.Length > 300 ||
+                priorityValue is < 0 or > 100 ||
+                !double.IsFinite(confidenceValue) ||
+                confidenceValue is < 0 or > 1 ||
+                !double.IsFinite(gameTimeValue) ||
+                !double.IsFinite(validUntilValue) ||
+                validUntilValue < gameTimeValue)
+                return null;
+
+            return new(
+                adviceId,
+                adviceText,
+                priorityValue,
+                confidenceValue,
+                gameTimeValue,
+                validUntilValue,
+                usedLanguageModel.ValueKind == JsonValueKind.True);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException
                or JsonException or InvalidOperationException)
